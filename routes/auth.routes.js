@@ -4,10 +4,9 @@ var User = db.users;
 
 module.exports = (app) => {
     app.post("/login", passport.authenticate("local", {
-        failureRedirect: "/auth/failed"
-    }), (req, res) => {
-        res.redirect("/profile");
-    });
+        successRedirect: '/profile',
+        failureRedirect: '/auth/failed',
+    }));
 
     app.post('/register', async (req, res, next) => {
         let user = await User.findOne({
@@ -30,7 +29,7 @@ module.exports = (app) => {
 
     app.get('/auth/failed', (req, res) => {
         res.json({
-            error: "authentication failed"
+            error: "failed to auth"
         })
     });
 }
