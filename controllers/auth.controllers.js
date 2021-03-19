@@ -10,7 +10,9 @@ module.exports = (app) => {
     passport.use(new LocalStrategy(
         function (username, password, done) {
             User.findOne({
-                phone_number: username
+                where: {
+                    phone_number: username
+                }
             }, function (err, user) {
                 if (err) {
                     return done(err);
