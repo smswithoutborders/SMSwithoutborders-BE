@@ -4,10 +4,13 @@
     "title": "SMSwithoutBorders API",
     "version": "1.0"
   },
-  "servers": [{
-    "url": "http://localhost:3000"
-  }],
-  "tags": [{
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
       "name": "Register",
       "description": "users register with their Phone number and Password"
     },
@@ -50,6 +53,21 @@
                   "type": "object",
                   "properties": {
                     "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
                       "type": "string"
                     }
                   }
