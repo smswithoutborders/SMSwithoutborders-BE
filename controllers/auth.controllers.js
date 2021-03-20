@@ -14,10 +14,14 @@ module.exports = (app) => {
             }
         })
         if (!user) {
-            return done(null, false);
+            const error = new Error("Invalid Phone number");
+            error.httpStatusCode = 401;
+            return done(error, false);
         }
         if (user.password != password) {
-            return done(null, false);
+            const error = new Error("Invalid Password");
+            error.httpStatusCode = 401;
+            return done(error, false);
         }
         return done(null, user);
     }));

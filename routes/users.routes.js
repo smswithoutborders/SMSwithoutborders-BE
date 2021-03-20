@@ -3,7 +3,7 @@ module.exports = (app) => {
         if (req.isAuthenticated()) {
             return next();
         }
-        res.redirect('/auth/failed');
+        res.redirect('/login/fail');
     };
 
     app.get("/profile", ensureAuthenticated, (req, res) => {

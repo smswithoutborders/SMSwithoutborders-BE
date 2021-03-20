@@ -33,4 +33,19 @@ db.sequelize.sync();
 require("./routes/auth.routes.js")(app);
 require("./routes/users.routes.js")(app);
 
+let errorHandler = (err, req, res, next) => {
+    if (err.httpStatusCode === 500) {
+        console.error(err.httpStatusCode, err.stack);
+        return res.status(err.httpStatusCode).json({
+            error: "Something Broke!"
+        })
+    }
+
+    res.status(err.httpStatusCode).json({
+        error: err.message
+    });
+}
+
+app.use(errorHandler);
+
 app.listen(configs.PORT, console.log(`Server is running on port ${configs.PORT}`));

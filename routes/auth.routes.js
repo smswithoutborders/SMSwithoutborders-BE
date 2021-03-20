@@ -5,7 +5,7 @@ var User = db.users;
 module.exports = (app) => {
     app.post("/login", passport.authenticate("local", {
         successRedirect: '/profile',
-        failureRedirect: '/auth/failed',
+        // failureRedirect: '/login/fail'
     }));
 
     app.post('/register', async (req, res, next) => {
@@ -27,9 +27,9 @@ module.exports = (app) => {
         res.send("user created successfully");
     });
 
-    app.get('/auth/failed', (req, res) => {
-        res.json({
-            error: "failed to auth"
-        })
+    app.get('/login/fail', (req, res, next) => {
+        const error = new Error("unauthorized please login");
+        error.httpStatusCode = 401;
+        next(error);
     });
 }
