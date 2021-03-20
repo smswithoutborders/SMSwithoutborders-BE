@@ -2,6 +2,9 @@ const configs = require("./config.json");
 const express = require("express");
 const session = require("express-session");
 var SequelizeStore = require("connect-session-sequelize")(session.Store);
+const swaggerUi = require('swagger-ui-express');
+
+const swaggerDocument = require('./openapi.json');
 const db = require("./models");
 
 var app = express();
@@ -21,7 +24,10 @@ app.use(session({
     cookie: {
         secure: false
     }
-}))
+}));
+
+// Create swagger docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Auth tih passport
 require("./controllers/auth.controllers.js")(app)

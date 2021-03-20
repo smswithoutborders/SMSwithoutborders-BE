@@ -14,7 +14,8 @@
     "passport-google-oauth2": "^0.2.0",
     "passport-local": "^1.0.0",
     "sequelize": "^6.5.1",
-    "sequelize-json": "^2.1.2"
+    "sequelize-json": "^2.1.2",
+    "swagger-ui-express": "^4.1.6"
   },
   "devDependencies": {},
   "scripts": {

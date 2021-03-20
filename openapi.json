@@ -1,0 +1,64 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "SMSwithoutBorders API",
+    "version": "1.0"
+  },
+  "servers": [{
+    "url": "http://localhost:3000"
+  }],
+  "tags": [{
+      "name": "Register",
+      "description": "users register with their Phone number and Password"
+    },
+    {
+      "name": "Login",
+      "description": "users login with their Phone number and Password"
+    }
+  ],
+  "paths": {
+    "/register/": {
+      "post": {
+        "tags": [
+          "Register"
+        ],
+        "summary": "request body should contain \"username\"= //users phone number and \"password\" = //users new password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

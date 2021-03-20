@@ -24,7 +24,9 @@ module.exports = (app) => {
             password: req.body.password
         })
 
-        res.send("user created successfully");
+        res.json({
+            message: "user created successfully"
+        });
     });
 
     app.get('/login/fail', (req, res, next) => {
