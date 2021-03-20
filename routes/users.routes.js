@@ -8,7 +8,7 @@ module.exports = (app) => {
 
     app.get("/profile", ensureAuthenticated, (req, res) => {
         res.json({
-            phone_number: req.user
+            user: req.user
         });
     })
 }

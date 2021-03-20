@@ -6,7 +6,11 @@ module.exports = (app) => {
     app.post("/login", passport.authenticate("local", {
         successRedirect: '/profile',
         // failureRedirect: '/login/fail'
-    }));
+    }), (req, res) => {
+        res.json({
+            message: "Successfully logedin"
+        })
+    });
 
     app.post('/register', async (req, res, next) => {
         let user = await User.findOne({
