@@ -16,7 +16,9 @@ module.exports = (app) => {
         });
 
         if (user) {
-            return res.json("user exist");
+            const error = new Error("Phone number already in use");
+            error.httpStatusCode = 400;
+            return next(error);
         };
 
         await User.create({
