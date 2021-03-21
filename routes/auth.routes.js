@@ -2,6 +2,13 @@ const db = require("../models");
 const passport = require("passport");
 var User = db.users;
 
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login/fail');
+};
+
 module.exports = (app) => {
     app.post("/login", passport.authenticate("local", {
         successRedirect: '/profile',
@@ -33,6 +40,18 @@ module.exports = (app) => {
         res.json({
             message: "user created successfully"
         });
+    });
+
+    app.get('/oauth2/:platforms/Tokens/', ensureAuthenticated, (req, res, next) => {
+        passport.authenticate(req.params.platforms, {
+            scope: ['email', 'profile']
+        })(req, res, next)
+    });
+
+    app.get('/oauth2/:platforms/Tokens/redirect', (req, res, next) => {
+        passport.authenticate(req.params.platforms, {
+            successRedirect: '/profile'
+        })(req, res, next)
     });
 
     app.get('/login/fail', (req, res, next) => {
