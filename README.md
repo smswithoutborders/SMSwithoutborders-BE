@@ -21,6 +21,8 @@ touch config.json
     "DATABASE": "",
     "PASSWORD": "",
     "SESSION_SECRET": ""
+    "GOOGLE_CLIENT_ID": "",
+    "GOOGLE_CLIENT_SECRET": "",
 }
 ```
 ### Start Server
@@ -35,5 +37,37 @@ node server.js
 
 ### API SandBox
 ```
-/api-docs
+http://localhost:3000/api-docs
 ```
+
+### Usage
+* Create an account
+
+    ```
+    > POST: http://localhost:3000/register/ 
+    {
+        username: STRING,
+        password: STRING
+    }
+    ```
+* Login to account
+
+    ```
+    > POST: http://localhost:3000/register/ 
+    {
+        username: STRING,
+        password: STRING
+    }
+    ```
+* If no user Token redirect to
+    ```
+    > GET: http://localhost:3000/oauth2/:platforms/Tokens/
+    > params = [google, twitter]
+    ```
+* After all authentications return User object
+    ```
+    user = {
+        data = {},
+        token = {}
+    }
+    ```
