@@ -1,5 +1,7 @@
 var passport = require('passport'),
-    LocalStrategy = require('passport-local').Strategy;
+    LocalStrategy = require('passport-local').Strategy,
+    GoogleStrategy = require('passport-google-oauth2').Strategy;
+
 const db = require("../models");
 var User = db.users;
 
@@ -13,6 +15,7 @@ module.exports = (app) => {
                 phone_number: username
             }
         })
+
         if (!user) {
             const error = new Error("Invalid Phone number");
             error.httpStatusCode = 401;
@@ -32,6 +35,11 @@ module.exports = (app) => {
 
     passport.deserializeUser(async function (id, done) {
         let user = await User.findByPk(id);
-        done(null, user)
+        let token = await user.getOauth2s();
+        let userData = {
+            data: user,
+            token
+        }
+        done(null, userData)
     });
 }
