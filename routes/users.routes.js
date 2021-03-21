@@ -10,7 +10,7 @@ module.exports = (app) => {
         if (req.user.token.length > 0) {
             return next();
         }
-        const error = new Error("Please get a tokens");
+        const error = new Error("Please get a tokens here: /oauth2/:platforms/Tokens/");
         error.httpStatusCode = 403;
         return next(error)
     }
