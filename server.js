@@ -26,6 +26,8 @@ app.use(session({
     }
 }));
 
+app.use(express.static('public'));
+
 // Create swagger docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

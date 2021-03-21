@@ -2,10 +2,6 @@ var passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
     GoogleStrategy = require('passport-google-oauth2').Strategy;
 const configs = require("../config.json");
-const {
-    oauth2
-} = require('../models');
-
 const db = require("../models");
 var User = db.users;
 var Oauth2 = db.oauth2;
@@ -59,7 +55,7 @@ module.exports = (app) => {
                 return done(error, false);
             };
 
-            newToken = await oauth2.create({
+            newToken = await Oauth2.create({
                 accessToken: accessToken,
                 refreshToken: refreshToken,
                 profile: profile,
