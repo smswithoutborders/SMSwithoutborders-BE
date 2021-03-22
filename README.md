@@ -44,11 +44,6 @@ http://localhost:3000/api-docs
         password: STRING
     }
     ```
-* If no user Token redirect to
-    ```
-    > GET: http://localhost:3000/oauth2/:platforms/Tokens/
-    > params = [google, twitter]
-    ```
 * After all authentications return User object
     ```
     user = {
