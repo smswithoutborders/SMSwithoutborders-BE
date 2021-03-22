@@ -9,22 +9,7 @@ npm install
 
 ### Setup
 * Create configuration file
-```
-touch config.json
-```
-* Setup configuration file
-```
-{
-    "PORT": "",
-    "HOST": "",
-    "OWNER": "",
-    "DATABASE": "",
-    "PASSWORD": "",
-    "SESSION_SECRET": ""
-    "GOOGLE_CLIENT_ID": "",
-    "GOOGLE_CLIENT_SECRET": "",
-}
-```
+    * Use the template in "example.config.json" file and rename to "config.json"
 ### Start Server
 * With NPM
 ```
