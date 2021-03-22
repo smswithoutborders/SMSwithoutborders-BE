@@ -35,7 +35,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 require("./controllers/auth.controllers.js")(app)
 
 // DATABASE
-db.sequelize.sync();
+db.sequelize.sync({
+    alter: true,
+    alter: {
+        drop: false
+    }
+});
 
 // ROUTES
 require("./routes/auth.routes.js")(app);
