@@ -1,8 +1,8 @@
 const configs = require("../config.json");
 const Sequelize = require("sequelize");
 
-var sequelize = new Sequelize(configs.DATABASE, configs.OWNER, configs.PASSWORD, {
-    host: configs.HOST,
+var sequelize = new Sequelize(configs.database.MYSQL_DATABASE, configs.database.MYSQL_USER, configs.database.MYSQL_PASSWORD, {
+    host: configs.database.MYSQL_HOST,
     dialect: "mysql",
     define: {
         timestamps: false

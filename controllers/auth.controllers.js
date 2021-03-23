@@ -1,7 +1,7 @@
 var passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
     GoogleStrategy = require('passport-google-oauth2').Strategy;
-const configs = require("../config.json");
+const credentials = require("../credentials.json");
 const db = require("../models");
 var User = db.users;
 var Oauth2 = db.oauth2;
@@ -31,8 +31,8 @@ module.exports = (app) => {
     }));
 
     passport.use(new GoogleStrategy({
-            clientID: configs.GOOGLE_CLIENT_ID,
-            clientSecret: configs.GOOGLE_CLIENT_SECRET,
+            clientID: credentials.google.GOOGLE_CLIENT_ID,
+            clientSecret: credentials.google.GOOGLE_CLIENT_SECRET,
             callbackURL: "http://localhost:3000/oauth2/google/Tokens/redirect/",
             passReqToCallback: true
         },

@@ -15,7 +15,7 @@ app.use(express.urlencoded({
 }));
 
 app.use(session({
-    secret: configs.SESSION_SECRET,
+    secret: configs.api.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     store: new SequelizeStore({
@@ -61,4 +61,4 @@ let errorHandler = (err, req, res, next) => {
 
 app.use(errorHandler);
 
-app.listen(configs.PORT, console.log(`Server is running on port ${configs.PORT}`));
+app.listen(configs.api.API_PORT, console.log(`Server is running on port ${configs.api.API_PORT}`));

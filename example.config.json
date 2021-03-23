@@ -1,10 +1,12 @@
 {
-    "PORT": "",
-    "HOST": "",
-    "OWNER": "",
-    "DATABASE": "",
-    "PASSWORD": "",
-    "GOOGLE_CLIENT_ID": "",
-    "GOOGLE_CLIENT_SECRET": "",
-    "SESSION_SECRET": ""
+    "database": {
+        "MYSQL_HOST": "",
+        "MYSQL_USER": "",
+        "MYSQL_PASSWORD": "",
+        "MYSQL_DATABASE": ""
+    },
+    "api": {
+        "API_PORT": "",
+        "SESSION_SECRET": ""
+    }
 }
