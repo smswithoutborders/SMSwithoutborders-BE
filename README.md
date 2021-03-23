@@ -9,7 +9,8 @@ npm install
 
 ### Setup
 * Create configuration file
-    * Use the template in "example.config.json" file and rename to "config.json"
+    * To set up database and API, use the template in "example.config.json" file and rename to "config.json"
+    * To set up platform credentials, use the template in "example.credentials.json" file and rename to "credentials.json"
 ### Start Server
 * With NPM
 ```
