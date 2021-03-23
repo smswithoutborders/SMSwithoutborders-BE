@@ -30,42 +30,44 @@ module.exports = (app) => {
         return done(null, user);
     }));
 
-    passport.use(new GoogleStrategy({
-            clientID: credentials.google.GOOGLE_CLIENT_ID,
-            clientSecret: credentials.google.GOOGLE_CLIENT_SECRET,
-            callbackURL: "http://localhost:3000/oauth2/google/Tokens/redirect/",
-            passReqToCallback: true
-        },
-        async function (req, accessToken, refreshToken, profile, done) {
-            let user = await User.findOne({
-                where: {
-                    id: req.user.data.id
-                }
-            });
-            // search for existing token
-            let token = await Oauth2.findOne({
-                where: {
+    if (credentials.google.GOOGLE_CLIENT_ID && credentials.google.GOOGLE_CLIENT_SECRET) {
+        passport.use(new GoogleStrategy({
+                clientID: credentials.google.GOOGLE_CLIENT_ID,
+                clientSecret: credentials.google.GOOGLE_CLIENT_SECRET,
+                callbackURL: "http://localhost:3000/oauth2/google/Tokens/redirect/",
+                passReqToCallback: true
+            },
+            async function (req, accessToken, refreshToken, profile, done) {
+                let user = await User.findOne({
+                    where: {
+                        id: req.user.data.id
+                    }
+                });
+                // search for existing token
+                let token = await Oauth2.findOne({
+                    where: {
+                        profileId: profile.id
+                    }
+                });
+
+                if (token) {
+                    const error = new Error("Token already exist");
+                    error.httpStatusCode = 400;
+                    return done(error, false);
+                };
+
+                newToken = await Oauth2.create({
+                    accessToken: accessToken,
+                    refreshToken: refreshToken,
+                    profile: profile,
                     profileId: profile.id
-                }
-            });
+                });
 
-            if (token) {
-                const error = new Error("Token already exist");
-                error.httpStatusCode = 400;
-                return done(error, false);
-            };
-
-            newToken = await Oauth2.create({
-                accessToken: accessToken,
-                refreshToken: refreshToken,
-                profile: profile,
-                profileId: profile.id
-            });
-
-            await user.setOauth2s(newToken);
-            return done(null, user);
-        }
-    ));
+                await user.setOauth2s(newToken);
+                return done(null, user);
+            }
+        ));
+    };
 
     passport.serializeUser(function (user, done) {
         done(null, user.id);
