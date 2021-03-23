@@ -17,6 +17,10 @@
     {
       "name": "Login",
       "description": "users login with their Phone number and Password"
+    },
+    {
+      "name": "Oauth2",
+      "description": "users grant access to respective platforms"
     }
   ],
   "paths": {
@@ -126,6 +130,42 @@
                   "type": "object",
                   "properties": {
                     "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth2/{platforms}/Tokens/": {
+      "get": {
+        "tags": [
+          "Oauth2"
+        ],
+        "summary": "approve account access from platform conscent screen",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "platforms",
+            "description": "google or twitter",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "URL": {
                       "type": "string"
                     }
                   }
