@@ -42,18 +42,6 @@ module.exports = (app) => {
         });
     });
 
-    app.get('/oauth2/:platforms/Tokens/', (req, res, next) => {
-        passport.authenticate(req.params.platforms, {
-            scope: ['email', 'profile']
-        })(req, res, next)
-    });
-
-    app.get('/oauth2/:platforms/Tokens/redirect', (req, res, next) => {
-        passport.authenticate(req.params.platforms, {
-            successRedirect: '/oauth2_profile'
-        })(req, res, next)
-    });
-
     app.get('/login/fail', (req, res, next) => {
         const error = new Error("unauthorized please login");
         error.httpStatusCode = 401;

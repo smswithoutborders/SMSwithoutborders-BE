@@ -58,8 +58,9 @@ app.use([morgan('combined', {
 
 ])
 
-// Auth tih passport
-require("./controllers/auth.controllers.js")(app)
+// Auths
+require("./controllers/passportAuth.js")(app);
+require("./controllers/googleAuth.js")(app);
 
 // DATABASE
 db.sequelize.sync({
