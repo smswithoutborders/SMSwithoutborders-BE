@@ -20,7 +20,7 @@ let checks = [ensureAuthenticated, checkTokenExist];
 
 module.exports = (app) => {
     app.get("/profile", checks, (req, res) => {
-        res.json({
+        res.status(200).json({
             user: req.user
         });
     })
