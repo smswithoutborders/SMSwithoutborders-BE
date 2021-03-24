@@ -22,11 +22,11 @@ module.exports = (app) => {
             error.httpStatusCode = 401;
             return done(error, false);
         }
-        if (user.password != password) {
-            const error = new Error("Invalid Password");
-            error.httpStatusCode = 401;
-            return done(error, false);
-        }
+        // if (user.password != password) {
+        //     const error = new Error("Invalid Password");
+        //     error.httpStatusCode = 401;
+        //     return done(error, false);
+        // }
         return done(null, user);
     }));
 
@@ -77,8 +77,16 @@ module.exports = (app) => {
         let user = await User.findByPk(id);
         let token = await user.getOauth2s();
         let userData = {
-            data: user,
-            token
+            userProfile: {
+                local: user,
+                google: token.profile
+            },
+            token: {
+                access_token: token.accessToken,
+                refresh_token: token.refreshToken,
+                expiry_date: token.expiry_date,
+                scope: token.scope
+            }
         }
         done(null, userData)
     });

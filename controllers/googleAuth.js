@@ -56,7 +56,7 @@ module.exports = (app) => {
         if (oauth2) {
             const error = new Error("Token already exist");
             error.httpStatusCode = 400;
-            return done(error, false);
+            return next(error);
         }
 
         await Oauth2.create({
@@ -69,6 +69,6 @@ module.exports = (app) => {
         });
 
         // await user.setOauth2s(newToken);
-        res.redirect("/profile");
+        res.redirect("/oauth2_profile");
     });
 }

@@ -59,7 +59,7 @@ app.use([morgan('combined', {
 ])
 
 // Auths
-require("./controllers/passportAuth.js")(app);
+// require("./controllers/passportAuth.js")(app);
 require("./controllers/googleAuth.js")(app);
 
 // DATABASE
