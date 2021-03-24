@@ -42,7 +42,7 @@ module.exports = (app) => {
         });
     });
 
-    app.get('/oauth2/:platforms/Tokens/', ensureAuthenticated, (req, res, next) => {
+    app.get('/oauth2/:platforms/Tokens/', (req, res, next) => {
         passport.authenticate(req.params.platforms, {
             scope: ['email', 'profile']
         })(req, res, next)
@@ -50,7 +50,7 @@ module.exports = (app) => {
 
     app.get('/oauth2/:platforms/Tokens/redirect', (req, res, next) => {
         passport.authenticate(req.params.platforms, {
-            successRedirect: '/profile'
+            successRedirect: '/oauth2_profile'
         })(req, res, next)
     });
 

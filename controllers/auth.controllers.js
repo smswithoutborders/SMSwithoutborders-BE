@@ -38,11 +38,11 @@ module.exports = (app) => {
                 passReqToCallback: true
             },
             async function (req, accessToken, refreshToken, profile, done) {
-                let user = await User.findOne({
-                    where: {
-                        id: req.user.data.id
-                    }
-                });
+                // let user = await User.findOne({
+                //     where: {
+                //         id: req.user.data.id
+                //     }
+                // });
                 // search for existing token
                 let token = await Oauth2.findOne({
                     where: {
@@ -56,14 +56,14 @@ module.exports = (app) => {
                     return done(error, false);
                 };
 
-                newToken = await Oauth2.create({
+                user = await Oauth2.create({
                     accessToken: accessToken,
                     refreshToken: refreshToken,
                     profile: profile,
                     profileId: profile.id
                 });
 
-                await user.setOauth2s(newToken);
+                // await user.setOauth2s(newToken);
                 return done(null, user);
             }
         ));

@@ -24,4 +24,10 @@ module.exports = (app) => {
             user: req.user
         });
     })
+
+    app.get("/oauth2_profile", (req, res) => {
+        res.status(200).json({
+            message: "token stored"
+        });
+    })
 }
