@@ -28,11 +28,14 @@ http://localhost:3000/api-docs
 
 ### Usage
 - Tables are automatically generated when server starts
+    * users
+    * oauth2s
+    * user_oauth2
 
 * Create an account
     > Use the SQL command
     ```
-    > INSERT INTO `users`(`example_phone_number`, `auth_key`) VALUES ("phone_number", null);
+    > INSERT INTO `users`(`phone_number`, `auth_key`) VALUES ("example_phone_number", null);
     ```
 * Login to account
 
