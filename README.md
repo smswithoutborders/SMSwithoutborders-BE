@@ -27,27 +27,49 @@ http://localhost:3000/api-docs
 ```
 
 ### Usage
-* Create an account
+- Tables are automatically generated when server starts
 
+* Create an account
+    > Use the SQL command
     ```
-    > POST: http://localhost:3000/register/ 
-    {
-        username: STRING    
-    }
+    > INSERT INTO `users`(`example_phone_number`, `auth_key`) VALUES ("phone_number", null);
     ```
 * Login to account
 
     ```
-    > POST: http://localhost:3000/register/ 
-    {
-        username: STRING,
-        password: STRING
+    > POST: http://localhost:3000/users/profile/
+    body = {
+        "phone_number": STRING
+    }
+    response = {
+        "auth_key": STRING
+    }    
+    ```
+* Get stored tokens
+
+    ```
+    > POST: http://localhost:3000/users/stored_tokens
+    body = {
+        "auth_key": STRING,
+        "user_id": STRING
+    }
+    response = {
+        "token": {
+            "access_token": STRING,
+            "refresh_token": STRING,
+            "expiry_date": STRING,
+            "scope": ARRAY
+        }
     }
     ```
-* After all authentications return User object
+* Get new token
+
     ```
-    user = {
-        data = {},
-        token = {}
+    > POST: http://localhost:3000/users/tokens
+    body = {
+        "auth_key": STRING
+    }
+    response = {
+        message: "Token stored Login!"
     }
     ```

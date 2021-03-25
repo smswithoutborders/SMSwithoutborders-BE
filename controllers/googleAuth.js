@@ -13,7 +13,7 @@ module.exports = (app) => {
     const oauth2Client = new google.auth.OAuth2(
         credentials.google.GOOGLE_CLIENT_ID,
         credentials.google.GOOGLE_CLIENT_SECRET,
-        "http://localhost:3000/oauth2/google/Tokens/redirect/"
+        credentials.google.GOOGLE_CALLBACK_URL
     );
 
     // generate a url that asks permissions for Blogger and Google Calendar scopes
@@ -88,7 +88,11 @@ module.exports = (app) => {
         });
 
         await user.setOauth2s(newToken);
-        res.status(200).json({
+        return res.redirect("/users/auth/success");
+    });
+
+    app.get('/users/auth/success', async (req, res, next) => {
+        return res.status(200).json({
             message: "Token stored Login!"
         })
     });

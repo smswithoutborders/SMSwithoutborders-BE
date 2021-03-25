@@ -67,7 +67,7 @@ module.exports = (app) => {
         return res.status(200).json(userData);
     })
 
-    app.get("/users/tokens", async (req, res, next) => {
+    app.post("/users/tokens", async (req, res, next) => {
         let user = await User.findOne({
             where: {
                 auth_key: req.body.auth_key
