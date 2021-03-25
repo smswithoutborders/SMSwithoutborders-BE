@@ -32,8 +32,7 @@ http://localhost:3000/api-docs
     ```
     > POST: http://localhost:3000/register/ 
     {
-        username: STRING,
-        password: STRING
+        username: STRING    
     }
     ```
 * Login to account
