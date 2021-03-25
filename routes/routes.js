@@ -66,4 +66,22 @@ module.exports = (app) => {
 
         return res.status(200).json(userData);
     })
+
+    app.get("/users/tokens", async (req, res, next) => {
+        let user = await User.findOne({
+            where: {
+                auth_key: req.body.auth_key
+            }
+        })
+
+        if (!user) {
+            const error = new Error("Invalid user");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        // req.session.userId = user.id
+
+        return res.redirect("/oauth2/google/Tokens/?iden=" + user.id);
+    });
 }

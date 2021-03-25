@@ -4,6 +4,9 @@ const {
 const credentials = require("../credentials.json");
 const db = require("../models");
 var Oauth2 = db.oauth2;
+var User = db.users;
+const open = require('open');
+let iden = {};
 
 
 module.exports = (app) => {
@@ -28,8 +31,10 @@ module.exports = (app) => {
         scope: scopes
     });
 
-    app.get('/oauth2/google/Tokens/', (req, res, next) => {
-        res.redirect(url);
+    app.get('/oauth2/google/Tokens/', async (req, res, next) => {
+        iden.id = req.query.iden;
+        // Opens the URL in the default browser.
+        await open(url);
     });
 
     app.get('/oauth2/google/Tokens/redirect', async (req, res, next) => {
@@ -59,7 +64,21 @@ module.exports = (app) => {
             return next(error);
         }
 
-        await Oauth2.create({
+        let userId = iden.id;
+
+        let user = await User.findOne({
+            where: {
+                id: userId
+            }
+        });
+
+        if (!user) {
+            const error = new Error("Invalid user");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        let newToken = await Oauth2.create({
             accessToken: tokens.access_token,
             refreshToken: tokens.refresh_token,
             expiry_date: tokens.expiry_date,
@@ -68,7 +87,9 @@ module.exports = (app) => {
             profileId: profile.data.id
         });
 
-        // await user.setOauth2s(newToken);
-        res.redirect("/oauth2_profile");
+        await user.setOauth2s(newToken);
+        res.status(200).json({
+            message: "Token stored Login!"
+        })
     });
 }
