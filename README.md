@@ -40,7 +40,7 @@ http://localhost:3000/api-docs
 * Login to account
 
     ```
-    > POST: http://localhost:3000/users/profile/
+    > POST: http://localhost:3000/users/profiles/
     body = {
         "phone_number": STRING
     }

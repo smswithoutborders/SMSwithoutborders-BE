@@ -8,7 +8,7 @@ const {
 } = require("sequelize");
 
 module.exports = (app) => {
-    app.post("/users/profile", async (req, res, next) => {
+    app.post("/users/profiles", async (req, res, next) => {
         if (req.body.phone_number) {
             let user = await User.findOne({
                 where: {
@@ -55,7 +55,12 @@ module.exports = (app) => {
         }
 
         let token = await user.getOauth2s();
-        let userData = {
+        let userData = []
+        if (token.length < 1){
+            return userData;
+        }
+
+        userData.google = {
             token: {
                 access_token: token[0].accessToken,
                 refresh_token: token[0].refreshToken,
