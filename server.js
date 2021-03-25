@@ -17,17 +17,17 @@ app.use(express.urlencoded({
     extended: true
 }));
 
-app.use(session({
-    secret: configs.api.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    store: new SequelizeStore({
-        db: db.sequelize,
-    }),
-    cookie: {
-        secure: false
-    }
-}));
+// app.use(session({
+//     secret: configs.api.SESSION_SECRET,
+//     resave: false,
+//     saveUninitialized: true,
+//     store: new SequelizeStore({
+//         db: db.sequelize,
+//     }),
+//     cookie: {
+//         secure: false
+//     }
+// }));
 
 // app.use(express.static('public'));
 
@@ -71,8 +71,8 @@ db.sequelize.sync({
 });
 
 // ROUTES
-require("./routes/auth.routes.js")(app);
-require("./routes/users.routes.js")(app);
+// require("./routes/auth.routes.js")(app);
+require("./routes/routes.js")(app);
 
 let errorHandler = (err, req, res, next) => {
     if (err.httpStatusCode === 500) {

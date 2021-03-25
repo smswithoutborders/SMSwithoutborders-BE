@@ -2,12 +2,6 @@ const db = require("../models");
 const passport = require("passport");
 var User = db.users;
 
-function ensureAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.redirect('/login/fail');
-};
 
 module.exports = (app) => {
     app.post("/login", async (req, res, next) => {
