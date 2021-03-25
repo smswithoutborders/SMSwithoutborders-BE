@@ -11,25 +11,29 @@
   ],
   "tags": [
     {
-      "name": "Register",
-      "description": "users register with their Phone number and Password"
+      "name": "Profile",
+      "description": "users gain access to profile with phone number"
     },
     {
-      "name": "Login",
-      "description": "users login with their Phone number and Password"
+      "name": "Get stored tokens",
+      "description": "users can get stored token with auth_key, user_id and provider"
+    },
+    {
+      "name": "Get new tokens",
+      "description": "sers can get new tokens with auth_key and provider"
     },
     {
       "name": "Oauth2",
-      "description": "users grant access to respective platforms"
+      "description": "users grant access to respective provider"
     }
   ],
   "paths": {
-    "/register/": {
+    "/users/profiles/": {
       "post": {
         "tags": [
-          "Register"
+          "Profile"
         ],
-        "summary": "request body should contain \"username\"= //users phone number and \"password\" = //users new password",
+        "summary": "request body should contain \"phone_number\"= //users phone number",
         "requestBody": {
           "required": true,
           "content": {
@@ -37,10 +41,96 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "username": {
+                  "phone_number": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "auth_key": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/stored_tokens": {
+      "post": {
+        "tags": [
+          "Get stored tokens"
+        ],
+        "summary": "request body should contain \"auth_key\"= //users auth_key, \"user_id\" = //users ID and \"provider\" = //authentication provider",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auth_key": {
                     "type": "string"
                   },
-                  "password": {
+                  "user_id": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/tokens": {
+      "post": {
+        "tags": [
+          "Get new tokens"
+        ],
+        "summary": "request body should contain \"auth_key\"= //users auth_key and \"provider\" = //authentication provider",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auth_key": {
+                    "type": "string"
+                  },
+                  "provider": {
                     "type": "string"
                   }
                 }
@@ -63,93 +153,20 @@
                 }
               }
             }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
           }
         }
       }
     },
-    "/login/": {
-      "post": {
-        "tags": [
-          "Login"
-        ],
-        "summary": "request body should contain \"username\"= //users registered phone number and \"password\" = //users password",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "user": {
-                      "type": "object"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/oauth2/{platforms}/Tokens/": {
+    "/oauth2/{provider}/Tokens/": {
       "get": {
         "tags": [
           "Oauth2"
         ],
-        "summary": "approve account access from platform conscent screen",
+        "summary": "approve account access from providers conscent screen",
         "parameters": [
           {
             "in": "path",
-            "name": "platforms",
+            "name": "provider",
             "description": "google or twitter",
             "required": true,
             "schema": {
