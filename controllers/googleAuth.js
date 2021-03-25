@@ -13,7 +13,7 @@ module.exports = (app) => {
     const oauth2Client = new google.auth.OAuth2(
         credentials.google.GOOGLE_CLIENT_ID,
         credentials.google.GOOGLE_CLIENT_SECRET,
-        credentials.google.GOOGLE_CALLBACK_URL
+        "http://localhost:3000/oauth2/google/Tokens/redirect/"
     );
 
     // generate a url that asks permissions for Blogger and Google Calendar scopes
@@ -33,6 +33,7 @@ module.exports = (app) => {
 
     app.get('/oauth2/google/Tokens/', async (req, res, next) => {
         iden.id = req.query.iden;
+        iden.proId = req.query.provider
         // Opens the URL in the default browser.
         await open(url);
     });
@@ -52,13 +53,13 @@ module.exports = (app) => {
 
         let profile = await gmail.userinfo.get();
 
-        let oauth2 = await Oauth2.findOne({
+        let oauth2 = await Oauth2.findAll({
             where: {
                 profileId: profile.data.id
             }
         });
 
-        if (oauth2) {
+        if (oauth2[0]) {
             const error = new Error("Token already exist");
             error.httpStatusCode = 400;
             return next(error);
@@ -66,14 +67,20 @@ module.exports = (app) => {
 
         let userId = iden.id;
 
-        let user = await User.findOne({
+        let user = await User.findAll({
             where: {
                 id: userId
             }
         });
 
-        if (!user) {
-            const error = new Error("Invalid user");
+        if (user.length < 1) {
+            const error = new Error("Invalid key");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        if (user.length > 1) {
+            const error = new Error("duplicate users");
             error.httpStatusCode = 401;
             return next(error);
         }
@@ -87,7 +94,10 @@ module.exports = (app) => {
             profileId: profile.data.id
         });
 
-        await user.setOauth2s(newToken);
+        let providerId = iden.proId;
+
+        await user[0].setOauth2s(newToken);
+        await newToken.setProviders([providerId]);
         return res.redirect("/users/auth/success");
     });
 
