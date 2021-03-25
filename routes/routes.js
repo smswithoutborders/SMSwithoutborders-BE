@@ -55,7 +55,7 @@ module.exports = (app) => {
         }
 
         let token = await user.getOauth2s();
-        let userData = []
+        let userData = {}
         if (token.length < 1){
             return userData;
         }
