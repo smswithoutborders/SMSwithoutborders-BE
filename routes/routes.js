@@ -87,11 +87,10 @@ module.exports = (app) => {
         } else {
             userData.google = {
                 token: {
-                    // access_token: token[0].accessToken,
-                    // refresh_token: token[0].refreshToken,
-                    // expiry_date: token[0].expiry_date,
-                    // scope: token[0].scope
-                    token
+                    access_token: token[0].accessToken,
+                    refresh_token: token[0].refreshToken,
+                    expiry_date: token[0].expiry_date,
+                    scope: token[0].scope
                 }
             };
 
