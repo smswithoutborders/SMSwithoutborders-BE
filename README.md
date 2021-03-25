@@ -54,14 +54,17 @@ http://localhost:3000/api-docs
     > POST: http://localhost:3000/users/stored_tokens
     body = {
         "auth_key": STRING,
-        "user_id": STRING
+        "user_id": STRING,
+        "provider": STRING
     }
     response = {
-        "token": {
-            "access_token": STRING,
-            "refresh_token": STRING,
-            "expiry_date": STRING,
-            "scope": ARRAY
+        provider:{
+            "token": {
+                "access_token": STRING,
+                "refresh_token": STRING,
+                "expiry_date": STRING,
+                "scope": ARRAY
+            }
         }
     }
     ```
@@ -70,7 +73,8 @@ http://localhost:3000/api-docs
     ```
     > POST: http://localhost:3000/users/tokens
     body = {
-        "auth_key": STRING
+        "auth_key": STRING,
+        "provider": STRING
     }
     response = {
         message: "Token stored Login!"
