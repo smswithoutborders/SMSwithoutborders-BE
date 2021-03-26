@@ -13,17 +13,17 @@ npm install
     * To set up platform credentials, use the template in "example.credentials.json" file and rename to "credentials.json"
 ### Start Server
 * With NPM
-```
+```bash
 npm start
 ```
 * With Node
-```
+```bash
 node server.js
 ```
 
 ### API SandBox
 ```
-http://localhost:3000/api-docs
+http://localhost:9000/api-docs
 ```
 
 ### Usage
@@ -40,7 +40,7 @@ http://localhost:3000/api-docs
 * Login to account
 
     ```
-    > POST: http://localhost:3000/users/profiles/
+    > POST: http://localhost:9000/users/profiles/
     body = {
         "phone_number": STRING
     }
@@ -51,10 +51,9 @@ http://localhost:3000/api-docs
 * Get stored tokens
 
     ```
-    > POST: http://localhost:3000/users/stored_tokens
+    > POST: http://localhost:9000/users/stored_tokens
     body = {
         "auth_key": STRING,
-        "user_id": STRING,
         "provider": STRING
     }
     response = {
@@ -71,7 +70,7 @@ http://localhost:3000/api-docs
 * Get new token
 
     ```
-    > POST: http://localhost:3000/users/tokens
+    > POST: http://localhost:9000/users/tokens
     body = {
         "auth_key": STRING,
         "provider": STRING

@@ -51,19 +51,9 @@ module.exports = (app) => {
             return next(error);
         };
 
-        if (!req.body.user_id) {
-            const error = new Error("user_id cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
-
         let user = await User.findAll({
             where: {
-                [Op.and]: [{
-                    auth_key: req.body.auth_key
-                }, {
-                    id: req.body.user_id
-                }]
+                auth_key: req.body.auth_key
             }
         })
 
