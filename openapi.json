@@ -1,0 +1,194 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "SMSwithoutBorders API",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:9000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Profile",
+      "description": "users gain access to profile with phone number"
+    },
+    {
+      "name": "Get stored tokens",
+      "description": "users can get stored token with auth_key, user_id and provider"
+    },
+    {
+      "name": "Get new tokens",
+      "description": "sers can get new tokens with auth_key and provider"
+    },
+    {
+      "name": "Oauth2",
+      "description": "users grant access to respective provider"
+    }
+  ],
+  "paths": {
+    "/users/profiles/": {
+      "post": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "request body should contain \"phone_number\"= //users phone number",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone_number": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "auth_key": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/stored_tokens": {
+      "post": {
+        "tags": [
+          "Get stored tokens"
+        ],
+        "summary": "request body should contain \"auth_key\"= //users auth_key, \"user_id\" = //users ID and \"provider\" = //authentication provider",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auth_key": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/tokens": {
+      "post": {
+        "tags": [
+          "Get new tokens"
+        ],
+        "summary": "request body should contain \"auth_key\"= //users auth_key and \"provider\" = //authentication provider",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auth_key": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth2/{provider}/Tokens/": {
+      "get": {
+        "tags": [
+          "Oauth2"
+        ],
+        "summary": "approve account access from providers conscent screen",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "description": "google or twitter",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "URL": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
