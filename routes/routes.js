@@ -79,34 +79,45 @@ module.exports = (app) => {
 
         let token = await user[0].getOauth2s();
 
-        // token.forEach(async (item) => {
-        //     let provider = await item.getProviders({
-        //         where: {
-        //             name: "goole"
-        //         }
-        //     });
-
-        //     console.log(provider);
-        // });
-
-        console.log(token)
-
-        let userData = {}
         if (token.length < 1) {
-            userData = {};
-            return res.status(200).json(userData);
-        } else {
-            userData.google = {
-                token: {
-                    access_token: token[0].accessToken,
-                    refresh_token: token[0].refreshToken,
-                    expiry_date: token[0].expiry_date,
-                    scope: token[0].scope
-                }
-            };
-
-            return res.status(200).json(userData);
+            return res.status(200).json([]);
         }
+
+        let userData = []
+
+        if (req.body.provider) {
+            for (let i = 0; i < token.length; i++) {
+                let provider = await token[i].getProviders({
+                    where: {
+                        name: `${req.body.provider}`
+                    }
+                });
+
+                if (provider.length > 0) {
+                    userData.push({
+                        [`${req.body.provider}`]: {
+                            access_token: token[i].accessToken,
+                            refresh_token: token[i].refreshToken,
+                            expiry_date: token[i].expiry_date,
+                            scope: token[i].scope
+                        }
+                    })
+                }
+            }
+            return res.status(200).json(userData)
+        }
+
+        for (let i = 0; i < token.length; i++) {
+            userData.push({
+                google: {
+                    access_token: token[i].accessToken,
+                    refresh_token: token[i].refreshToken,
+                    expiry_date: token[i].expiry_date,
+                    scope: token[i].scope
+                }
+            })
+        }
+        return res.status(200).json(userData)
     })
 
     app.post("/users/tokens", async (req, res, next) => {
