@@ -78,6 +78,19 @@ module.exports = (app) => {
         }
 
         let token = await user[0].getOauth2s();
+
+        // token.forEach(async (item) => {
+        //     let provider = await item.getProviders({
+        //         where: {
+        //             name: "goole"
+        //         }
+        //     });
+
+        //     console.log(provider);
+        // });
+
+        console.log(token)
+
         let userData = {}
         if (token.length < 1) {
             userData = {};
