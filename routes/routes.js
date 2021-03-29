@@ -83,8 +83,10 @@ module.exports = (app) => {
             return res.status(200).json([]);
         }
 
+        // store tokens from db
         let userData = []
 
+        // filter tokens by provider
         if (req.body.provider) {
             for (let i = 0; i < token.length; i++) {
                 let provider = await token[i].getProviders({
@@ -107,6 +109,7 @@ module.exports = (app) => {
             return res.status(200).json(userData)
         }
 
+        // get all tokens
         for (let i = 0; i < token.length; i++) {
             userData.push({
                 google: {
