@@ -15,6 +15,9 @@ module.exports = (app) => {
                 where: {
                     phone_number: req.body.phone_number
                 }
+            }).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
             });
 
             if (user.length < 1) {
@@ -29,9 +32,11 @@ module.exports = (app) => {
                 return next(error);
             }
 
-            // console.log(uuidv4());
             await user[0].update({
                 auth_key: uuidv4()
+            }).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
             });
 
             return res.status(200).json({
@@ -55,7 +60,10 @@ module.exports = (app) => {
             where: {
                 auth_key: req.body.auth_key
             }
-        })
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
 
         if (user.length < 1) {
             const error = new Error("Invalid key");
@@ -105,6 +113,9 @@ module.exports = (app) => {
             where: {
                 name: req.body.provider.toLowerCase()
             }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
         });
 
         if (provider.length < 1) {
@@ -123,6 +134,9 @@ module.exports = (app) => {
             where: {
                 auth_key: req.body.auth_key
             }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
         })
 
         if (user.length < 1) {
