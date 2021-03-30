@@ -6,12 +6,14 @@ const swaggerUi = require('swagger-ui-express');
 const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
+const cors = require("cors");
 
 const swaggerDocument = require('./openapi.json');
 const db = require("./models");
 
 var app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({
     extended: true
