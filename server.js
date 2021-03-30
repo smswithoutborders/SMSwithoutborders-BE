@@ -71,9 +71,9 @@ db.sequelize.sync({
 });
 
 // ROUTES
-// require("./routes/auth.routes.js")(app);
 require("./routes/routes.js")(app);
 
+// error handler
 let errorHandler = (err, req, res, next) => {
     if (err.httpStatusCode === 500) {
         console.error(err.httpStatusCode, err.stack);

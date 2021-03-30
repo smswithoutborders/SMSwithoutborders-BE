@@ -15,6 +15,9 @@ module.exports = (app) => {
                 where: {
                     phone_number: req.body.phone_number
                 }
+            }).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
             });
 
             if (user.length < 1) {
@@ -29,9 +32,11 @@ module.exports = (app) => {
                 return next(error);
             }
 
-            // console.log(uuidv4());
             await user[0].update({
                 auth_key: uuidv4()
+            }).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
             });
 
             return res.status(200).json({
@@ -55,7 +60,10 @@ module.exports = (app) => {
             where: {
                 auth_key: req.body.auth_key
             }
-        })
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
 
         if (user.length < 1) {
             const error = new Error("Invalid key");
@@ -70,22 +78,49 @@ module.exports = (app) => {
         }
 
         let token = await user[0].getOauth2s();
-        let userData = {}
-        if (token.length < 1) {
-            userData = {};
-            return res.status(200).json(userData);
-        } else {
-            userData.google = {
-                token: {
-                    access_token: token[0].accessToken,
-                    refresh_token: token[0].refreshToken,
-                    expiry_date: token[0].expiry_date,
-                    scope: token[0].scope
-                }
-            };
 
-            return res.status(200).json(userData);
+        if (token.length < 1) {
+            return res.status(200).json([]);
         }
+
+        // store tokens from db
+        let userData = []
+
+        // filter tokens by provider
+        if (req.body.provider) {
+            for (let i = 0; i < token.length; i++) {
+                let provider = await token[i].getProviders({
+                    where: {
+                        name: `${req.body.provider}`
+                    }
+                });
+
+                if (provider.length > 0) {
+                    userData.push({
+                        [`${req.body.provider}`]: {
+                            access_token: token[i].accessToken,
+                            refresh_token: token[i].refreshToken,
+                            expiry_date: token[i].expiry_date,
+                            scope: token[i].scope
+                        }
+                    })
+                }
+            }
+            return res.status(200).json(userData)
+        }
+
+        // get all tokens
+        for (let i = 0; i < token.length; i++) {
+            userData.push({
+                google: {
+                    access_token: token[i].accessToken,
+                    refresh_token: token[i].refreshToken,
+                    expiry_date: token[i].expiry_date,
+                    scope: token[i].scope
+                }
+            })
+        }
+        return res.status(200).json(userData)
     })
 
     app.post("/users/tokens", async (req, res, next) => {
@@ -105,6 +140,9 @@ module.exports = (app) => {
             where: {
                 name: req.body.provider.toLowerCase()
             }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
         });
 
         if (provider.length < 1) {
@@ -123,6 +161,9 @@ module.exports = (app) => {
             where: {
                 auth_key: req.body.auth_key
             }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
         })
 
         if (user.length < 1) {
