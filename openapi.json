@@ -299,10 +299,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "auth_key": {
+                  "phone_number": {
                     "type": "string"
                   },
-                  "provider": {
+                  "password": {
                     "type": "string"
                   }
                 }
