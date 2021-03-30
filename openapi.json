@@ -341,6 +341,21 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized (e.g Invalid phone_number or password)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
