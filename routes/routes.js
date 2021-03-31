@@ -84,7 +84,9 @@ module.exports = (app) => {
         }
 
         // store tokens from db
-        let userData = []
+        let userData = {
+            user_token: []
+        }
 
         // filter tokens by provider
         if (req.body.provider) {
@@ -96,8 +98,31 @@ module.exports = (app) => {
                 });
 
                 if (provider.length > 0) {
-                    userData.push({
-                        [`${req.body.provider}`]: {
+                    for (let j = 0; j < provider.length; j++) {
+                        userData.user_token.push({
+                            provider: provider[j].name,
+                            token: {
+                                access_token: token[i].accessToken,
+                                refresh_token: token[i].refreshToken,
+                                expiry_date: token[i].expiry_date,
+                                scope: token[i].scope
+                            }
+                        })
+                    }
+                }
+            }
+            return res.status(200).json(userData)
+        }
+
+        // get all tokens
+        for (let i = 0; i < token.length; i++) {
+            let provider = await token[i].getProviders();
+
+            if (provider.length > 0) {
+                for (let j = 0; j < provider.length; j++) {
+                    userData.user_token.push({
+                        provider: provider[j].name,
+                        token: {
                             access_token: token[i].accessToken,
                             refresh_token: token[i].refreshToken,
                             expiry_date: token[i].expiry_date,
@@ -106,19 +131,6 @@ module.exports = (app) => {
                     })
                 }
             }
-            return res.status(200).json(userData)
-        }
-
-        // get all tokens
-        for (let i = 0; i < token.length; i++) {
-            userData.push({
-                google: {
-                    access_token: token[i].accessToken,
-                    refresh_token: token[i].refreshToken,
-                    expiry_date: token[i].expiry_date,
-                    scope: token[i].scope
-                }
-            })
         }
         return res.status(200).json(userData)
     })
