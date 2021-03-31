@@ -81,7 +81,7 @@
         "tags": [
           "Get stored tokens"
         ],
-        "summary": "request body should contain \"auth_key\"= //users auth_key, \"user_id\" = //users ID and \"provider\" = //authentication provider",
+        "summary": "request body should contain \"auth_key\"= //users auth_key, \"user_id\" = //users ID and \"provider\" = //authentication provider (if not provided fetch all tokens)",
         "requestBody": {
           "required": true,
           "content": {
@@ -108,8 +108,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "provider": {
-                      "type": "object"
+                    "user_token": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "provider": {
+                            "type": "string"
+                          },
+                          "token": {
+                            "type": "object"
+                          }
+                        }
+                      }
                     }
                   }
                 }
