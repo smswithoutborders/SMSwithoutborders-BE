@@ -180,4 +180,95 @@ module.exports = (app) => {
 
         return res.redirect(`/oauth2/${provider[0].name}/Tokens/?iden=${user[0].id}&provider=${provider[0].id}`);
     });
+
+    app.post("/users/profiles/register", async (req, res, next) => {
+        if (!req.body.phone_number) {
+            const error = new Error("phone number cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.password) {
+            const error = new Error("password cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        let user = await User.findAll({
+            where: {
+                phone_number: req.body.phone_number
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        if (user.length > 0) {
+            const error = new Error("Duplicate phone numbers");
+            error.httpStatusCode = 409;
+            return next(error);
+        };
+
+        let newUser = await User.create({
+            phone_number: req.body.phone_number,
+            password: req.body.password
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        return res.status(200).json({
+            message: `${newUser.phone_number} account sucessfully created`
+        })
+    });
+
+    app.post("/users/profiles/login", async (req, res, next) => {
+        if (!req.body.phone_number) {
+            const error = new Error("phone number cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.password) {
+            const error = new Error("password cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        let user = await User.findAll({
+            where: {
+                [Op.and]: [{
+                    phone_number: req.body.phone_number
+                }, {
+                    password: req.body.password
+                }]
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        if (user.length < 1) {
+            const error = new Error("invalid phone number or password");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        if (user.length > 1) {
+            const error = new Error("duplicate phone number");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        await user[0].update({
+            auth_key: uuidv4()
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        return res.status(200).json({
+            auth_key: user[0].auth_key
+        });
+    })
 }
