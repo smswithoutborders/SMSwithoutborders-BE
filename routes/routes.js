@@ -5,7 +5,8 @@ const {
     v4: uuidv4
 } = require('uuid');
 const {
-    Op
+    Op,
+    QueryTypes
 } = require("sequelize");
 
 module.exports = (app) => {
@@ -91,37 +92,16 @@ module.exports = (app) => {
         // filter tokens by provider
         if (req.body.provider) {
             for (let i = 0; i < token.length; i++) {
-                let provider = await token[i].getProviders({
+                let provider = await token[i].getProvider({
                     where: {
                         name: `${req.body.provider}`
                     }
                 });
 
-                if (provider.length > 0) {
-                    for (let j = 0; j < provider.length; j++) {
-                        userData.user_token.push({
-                            provider: provider[j].name,
-                            token: {
-                                access_token: token[i].accessToken,
-                                refresh_token: token[i].refreshToken,
-                                expiry_date: token[i].expiry_date,
-                                scope: token[i].scope
-                            }
-                        })
-                    }
-                }
-            }
-            return res.status(200).json(userData)
-        }
-
-        // get all tokens
-        for (let i = 0; i < token.length; i++) {
-            let provider = await token[i].getProviders();
-
-            if (provider.length > 0) {
-                for (let j = 0; j < provider.length; j++) {
+                if (provider) {
                     userData.user_token.push({
-                        provider: provider[j].name,
+                        provider: provider.name,
+                        platform: provider.platform,
                         token: {
                             access_token: token[i].accessToken,
                             refresh_token: token[i].refreshToken,
@@ -130,6 +110,25 @@ module.exports = (app) => {
                         }
                     })
                 }
+            }
+            return res.status(200).json(userData)
+        }
+
+        // get all tokens
+        for (let i = 0; i < token.length; i++) {
+            let provider = await token[i].getProvider();
+
+            if (provider) {
+                userData.user_token.push({
+                    provider: provider.name,
+                    platform: provider.platform,
+                    token: {
+                        access_token: token[i].accessToken,
+                        refresh_token: token[i].refreshToken,
+                        expiry_date: token[i].expiry_date,
+                        scope: token[i].scope
+                    }
+                })
             }
         }
         return res.status(200).json(userData)
@@ -148,9 +147,19 @@ module.exports = (app) => {
             return next(error);
         };
 
+        if (!req.body.platform) {
+            const error = new Error("provider cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
         let provider = await Providers.findAll({
             where: {
-                name: req.body.provider.toLowerCase()
+                [Op.and]: [{
+                    name: req.body.provider.toLowerCase()
+                }, {
+                    platform: req.body.platform.toLowerCase()
+                }]
             }
         }).catch(error => {
             error.httpStatusCode = 500
@@ -158,7 +167,7 @@ module.exports = (app) => {
         });
 
         if (provider.length < 1) {
-            const error = new Error("invalid provider");
+            const error = new Error("invalid provider or platform");
             error.httpStatusCode = 400;
             return next(error);
         }
@@ -282,5 +291,76 @@ module.exports = (app) => {
         return res.status(200).json({
             auth_key: user[0].auth_key
         });
+    })
+
+    app.post("/users/providers", async (req, res, next) => {
+        if (!req.body.auth_key) {
+            const error = new Error("auth_key cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        let user = await User.findAll({
+            where: {
+                auth_key: req.body.auth_key
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        if (user.length < 1) {
+            const error = new Error("Invalid key");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        if (user.length > 1) {
+            const error = new Error("duplicate Users");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        let token = await user[0].getOauth2s();
+
+        if (token.length < 1) {
+            return res.status(200).json([]);
+        }
+
+        // store tokens from db
+        let userData = {
+            default_provider: [],
+            user_provider: []
+        }
+
+        // get all tokens
+        for (let i = 0; i < token.length; i++) {
+            let provider = await token[i].getProvider();
+
+            if (provider) {
+                userData.user_provider.push({
+                    provider: provider.name,
+                    platform: provider.platform
+                })
+            }
+        }
+
+        let query = `SELECT t1.name, t1.platform FROM providers t1 LEFT JOIN oauth2s t2 ON t2.providerId = t1.id WHERE t2.providerId IS NULL`
+
+        let defaultTokens = await db.sequelize.query(query, {
+            type: QueryTypes.SELECT
+        });
+
+        if (defaultTokens.length > 0) {
+            // get all tokens
+            for (let i = 0; i < defaultTokens.length; i++) {
+                userData.default_provider.push({
+                    provider: defaultTokens[i].name,
+                    platform: defaultTokens[i].platform
+                })
+            }
+        }
+
+        return res.status(200).json(userData)
     })
 }

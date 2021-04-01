@@ -19,22 +19,14 @@ db.users = require("./users.models.js")(sequelize, Sequelize);
 db.oauth2 = require("./oauth2.0.models.js")(sequelize, Sequelize);
 db.providers = require("./providers.models.js")(sequelize, Sequelize);
 
-db.users.belongsToMany(db.oauth2, {
-    through: "user_oauth2",
+db.users.hasMany(db.oauth2, {
     foreignKey: "userId"
 });
-db.oauth2.belongsToMany(db.users, {
-    through: "user_oauth2",
-    foreignKey: "profileId"
-});
-db.providers.belongsToMany(db.oauth2, {
-    through: "oauth2_provider",
+db.oauth2.belongsTo(db.users);
+db.providers.hasOne(db.oauth2, {
     foreignKey: "providerId"
 });
-db.oauth2.belongsToMany(db.providers, {
-    through: "oauth2_provider",
-    foreignKey: "profileId"
-});
+db.oauth2.belongsTo(db.providers);
 
 // // Create default providers
 // db.providers.bulkCreate([{

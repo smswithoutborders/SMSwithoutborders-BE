@@ -5,7 +5,11 @@ const credentials = require("../credentials.json");
 const db = require("../models");
 var Oauth2 = db.oauth2;
 var User = db.users;
+var Provider = db.providers;
 const open = require('open');
+const {
+    providers
+} = require('../models');
 let iden = {};
 
 
@@ -85,7 +89,7 @@ module.exports = (app) => {
             return next(error);
         }
 
-        let newToken = await Oauth2.create({
+        await Oauth2.create({
             accessToken: tokens.access_token,
             refreshToken: tokens.refresh_token,
             expiry_date: tokens.expiry_date,
@@ -96,8 +100,40 @@ module.exports = (app) => {
 
         let providerId = iden.proId;
 
-        await newToken.setUsers(user[0]);
-        await newToken.setProviders([providerId]);
+        await Oauth2.update({
+            userId: user[0].id
+        }, {
+            where: {
+                profileId: profile.data.id
+            }
+        })
+
+        let provider = await Provider.findAll({
+            where: {
+                id: providerId
+            }
+        })
+
+        if (provider.length < 1) {
+            const error = new Error("Invalid Provider");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        if (provider.length > 1) {
+            const error = new Error("duplicate providers");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        await Oauth2.update({
+            providerId: provider[0].id
+        }, {
+            where: {
+                profileId: profile.data.id
+            }
+        })
+
         return res.redirect("/users/auth/success");
     });
 
