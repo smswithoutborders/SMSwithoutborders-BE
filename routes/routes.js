@@ -148,7 +148,7 @@ module.exports = (app) => {
         };
 
         if (!req.body.platform) {
-            const error = new Error("provider cannot be empty");
+            const error = new Error("platform cannot be empty");
             error.httpStatusCode = 400;
             return next(error);
         };
