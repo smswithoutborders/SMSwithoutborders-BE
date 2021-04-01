@@ -33,6 +33,10 @@
     {
       "name": "Login",
       "description": "users login to account with phone number and password"
+    },
+    {
+      "name": "Get providers",
+      "description": "users login to account with phone number and password"
     }
   ],
   "paths": {
@@ -135,7 +139,7 @@
         "tags": [
           "Get new tokens"
         ],
-        "summary": "request body should contain \"auth_key\"= //users auth_key and \"provider\" = //authentication provider",
+        "summary": "request body should contain \"auth_key\"= //users auth_key, \"provider\" = //authentication provider and \"platform\" = //authentication platform",
         "requestBody": {
           "required": true,
           "content": {
@@ -147,6 +151,9 @@
                     "type": "string"
                   },
                   "provider": {
+                    "type": "string"
+                  },
+                  "platform": {
                     "type": "string"
                   }
                 }
@@ -354,6 +361,116 @@
           },
           "401": {
             "description": "Unauthorized (e.g Invalid phone_number or password)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/providers": {
+      "post": {
+        "tags": [
+          "Get providers"
+        ],
+        "summary": "request body should contain \"auth_key\"= //users auth_key",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auth_key": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_provider": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "provider": {
+                            "type": "string"
+                          },
+                          "platform": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "default_provider": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "provider": {
+                            "type": "string"
+                          },
+                          "platform": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g missing required fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (e.g Invalid auth_key)",
             "content": {
               "application/json": {
                 "schema": {

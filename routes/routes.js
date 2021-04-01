@@ -317,7 +317,7 @@ module.exports = (app) => {
 
         if (user.length > 1) {
             const error = new Error("duplicate Users");
-            error.httpStatusCode = 401;
+            error.httpStatusCode = 409;
             return next(error);
         }
 
