@@ -29,7 +29,7 @@ module.exports = (app) => {
 
             if (user.length > 1) {
                 const error = new Error("duplicate phone number");
-                error.httpStatusCode = 401;
+                error.httpStatusCode = 409;
                 return next(error);
             }
 
@@ -74,7 +74,7 @@ module.exports = (app) => {
 
         if (user.length > 1) {
             const error = new Error("duplicate Users");
-            error.httpStatusCode = 401;
+            error.httpStatusCode = 409;
             return next(error);
         }
 
@@ -168,13 +168,13 @@ module.exports = (app) => {
 
         if (provider.length < 1) {
             const error = new Error("invalid provider or platform");
-            error.httpStatusCode = 400;
+            error.httpStatusCode = 401;
             return next(error);
         }
 
         if (provider.length > 1) {
             const error = new Error("Duplicate provider");
-            error.httpStatusCode = 400;
+            error.httpStatusCode = 409;
             return next(error);
         }
 
@@ -195,7 +195,7 @@ module.exports = (app) => {
 
         if (user.length > 1) {
             const error = new Error("duplicate Users");
-            error.httpStatusCode = 401;
+            error.httpStatusCode = 409;
             return next(error);
         }
 
