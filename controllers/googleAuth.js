@@ -39,7 +39,8 @@ module.exports = (app) => {
         iden.id = req.query.iden;
         iden.proId = req.query.provider
         // Opens the URL in the default browser.
-        await open(url);
+        // await open(url);
+        res.redirect(url);
     });
 
     app.get('/oauth2/google/Tokens/redirect', async (req, res, next) => {
@@ -66,7 +67,7 @@ module.exports = (app) => {
         if (oauth2[0]) {
             const error = new Error("Token already exist");
             error.httpStatusCode = 400;
-            return next(error);
+            return next("/users/auth/failure", error);
         }
 
         let userId = iden.id;
@@ -142,4 +143,10 @@ module.exports = (app) => {
             message: "Token stored Login!"
         })
     });
+
+    // app.get('/users/auth/failure', async (req, res, next) => {
+    //     return res.status(200).json({
+    //         message: "Token stored Login!"
+    //     })
+    // });
 }
