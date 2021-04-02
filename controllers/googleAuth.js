@@ -7,9 +7,6 @@ var Oauth2 = db.oauth2;
 var User = db.users;
 var Provider = db.providers;
 const open = require('open');
-const {
-    providers
-} = require('../models');
 let iden = {};
 
 
@@ -39,8 +36,8 @@ module.exports = (app) => {
         iden.id = req.query.iden;
         iden.proId = req.query.provider
         // Opens the URL in the default browser.
-        // await open(url);
-        res.redirect(url);
+        await open(url);
+        // res.redirect(url);
     });
 
     app.get('/oauth2/google/Tokens/redirect', async (req, res, next) => {
