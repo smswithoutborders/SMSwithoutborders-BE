@@ -356,28 +356,10 @@ module.exports = (app) => {
             return next(error);
         }
 
-        let token = await user[0].getOauth2s();
-
-        if (token.length < 1) {
-            return res.status(200).json([]);
-        }
-
         // store tokens from db
         let userData = {
             default_provider: [],
             user_provider: []
-        }
-
-        // get all tokens
-        for (let i = 0; i < token.length; i++) {
-            let provider = await token[i].getProvider();
-
-            if (provider) {
-                userData.user_provider.push({
-                    provider: provider.name,
-                    platform: provider.platform
-                })
-            }
         }
 
         let query = `SELECT t1.name, t1.platform FROM providers t1 LEFT JOIN oauth2s t2 ON t2.providerId = t1.id WHERE t2.providerId IS NULL`
@@ -396,6 +378,111 @@ module.exports = (app) => {
             }
         }
 
+        let token = await user[0].getOauth2s();
+
+        if (token.length < 1) {
+            return res.status(200).json(userData);
+        }
+
+        // get all tokens
+        for (let i = 0; i < token.length; i++) {
+            let provider = await token[i].getProvider();
+
+            if (provider) {
+                userData.user_provider.push({
+                    provider: provider.name,
+                    platform: provider.platform
+                })
+            }
+        }
+
         return res.status(200).json(userData)
-    })
+    });
+
+    app.post("/users/tokens/revoke", async (req, res, next) => {
+        // ==================== REQUEST BODY CHECKS ====================
+        if (!req.body.auth_key) {
+            const error = new Error("auth_key cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.password) {
+            const error = new Error("password cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.provider) {
+            const error = new Error("provider cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.platform) {
+            const error = new Error("platform cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+        // ===============================================================
+
+        // SEARCH FOR PROVIDER AND PLATFORM IN DB
+        let provider = await Providers.findAll({
+            where: {
+                [Op.and]: [{
+                    name: req.body.provider.toLowerCase()
+                }, {
+                    platform: req.body.platform.toLowerCase()
+                }]
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        // RETURN = [], IF PROVIDER NOT FOUND
+        if (provider.length < 1) {
+            const error = new Error("invalid provider or platform");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        // IF PROVIDER IS MORE THAN ONE IN DB
+        if (provider.length > 1) {
+            const error = new Error("Duplicate provider");
+            error.httpStatusCode = 409;
+            return next(error);
+        }
+
+        // SEARCH FOR USER IN DB
+        let user = await User.findAll({
+            where: {
+                [Op.and]: [{
+                    auth_key: req.body.auth_key
+                }, {
+                    password: req.body.password
+                }]
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        })
+
+        // RTURN = [], IF USER IS NOT FOUND
+        if (user.length < 1) {
+            const error = new Error("Invalid key or wrong password");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        // IF MORE THAN ONE USER EXIST IN DATABASE
+        if (user.length > 1) {
+            const error = new Error("duplicate Users");
+            error.httpStatusCode = 409;
+            return next(error);
+        }
+
+        // RETURN FOUND USER AND PROVIDER
+        return res.redirect(`/oauth2/${provider[0].name}/Tokens/revoke/?iden=${user[0].id}&provider=${provider[0].id}`);
+    });
 }
