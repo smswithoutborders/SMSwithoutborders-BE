@@ -6,6 +6,9 @@ const db = require("../models");
 var Oauth2 = db.oauth2;
 var User = db.users;
 var Provider = db.providers;
+const {
+    Op
+} = require("sequelize");
 const open = require('open');
 let iden = {};
 
@@ -142,6 +145,84 @@ module.exports = (app) => {
     });
 
     // app.get('/users/auth/failure', async (req, res, next) => {
-
     // });
+
+    app.get('/oauth2/google/Tokens/revoke', async (req, res, next) => {
+        let user = await User.findAll({
+            where: {
+                id: req.query.iden
+            }
+        });
+
+        if (user.length < 1) {
+            const error = new Error("Invalid key");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        if (user.length > 1) {
+            const error = new Error("duplicate users");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        let provider = await Provider.findAll({
+            where: {
+                id: req.query.provider
+            }
+        })
+
+        if (provider.length < 1) {
+            const error = new Error("Invalid Provider");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        if (provider.length > 1) {
+            const error = new Error("duplicate providers");
+            error.httpStatusCode = 401;
+            return next(error);
+        };
+
+        let oauth2 = await Oauth2.findAll({
+            where: {
+                [Op.and]: [{
+                    userId: user[0].id
+                }, {
+                    providerId: provider[0].id
+                }]
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        if (oauth2.length < 1) {
+            const error = new Error("Token doesn't exist");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        if (oauth2.length > 1) {
+            const error = new Error("duplicate Tokens");
+            error.httpStatusCode = 409;
+            return next(error);
+        };
+
+        await oauth2Client.revokeToken(oauth2[0].accessToken).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        await oauth2[0].destroy().catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });;
+
+        return res.status(200).json({
+            message: "Token revoke success"
+        });
+
+    });
+
 }
