@@ -36,7 +36,11 @@
     },
     {
       "name": "Get providers",
-      "description": "users login to account with phone number and password"
+      "description": "users can see all providers stored and not stored"
+    },
+    {
+      "name": "Revoke token",
+      "description": "users can revoke specific tokens"
     }
   ],
   "paths": {
@@ -606,6 +610,99 @@
           },
           "401": {
             "description": "Unauthorized (e.g Invalid auth_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/tokens/revoke": {
+      "post": {
+        "tags": [
+          "Revoke token"
+        ],
+        "summary": "request body should contain \"auth_key\"= //users auth_key, \"password\" = //Users password, \"provider\" = //authentication provider and \"platform\" = //authentication platform",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auth_key": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "type": "string"
+                  },
+                  "platform": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g missing required fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (e.g Invalid auth_key, provider, platform, password)",
             "content": {
               "application/json": {
                 "schema": {
