@@ -362,7 +362,11 @@ module.exports = (app) => {
             user_provider: []
         }
 
-        let query = `SELECT t1.name, t1.platform FROM providers t1 LEFT JOIN oauth2s t2 ON t2.providerId = t1.id WHERE t2.providerId IS NULL`
+        let query = `SELECT t1.name, t1.platform 
+        FROM providers t1 
+        LEFT JOIN (SELECT * FROM oauth2s WHERE oauth2s.userId = ${user[0].id}) AS t2 
+        ON t2.providerId = t1.id 
+        WHERE t2.providerId IS NULL `
 
         let defaultTokens = await db.sequelize.query(query, {
             type: QueryTypes.SELECT
