@@ -485,4 +485,18 @@ module.exports = (app) => {
         // RETURN FOUND USER AND PROVIDER
         return res.redirect(`/oauth2/${provider[0].name}/Tokens/revoke/?iden=${user[0].id}&provider=${provider[0].id}`);
     });
+
+    app.post("/users/oauth2/login", async (req, res, next) => {
+        // ==================== REQUEST BODY CHECKS ====================
+        if (!req.body.provider) {
+            const error = new Error("provider cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+        // ===============================================================
+
+        // REDIRECT TO PROVIDER
+        return res.redirect(`/oauth2/${req.body.provider.toLowerCase()}/login/`);
+    });
+
 }

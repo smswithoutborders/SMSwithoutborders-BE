@@ -9,37 +9,40 @@ var Provider = db.providers;
 const {
     Op
 } = require("sequelize");
+const {
+    v4: uuidv4
+} = require('uuid');
 const open = require('open');
 let iden = {};
 
 
 module.exports = (app) => {
-    const oauth2Client = new google.auth.OAuth2(
+    const oauth2ClientToken = new google.auth.OAuth2(
         credentials.google.GOOGLE_CLIENT_ID,
         credentials.google.GOOGLE_CLIENT_SECRET,
         "http://localhost:9000/oauth2/google/Tokens/redirect/"
     );
 
     // generate a url that asks permissions for Blogger and Google Calendar scopes
-    const scopes = [
+    const token_scopes = [
         'https://www.googleapis.com/auth/gmail.readonly',
         'https://www.googleapis.com/auth/gmail.send',
         'https://www.googleapis.com/auth/userinfo.profile'
     ];
 
-    const url = oauth2Client.generateAuthUrl({
+    const token_url = oauth2ClientToken.generateAuthUrl({
         // 'online' (default) or 'offline' (gets refresh_token)
         access_type: 'offline',
 
         // If you only need one scope you can pass it as a string
-        scope: scopes
+        scope: token_scopes
     });
 
     app.get('/oauth2/google/Tokens/', async (req, res, next) => {
         iden.id = req.query.iden;
         iden.proId = req.query.provider
         // Opens the URL in the default browser.
-        await open(url);
+        await open(token_url);
         // res.redirect(url);
     });
 
@@ -47,12 +50,12 @@ module.exports = (app) => {
         let code = req.query.code
         const {
             tokens
-        } = await oauth2Client.getToken(code)
-        oauth2Client.setCredentials(tokens);
+        } = await oauth2ClientToken.getToken(code)
+        oauth2ClientToken.setCredentials(tokens);
 
         // get profile data
         var gmail = google.oauth2({
-            auth: oauth2Client,
+            auth: oauth2ClientToken,
             version: 'v2'
         });
 
@@ -209,7 +212,7 @@ module.exports = (app) => {
             return next(error);
         };
 
-        await oauth2Client.revokeToken(oauth2[0].accessToken).catch(error => {
+        await oauth2ClientToken.revokeToken(oauth2[0].accessToken).catch(error => {
             error.httpStatusCode = 500
             return next(error);
         });
@@ -225,4 +228,122 @@ module.exports = (app) => {
 
     });
 
+    const oauth2ClientProfile = new google.auth.OAuth2(
+        credentials.google.GOOGLE_CLIENT_ID,
+        credentials.google.GOOGLE_CLIENT_SECRET,
+        "http://localhost:9000/oauth2/google/login/redirect/"
+    );
+
+    // generate a url that asks permissions for Blogger and Google Calendar scopes
+    const profile_scopes = [
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile'
+    ];
+
+    const profile_url = oauth2ClientProfile.generateAuthUrl({
+        // 'online' (default) or 'offline' (gets refresh_token)
+        // access_type: 'offline',
+
+        // If you only need one scope you can pass it as a string
+        scope: profile_scopes
+    });
+
+    app.get('/oauth2/google/login/', async (req, res, next) => {
+        // Opens the URL in the default browser.
+        await open(profile_url);
+        // res.redirect(url);
+    });
+
+    app.get('/oauth2/google/login/redirect', async (req, res, next) => {
+        let code = req.query.code
+        const {
+            tokens
+        } = await oauth2ClientProfile.getToken(code)
+        oauth2ClientProfile.setCredentials(tokens);
+
+        // get profile data
+        var google_oauth2 = google.oauth2({
+            auth: oauth2ClientProfile,
+            version: 'v2'
+        });
+
+        let profile = await google_oauth2.userinfo.get();
+
+        let user = await User.findAll({
+            where: {
+                [Op.and]: [{
+                    profileId: profile.data.id
+                }, {
+                    email: profile.data.email
+                }]
+            }
+        });
+
+        if (user.length > 1) {
+            const error = new Error("duplicate users");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        if (user.length < 1) {
+            let newUser = await User.create({
+                profileId: profile.data.id,
+                username: profile.data.name,
+                email: profile.data.email
+            }).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
+            });;
+
+            if (newUser.phone_number) {
+                await user[0].update({
+                    auth_key: uuidv4()
+                }).catch(error => {
+                    error.httpStatusCode = 500
+                    return next(error);
+                });
+
+                return res.status(200).json({
+                    auth_key: user[0].auth_key
+                });
+            }
+
+            await newUser.update({
+                auth_key: uuidv4()
+            }).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
+            });
+
+            return res.status(403).json({
+                error: "No phone_number",
+                auth_key: newUser.auth_key
+            });
+        }
+
+        if (user[0].phone_number) {
+            await user[0].update({
+                auth_key: uuidv4()
+            }).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
+            });
+
+            return res.status(200).json({
+                auth_key: user[0].auth_key
+            });
+        }
+
+        await user[0].update({
+            auth_key: uuidv4()
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        return res.status(403).json({
+            error: "No phone_number",
+            auth_key: user[0].auth_key
+        });
+    });
 }
