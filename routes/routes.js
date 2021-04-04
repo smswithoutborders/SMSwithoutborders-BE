@@ -499,4 +499,80 @@ module.exports = (app) => {
         return res.redirect(`/oauth2/${req.body.provider.toLowerCase()}/login/`);
     });
 
+    app.post("/users/oauth2/register", async (req, res, next) => {
+        if (!req.body.phone_number) {
+            const error = new Error("phone number cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.password) {
+            const error = new Error("password cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.auth_key) {
+            const error = new Error("auth_key cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        let user = await User.findAll({
+            where: {
+                phone_number: req.body.phone_number
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        if (user.length > 0) {
+            const error = new Error("Duplicate phone numbers");
+            error.httpStatusCode = 409;
+            return next(error);
+        };
+
+        let newUser = await User.findAll({
+            where: {
+                auth_key: req.body.auth_key
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        // RTURN = [], IF USER IS NOT FOUND
+        if (newUser.length < 1) {
+            const error = new Error("Invalid key");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        // IF MORE THAN ONE USER EXIST IN DATABASE
+        if (newUser.length > 1) {
+            const error = new Error("duplicate Users");
+            error.httpStatusCode = 409;
+            return next(error);
+        }
+
+        await newUser[0].update({
+            phone_number: req.body.phone_number,
+            password: req.body.password
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        await newUser[0].update({
+            auth_key: uuidv4()
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        return res.status(200).json({
+            auth_key: newUser[0].auth_key
+        });
+    });
 }
