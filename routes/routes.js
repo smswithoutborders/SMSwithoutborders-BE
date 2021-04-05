@@ -101,6 +101,42 @@ module.exports = (app) => {
             user_token: []
         }
 
+        // FILTER TOKENS BY PROVIDER AND PLATFORM
+        if (req.body.provider && req.body.platform) {
+            // LOOP THROUGH ALL TOKENS FOUND
+            for (let i = 0; i < token.length; i++) {
+                // GET REQUESTED PROVIDER FOR CURRENT TOKEN
+                let provider = await token[i].getProvider({
+                    where: {
+                        [Op.and]: [{
+                            name: req.body.provider.toLowerCase()
+                        }, {
+                            platform: req.body.platform.toLowerCase()
+                        }]
+                    }
+                }).catch(error => {
+                    error.httpStatusCode = 500
+                    return next(error);
+                });
+
+                // IF PROVIDER FOUND
+                if (provider) {
+                    userData.user_token.push({
+                        provider: provider.name,
+                        platform: provider.platform,
+                        token: {
+                            access_token: token[i].accessToken,
+                            refresh_token: token[i].refreshToken,
+                            expiry_date: token[i].expiry_date,
+                            scope: token[i].scope
+                        }
+                    })
+                }
+            }
+            // RETURN STORED TOKEN AND PROVIDER
+            return res.status(200).json(userData)
+        }
+
         // FILTER TOKENS BY PROVIDER
         if (req.body.provider) {
             // LOOP THROUGH ALL TOKENS FOUND
@@ -108,7 +144,39 @@ module.exports = (app) => {
                 // GET REQUESTED PROVIDER FOR CURRENT TOKEN
                 let provider = await token[i].getProvider({
                     where: {
-                        name: `${req.body.provider}`
+                        name: req.body.provider.toLowerCase()
+                    }
+                }).catch(error => {
+                    error.httpStatusCode = 500
+                    return next(error);
+                });
+
+                // IF PROVIDER FOUND
+                if (provider) {
+                    userData.user_token.push({
+                        provider: provider.name,
+                        platform: provider.platform,
+                        token: {
+                            access_token: token[i].accessToken,
+                            refresh_token: token[i].refreshToken,
+                            expiry_date: token[i].expiry_date,
+                            scope: token[i].scope
+                        }
+                    })
+                }
+            }
+            // RETURN STORED TOKEN AND PROVIDER
+            return res.status(200).json(userData)
+        }
+
+        // FILTER TOKENS BY PROVIDER
+        if (req.body.platform) {
+            // LOOP THROUGH ALL TOKENS FOUND
+            for (let i = 0; i < token.length; i++) {
+                // GET REQUESTED PROVIDER FOR CURRENT TOKEN
+                let provider = await token[i].getProvider({
+                    where: {
+                        platform: req.body.platform.toLowerCase()
                     }
                 }).catch(error => {
                     error.httpStatusCode = 500

@@ -131,7 +131,7 @@
         "tags": [
           "Get stored tokens"
         ],
-        "summary": "request body should contain \"auth_key\"= //users auth_key, \"user_id\" = //users ID and \"provider\" = //authentication provider (if not provided fetch all tokens)",
+        "summary": "request body should contain \"auth_key\"= //users auth_key, \"platform\" = //authentication platform and \"provider\" = //authentication provider",
         "requestBody": {
           "required": true,
           "content": {
@@ -143,6 +143,9 @@
                     "type": "string"
                   },
                   "provider": {
+                    "type": "string"
+                  },
+                  "platform": {
                     "type": "string"
                   }
                 }
