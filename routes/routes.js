@@ -63,6 +63,12 @@ module.exports = (app) => {
             error.httpStatusCode = 400;
             return next(error);
         };
+
+        if (!req.body.provider && !req.body.platform) {
+            const error = new Error("Provider and Platform cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
         // =============================================================
 
         // SEARCH FOR USER IN DB
@@ -201,31 +207,31 @@ module.exports = (app) => {
             return res.status(200).json(userData)
         }
 
-        // LOOP THROUGH ALL TOKENS FOUND
-        for (let i = 0; i < token.length; i++) {
-            // GET ALL TOKENS UNDER CURRENT USER
-            let provider = await token[i].getProvider().catch(error => {
-                error.httpStatusCode = 500
-                return next(error);
-            });
+        // // LOOP THROUGH ALL TOKENS FOUND
+        // for (let i = 0; i < token.length; i++) {
+        //     // GET ALL TOKENS UNDER CURRENT USER
+        //     let provider = await token[i].getProvider().catch(error => {
+        //         error.httpStatusCode = 500
+        //         return next(error);
+        //     });
 
-            // IF PROVIDER FOUND
-            if (provider) {
-                userData.user_token.push({
-                    provider: provider.name,
-                    platform: provider.platform,
-                    token: {
-                        access_token: token[i].accessToken,
-                        refresh_token: token[i].refreshToken,
-                        expiry_date: token[i].expiry_date,
-                        scope: token[i].scope
-                    }
-                })
-            }
-        }
+        //     // IF PROVIDER FOUND
+        //     if (provider) {
+        //         userData.user_token.push({
+        //             provider: provider.name,
+        //             platform: provider.platform,
+        //             token: {
+        //                 access_token: token[i].accessToken,
+        //                 refresh_token: token[i].refreshToken,
+        //                 expiry_date: token[i].expiry_date,
+        //                 scope: token[i].scope
+        //             }
+        //         })
+        //     }
+        // }
 
-        // RETURN STORED TOKENS AND PROVIDER
-        return res.status(200).json(userData)
+        // // RETURN STORED TOKENS AND PROVIDER
+        // return res.status(200).json(userData)
     })
 
     app.post("/users/tokens", async (req, res, next) => {
