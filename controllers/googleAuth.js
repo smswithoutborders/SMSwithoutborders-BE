@@ -13,7 +13,6 @@ const {
     v4: uuidv4
 } = require('uuid');
 let iden = {};
-const cors = require("cors");
 
 
 module.exports = (app) => {
@@ -228,122 +227,122 @@ module.exports = (app) => {
 
     });
 
-    const oauth2ClientProfile = new google.auth.OAuth2(
-        credentials.google.GOOGLE_CLIENT_ID,
-        credentials.google.GOOGLE_CLIENT_SECRET,
-        "http://localhost:9000/oauth2/google/login/redirect/"
-    );
+    // const oauth2ClientProfile = new google.auth.OAuth2(
+    //     credentials.google.GOOGLE_CLIENT_ID,
+    //     credentials.google.GOOGLE_CLIENT_SECRET,
+    //     "http://localhost:9000/oauth2/google/login/redirect/"
+    // );
 
-    // generate a url that asks permissions for Blogger and Google Calendar scopes
-    const profile_scopes = [
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile'
-    ];
+    // // generate a url that asks permissions for Blogger and Google Calendar scopes
+    // const profile_scopes = [
+    //     'https://www.googleapis.com/auth/userinfo.email',
+    //     'https://www.googleapis.com/auth/userinfo.profile'
+    // ];
 
-    const profile_url = oauth2ClientProfile.generateAuthUrl({
-        // 'online' (default) or 'offline' (gets refresh_token)
-        // access_type: 'offline',
+    // const profile_url = oauth2ClientProfile.generateAuthUrl({
+    //     // 'online' (default) or 'offline' (gets refresh_token)
+    //     // access_type: 'offline',
 
-        // If you only need one scope you can pass it as a string
-        scope: profile_scopes
-    });
+    //     // If you only need one scope you can pass it as a string
+    //     scope: profile_scopes
+    // });
 
-    app.get('/oauth2/google/login/', async (req, res, next) => {
-        // Opens the URL in the default browser.
-        // await open(profile_url);
-        res.redirect(profile_url);
-    });
+    // app.get('/oauth2/google/login/', async (req, res, next) => {
+    //     // Opens the URL in the default browser.
+    //     // await open(profile_url);
+    //     res.redirect(profile_url);
+    // });
 
-    app.get('/oauth2/google/login/redirect', async (req, res, next) => {
-        let code = req.query.code
-        const {
-            tokens
-        } = await oauth2ClientProfile.getToken(code)
-        oauth2ClientProfile.setCredentials(tokens);
+    // app.get('/oauth2/google/login/redirect', async (req, res, next) => {
+    //     let code = req.query.code
+    //     const {
+    //         tokens
+    //     } = await oauth2ClientProfile.getToken(code)
+    //     oauth2ClientProfile.setCredentials(tokens);
 
-        // get profile data
-        var google_oauth2 = google.oauth2({
-            auth: oauth2ClientProfile,
-            version: 'v2'
-        });
+    //     // get profile data
+    //     var google_oauth2 = google.oauth2({
+    //         auth: oauth2ClientProfile,
+    //         version: 'v2'
+    //     });
 
-        let profile = await google_oauth2.userinfo.get();
+    //     let profile = await google_oauth2.userinfo.get();
 
-        let user = await User.findAll({
-            where: {
-                [Op.and]: [{
-                    profileId: profile.data.id
-                }, {
-                    email: profile.data.email
-                }]
-            }
-        });
+    //     let user = await User.findAll({
+    //         where: {
+    //             [Op.and]: [{
+    //                 profileId: profile.data.id
+    //             }, {
+    //                 email: profile.data.email
+    //             }]
+    //         }
+    //     });
 
-        if (user.length > 1) {
-            const error = new Error("duplicate users");
-            error.httpStatusCode = 409;
-            return next(error);
-        }
+    //     if (user.length > 1) {
+    //         const error = new Error("duplicate users");
+    //         error.httpStatusCode = 409;
+    //         return next(error);
+    //     }
 
-        if (user.length < 1) {
-            let newUser = await User.create({
-                profileId: profile.data.id,
-                username: profile.data.name,
-                email: profile.data.email
-            }).catch(error => {
-                error.httpStatusCode = 500
-                return next(error);
-            });;
+    //     if (user.length < 1) {
+    //         let newUser = await User.create({
+    //             profileId: profile.data.id,
+    //             username: profile.data.name,
+    //             email: profile.data.email
+    //         }).catch(error => {
+    //             error.httpStatusCode = 500
+    //             return next(error);
+    //         });;
 
-            if (newUser.phone_number) {
-                await user[0].update({
-                    auth_key: uuidv4()
-                }).catch(error => {
-                    error.httpStatusCode = 500
-                    return next(error);
-                });
+    //         if (newUser.phone_number) {
+    //             await user[0].update({
+    //                 auth_key: uuidv4()
+    //             }).catch(error => {
+    //                 error.httpStatusCode = 500
+    //                 return next(error);
+    //             });
 
-                return res.status(200).json({
-                    auth_key: user[0].auth_key
-                });
-            }
+    //             return res.status(200).json({
+    //                 auth_key: user[0].auth_key
+    //             });
+    //         }
 
-            await newUser.update({
-                auth_key: uuidv4()
-            }).catch(error => {
-                error.httpStatusCode = 500
-                return next(error);
-            });
+    //         await newUser.update({
+    //             auth_key: uuidv4()
+    //         }).catch(error => {
+    //             error.httpStatusCode = 500
+    //             return next(error);
+    //         });
 
-            return res.status(403).json({
-                error: "No phone_number",
-                auth_key: newUser.auth_key
-            });
-        }
+    //         return res.status(403).json({
+    //             error: "No phone_number",
+    //             auth_key: newUser.auth_key
+    //         });
+    //     }
 
-        if (user[0].phone_number) {
-            await user[0].update({
-                auth_key: uuidv4()
-            }).catch(error => {
-                error.httpStatusCode = 500
-                return next(error);
-            });
+    //     if (user[0].phone_number) {
+    //         await user[0].update({
+    //             auth_key: uuidv4()
+    //         }).catch(error => {
+    //             error.httpStatusCode = 500
+    //             return next(error);
+    //         });
 
-            return res.status(200).json({
-                auth_key: user[0].auth_key
-            });
-        }
+    //         return res.status(200).json({
+    //             auth_key: user[0].auth_key
+    //         });
+    //     }
 
-        await user[0].update({
-            auth_key: uuidv4()
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
+    //     await user[0].update({
+    //         auth_key: uuidv4()
+    //     }).catch(error => {
+    //         error.httpStatusCode = 500
+    //         return next(error);
+    //     });
 
-        return res.status(403).json({
-            error: "No phone_number",
-            auth_key: user[0].auth_key
-        });
-    });
+    //     return res.status(403).json({
+    //         error: "No phone_number",
+    //         auth_key: user[0].auth_key
+    //     });
+    // });
 }

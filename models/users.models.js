@@ -3,9 +3,9 @@ module.exports = (sequelize, Sequelize) => {
         phone_number: Sequelize.STRING,
         password: Sequelize.STRING,
         auth_key: Sequelize.STRING,
-        username: Sequelize.STRING,
-        profileId: Sequelize.STRING,
-        email: Sequelize.STRING
+        // username: Sequelize.STRING,
+        // profileId: Sequelize.STRING,
+        // email: Sequelize.STRING
     });
 
     return Users;

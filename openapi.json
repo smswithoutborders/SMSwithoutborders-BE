@@ -4,13 +4,10 @@
     "title": "SMSwithoutBorders API",
     "version": "1.0"
   },
-  "servers": [
-    {
-      "url": "http://localhost:9000"
-    }
-  ],
-  "tags": [
-    {
+  "servers": [{
+    "url": "http://localhost:9000"
+  }],
+  "tags": [{
       "name": "Profile",
       "description": "users gain access to profile with phone number"
     },
@@ -27,10 +24,6 @@
       "description": "users grant access to respective provider for refresh and access Token"
     },
     {
-      "name": "Oauth2 Login",
-      "description": "users grant access to respective provider for profile info"
-    },
-    {
       "name": "Register",
       "description": "users create account with phone number and password"
     },
@@ -45,14 +38,6 @@
     {
       "name": "Revoke token",
       "description": "users can revoke specific tokens"
-    },
-    {
-      "name": "Providers Login",
-      "description": "users can login with specific providers token"
-    },
-    {
-      "name": "Providers Registration",
-      "description": "users can add phone_number and password to specific providers token"
     }
   ],
   "paths": {
@@ -337,53 +322,15 @@
           "Oauth2 Token"
         ],
         "summary": "approve account access from providers conscent screen, //\"Redirect_url\" = /oauth2/:provider/Tokens/redirect",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "provider",
-            "description": "google or twitter",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+        "parameters": [{
+          "in": "path",
+          "name": "provider",
+          "description": "google or twitter",
+          "required": true,
+          "schema": {
+            "type": "string"
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "URL": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/oauth2/{provider}/login/": {
-      "get": {
-        "tags": [
-          "Oauth2 Login"
-        ],
-        "summary": "approve account access from providers conscent screen, //\"Redirect_url\" = /oauth2/:provider/login/redirect",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "provider",
-            "description": "google or twitter",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        }],
         "responses": {
           "200": {
             "description": "Successful",
@@ -751,198 +698,6 @@
           },
           "401": {
             "description": "Unauthorized (e.g Invalid auth_key, provider, platform, password)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/oauth2/login": {
-      "post": {
-        "tags": [
-          "Providers Login"
-        ],
-        "summary": "request body should contain \"provider\" = //authentication provider",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "provider": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request (e.g missing required fields)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden (e.g no phone_number in db, use returned auth_key to add phone_number and password from \"Oauth2 Register\" end point)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "auth_key": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/oauth2/register": {
-      "post": {
-        "tags": [
-          "Providers Registration"
-        ],
-        "summary": "request body should contain \"auth_key\"= //users auth_key, \"phone_number\": //New users phone number and \"password\" = //New Users password",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "auth_key": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "phone_number": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "auth_key": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request (e.g missing required fields)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized (e.g Invalid auth_key)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict (e.g Phone number already in use)",
             "content": {
               "application/json": {
                 "schema": {
