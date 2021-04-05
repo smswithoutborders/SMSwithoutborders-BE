@@ -12,8 +12,8 @@ const {
 const {
     v4: uuidv4
 } = require('uuid');
-const open = require('open');
 let iden = {};
+const cors = require("cors");
 
 
 module.exports = (app) => {
@@ -40,10 +40,10 @@ module.exports = (app) => {
 
     app.get('/oauth2/google/Tokens/', async (req, res, next) => {
         iden.id = req.query.iden;
-        iden.proId = req.query.provider
-        // Opens the URL in the default browser.
-        // await open(token_url);
-        res.redirect(token_url);
+        iden.proId = req.query.provider;
+        return res.status(200).json({
+            url: token_url
+        });
     });
 
     app.get('/oauth2/google/Tokens/redirect', async (req, res, next) => {
