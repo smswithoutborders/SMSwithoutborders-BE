@@ -42,8 +42,8 @@ module.exports = (app) => {
         iden.id = req.query.iden;
         iden.proId = req.query.provider
         // Opens the URL in the default browser.
-        await open(token_url);
-        // res.redirect(url);
+        // await open(token_url);
+        res.redirect(token_url);
     });
 
     app.get('/oauth2/google/Tokens/redirect', async (req, res, next) => {
@@ -250,8 +250,8 @@ module.exports = (app) => {
 
     app.get('/oauth2/google/login/', async (req, res, next) => {
         // Opens the URL in the default browser.
-        await open(profile_url);
-        // res.redirect(url);
+        // await open(profile_url);
+        res.redirect(profile_url);
     });
 
     app.get('/oauth2/google/login/redirect', async (req, res, next) => {
