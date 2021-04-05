@@ -45,6 +45,21 @@ module.exports = (app) => {
         });
     });
 
+    app.post('/oauth2/google/code', async (req, res, next) => {
+        const oauth2ClientToken = new google.auth.OAuth2(
+            credentials.google.GOOGLE_CLIENT_ID,
+            credentials.google.GOOGLE_CLIENT_SECRET,
+            "http://localhost:9000/oauth2/google/Tokens/redirect/"
+        );
+
+        const {
+            tokens
+        } = await oauth2ClientToken.getToken(code)
+
+        console.log(tokens);
+        return res.status(200).json("well done it works");
+    });
+
     app.get('/oauth2/google/Tokens/redirect', async (req, res, next) => {
         let code = req.query.code
         const {
