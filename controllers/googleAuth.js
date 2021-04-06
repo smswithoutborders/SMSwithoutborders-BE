@@ -46,6 +46,9 @@ module.exports = (app) => {
     });
 
     app.post('/oauth2/google/code', async (req, res, next) => {
+        let data = JSON.parse(req.body.data);
+        let token = data.token;
+
         const {
             OAuth2Client
         } = require('google-auth-library');
