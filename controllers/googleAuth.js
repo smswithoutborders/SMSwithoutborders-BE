@@ -46,17 +46,23 @@ module.exports = (app) => {
     });
 
     app.post('/oauth2/google/code', async (req, res, next) => {
-        const oauth2ClientToken = new google.auth.OAuth2(
-            credentials.google.GOOGLE_CLIENT_ID,
-            credentials.google.GOOGLE_CLIENT_SECRET,
-            "http://localhost:9000/oauth2/google/Tokens/redirect/"
-        );
-
         const {
-            tokens
-        } = await oauth2ClientToken.getToken(code)
+            OAuth2Client
+        } = require('google-auth-library');
+        const client = new OAuth2Client(credentials.google.GOOGLE_CLIENT_ID);
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: credentials.google.GOOGLE_CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
+            // Or, if multiple clients access the backend:
+            //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+        });
+        const payload = ticket.getPayload();
+        const userid = payload['sub'];
+        // If request specified a G Suite domain:
+        // const domain = payload['hd'];
 
-        console.log(tokens);
+        console.log(payload);
+        console.log(userid)
         return res.status(200).json("well done it works");
     });
 
