@@ -8,6 +8,7 @@ const {
     Op,
     QueryTypes
 } = require("sequelize");
+const axios = require('axios');
 
 module.exports = (app) => {
     app.post("/users/profiles", async (req, res, next) => {
@@ -308,7 +309,19 @@ module.exports = (app) => {
         }
 
         // RETURN FOUND USER AND PROVIDER
-        return res.redirect(`/oauth2/${provider[0].name}/Tokens/?iden=${user[0].id}&provider=${provider[0].id}`);
+        // return res.redirect(`/oauth2/${provider[0].name}/Tokens/?iden=${user[0].id}&provider=${provider[0].id}`);
+
+        axios.post(`http://localhost:9000/oauth2/${provider[0].name}/Tokens/`, {
+                auth_key: req.body.auth_key,
+                provider: req.body.provider
+            })
+            .then(function (response) {
+                return res.status(200).json(response.data);
+            })
+            .catch(function (error) {
+                error.httpStatusCode = 500
+                return next(error);
+            });
     });
 
     app.post("/users/profiles/register", async (req, res, next) => {

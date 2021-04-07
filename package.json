@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "axios": "^0.21.1",
     "connect-session-sequelize": "^7.1.1",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",

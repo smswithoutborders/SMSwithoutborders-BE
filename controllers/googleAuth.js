@@ -12,7 +12,6 @@ const {
 const {
     v4: uuidv4
 } = require('uuid');
-let iden = {};
 
 
 module.exports = (app) => {
@@ -37,40 +36,53 @@ module.exports = (app) => {
         scope: token_scopes
     });
 
-    app.get('/oauth2/google/Tokens/', async (req, res, next) => {
-        iden.id = req.query.iden;
-        iden.proId = req.query.provider;
-        return res.status(200).json({
-            url: token_url
-        });
+    app.post('/oauth2/google/Tokens/', async (req, res, next) => {
+        if (req.body.auth_key) {
+            return res.status(200).json({
+                auth_key: req.body.auth_key,
+                provider: req.body.provider,
+                url: token_url
+            });
+        }
     });
 
-    app.post('/oauth2/google/code', async (req, res, next) => {
-        let data = JSON.parse(req.body.data);
-        let token = data.token;
+    // app.post('/oauth2/google/code', async (req, res, next) => {
+    //     let data = JSON.parse(req.body.data);
+    //     let token = data.id_token;
 
-        const {
-            OAuth2Client
-        } = require('google-auth-library');
-        const client = new OAuth2Client(credentials.google.GOOGLE_CLIENT_ID);
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: credentials.google.GOOGLE_CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
-            // Or, if multiple clients access the backend:
-            //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-        // If request specified a G Suite domain:
-        // const domain = payload['hd'];
+    //     const {
+    //         OAuth2Client
+    //     } = require('google-auth-library');
+    //     const client = new OAuth2Client(credentials.google.GOOGLE_CLIENT_ID);
+    //     const ticket = await client.verifyIdToken({
+    //         idToken: token,
+    //         audience: credentials.google.GOOGLE_CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
+    //         // Or, if multiple clients access the backend:
+    //         //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+    //     });
+    //     const payload = ticket.getPayload();
+    //     const userid = payload['sub'];
+    //     // If request specified a G Suite domain:
+    //     // const domain = payload['hd'];
 
-        console.log(payload);
-        console.log(userid)
-        return res.status(200).json("well done it works");
-    });
+    //     console.log(data)
+    //     console.log(payload);
+    //     console.log(userid)
+    //     return res.status(200).json("well done it works");
+    // });
 
     app.get('/oauth2/google/Tokens/redirect', async (req, res, next) => {
         let code = req.query.code
+
+        return res.status(200).json({
+            code: code
+        });
+    });
+
+    app.get('/users/auth/success', async (req, res, next) => {
+        let code = req.body.code;
+        let auth_key = req.body.auth_key;
+        
         const {
             tokens
         } = await oauth2ClientToken.getToken(code)
@@ -161,10 +173,6 @@ module.exports = (app) => {
             }
         })
 
-        return res.redirect("/users/auth/success");
-    });
-
-    app.get('/users/auth/success', async (req, res, next) => {
         return res.status(200).json({
             message: "Token stored Login!"
         })
