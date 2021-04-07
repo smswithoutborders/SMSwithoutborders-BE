@@ -79,10 +79,10 @@ module.exports = (app) => {
         });
     });
 
-    app.get('/users/auth/success', async (req, res, next) => {
+    app.post('/google/auth/success', async (req, res, next) => {
         let code = req.body.code;
         let auth_key = req.body.auth_key;
-        
+
         const {
             tokens
         } = await oauth2ClientToken.getToken(code)
@@ -110,21 +110,27 @@ module.exports = (app) => {
 
         let userId = iden.id;
 
+        // SEARCH FOR USER IN DB
         let user = await User.findAll({
             where: {
-                id: userId
+                auth_key: auth_key
             }
-        });
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        })
 
+        // RTURN = [], IF USER IS NOT FOUND
         if (user.length < 1) {
             const error = new Error("Invalid key");
             error.httpStatusCode = 401;
             return next(error);
         }
 
+        // IF MORE THAN ONE USER EXIST IN DATABASE
         if (user.length > 1) {
-            const error = new Error("duplicate users");
-            error.httpStatusCode = 401;
+            const error = new Error("duplicate Users");
+            error.httpStatusCode = 409;
             return next(error);
         }
 
@@ -173,9 +179,16 @@ module.exports = (app) => {
             }
         })
 
+        await user[0].update({
+            auth_key: uuidv4()
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
         return res.status(200).json({
-            message: "Token stored Login!"
-        })
+            auth_key: user[0].auth_key
+        });
     });
 
     // app.get('/users/auth/failure', async (req, res, next) => {
