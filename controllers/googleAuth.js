@@ -71,13 +71,13 @@ module.exports = (app) => {
     //     return res.status(200).json("well done it works");
     // });
 
-    app.get('/oauth2/google/Tokens/redirect', async (req, res, next) => {
-        let code = req.query.code
+    // app.get('/oauth2/google/Tokens/redirect', async (req, res, next) => {
+    //     let code = req.query.code
 
-        return res.status(200).json({
-            code: code
-        });
-    });
+    //     return res.status(200).json({
+    //         code: code
+    //     });
+    // });
 
     app.post('/google/auth/success', async (req, res, next) => {
         let code = req.body.code;
