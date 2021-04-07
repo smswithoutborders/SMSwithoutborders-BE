@@ -31,7 +31,7 @@ app.use(express.urlencoded({
 //     }
 // }));
 
-app.use(express.static('public'));
+// app.use(express.static('public'));
 
 // Create swagger docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
