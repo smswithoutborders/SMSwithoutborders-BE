@@ -263,7 +263,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {
+                    "auth_key": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "type": "string"
+                    },
+                    "url": {
                       "type": "string"
                     }
                   }
