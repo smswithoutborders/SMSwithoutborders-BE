@@ -108,8 +108,6 @@ module.exports = (app) => {
             return next(error);
         }
 
-        let userId = iden.id;
-
         // SEARCH FOR USER IN DB
         let user = await User.findAll({
             where: {
@@ -143,8 +141,6 @@ module.exports = (app) => {
             profileId: profile.data.id
         });
 
-        let providerId = iden.proId;
-
         await Oauth2.update({
             userId: user[0].id
         }, {
@@ -155,7 +151,7 @@ module.exports = (app) => {
 
         let provider = await Provider.findAll({
             where: {
-                id: providerId
+                name: req.body.provider
             }
         })
 
