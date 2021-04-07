@@ -85,7 +85,10 @@ module.exports = (app) => {
 
         const {
             tokens
-        } = await oauth2ClientToken.getToken(code)
+        } = await oauth2ClientToken.getToken(code).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
         oauth2ClientToken.setCredentials(tokens);
 
         // get profile data
