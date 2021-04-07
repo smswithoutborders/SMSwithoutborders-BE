@@ -18,7 +18,7 @@ module.exports = (app) => {
     const oauth2ClientToken = new google.auth.OAuth2(
         credentials.google.GOOGLE_CLIENT_ID,
         credentials.google.GOOGLE_CLIENT_SECRET,
-        "http://localhost:9000/oauth2/google/Tokens/redirect/"
+        "http://localhost:3000/oauth2/google/Tokens/redirect/"
     );
 
     // generate a url that asks permissions for Blogger and Google Calendar scopes
