@@ -165,6 +165,14 @@ module.exports = (app) => {
     });
 
     app.post('/oauth2/google/Tokens/revoke', async (req, res, next) => {
+        let originalURL = req.body.origin
+
+        oauth2ClientToken = new google.auth.OAuth2(
+            credentials.google.GOOGLE_CLIENT_ID,
+            credentials.google.GOOGLE_CLIENT_SECRET,
+            `${originalURL}/oauth2/google/Tokens/redirect/`
+        )
+
         let user = await User.findAll({
             where: {
                 id: req.body.id

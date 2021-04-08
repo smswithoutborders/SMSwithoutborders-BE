@@ -591,9 +591,10 @@ module.exports = (app) => {
 
         let port = app.runningPort
         let originalURL = req.hostname
-        await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
+        await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/revoke`, {
                 id: user[0].id,
-                providerId: provider[0].id
+                providerId: provider[0].id,
+                origin: req.header('Origin')
             })
             .then(function (response) {
                 return res.status(200).json(response.data);
