@@ -11,6 +11,8 @@ const cors = require("cors");
 const swaggerDocument = require('./openapi.json');
 const db = require("./models");
 
+const https = require("https")
+
 var app = express();
 
 app.use(cors());
@@ -91,4 +93,14 @@ let errorHandler = (err, req, res, next) => {
 
 app.use(errorHandler);
 
-app.listen(configs.api.API_PORT, console.log(`Server is running on port ${configs.api.API_PORT}`));
+var httpsServer = ""
+if(fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) ){
+	privateKey  = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
+	let certificate = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
+	let credentials = {key: privateKey, cert: certificate};
+	httpsServer = https.createServer(credentials, app);
+	httpsServer.listen(configs.ssl_api.API_PORT);
+}
+else {
+	app.listen(configs.api.API_PORT, console.log(`Server is running on port ${configs.api.API_PORT}`));
+}
