@@ -20,7 +20,7 @@ var rootCas = require('ssl-root-cas').create()
 
 require('https').globalAgent.options.ca = rootCas
 
-if(fs.existsSync(configs.ssl_api.PEM)){
+if((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)){
 	rootCas.addFile('/var/www/ssl/server.pem')
 }
 axios = Axios

@@ -94,7 +94,7 @@ let errorHandler = (err, req, res, next) => {
 app.use(errorHandler);
 
 var httpsServer = ""
-if(fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) && fs.existsSync(configs.ssl_api.PEM)){
+if((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) && fs.existsSync(configs.ssl_api.PEM)){
 	let privateKey  = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
 	let certificate = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
 	let credentials = {key: privateKey, cert: certificate};
