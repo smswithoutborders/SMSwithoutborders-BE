@@ -1,6 +1,8 @@
+const configs = require("./../config.json");
 const db = require("../models");
 var User = db.users;
 var Providers = db.providers;
+const fs = require('fs')
 const {
     v4: uuidv4
 } = require('uuid');
@@ -8,10 +10,35 @@ const {
     Op,
     QueryTypes
 } = require("sequelize");
-const axios = require('axios');
+const Axios = require('axios');
 const {
     providers
 } = require("../models");
+
+
+var rootCas = require('ssl-root-cas').create()
+rootCas.addFile('/var/www/ssl/server.pem')
+
+require('https').globalAgent.options.ca = rootCas
+
+/*
+var axios = ""
+if(fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) ){
+	let privateKey  = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
+	let certificate = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
+	let credentials = {key: privateKey, cert: certificate};
+	const httpsAgent = new https.Agent({
+		cert: certificate,
+		key: privateKey,
+		passphrase: configs.ssl_api.PASSPHRASE
+	})
+	axios = Axios.create({httpsAgent})
+}
+else {
+	axios = Axios
+}
+*/
+axios = Axios
 
 module.exports = (app) => {
     app.post("/users/profiles", async (req, res, next) => {
@@ -311,7 +338,10 @@ module.exports = (app) => {
             return next(error);
         }
 
-        await axios.post(`http://localhost:9000/oauth2/${provider[0].name}/Tokens/`, {
+	let port = app.runningPort
+	let originalURL = req.hostname
+	console.log(">> OURL:", originalURL)
+        await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
                 auth_key: req.body.auth_key,
                 provider: req.body.provider
             })
@@ -573,7 +603,9 @@ module.exports = (app) => {
             return next(error);
         }
 
-        await axios.post(`http://localhost:9000/oauth2/${provider[0].name}/Tokens/revoke`, {
+	let port = app.runningPort
+	let originalURL = req.hostname
+        await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
                 id: user[0].id,
                 providerId: provider[0].id
             })
