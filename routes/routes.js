@@ -17,27 +17,12 @@ const {
 
 
 var rootCas = require('ssl-root-cas').create()
-rootCas.addFile('/var/www/ssl/server.pem')
 
 require('https').globalAgent.options.ca = rootCas
 
-/*
-var axios = ""
-if(fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) ){
-	let privateKey  = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
-	let certificate = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
-	let credentials = {key: privateKey, cert: certificate};
-	const httpsAgent = new https.Agent({
-		cert: certificate,
-		key: privateKey,
-		passphrase: configs.ssl_api.PASSPHRASE
-	})
-	axios = Axios.create({httpsAgent})
+if(fs.existsSync(configs.ssl_api.PEM)){
+	rootCas.addFile('/var/www/ssl/server.pem')
 }
-else {
-	axios = Axios
-}
-*/
 axios = Axios
 
 module.exports = (app) => {
