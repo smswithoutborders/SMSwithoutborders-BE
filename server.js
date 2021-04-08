@@ -95,12 +95,14 @@ app.use(errorHandler);
 
 var httpsServer = ""
 if(fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) ){
-	privateKey  = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
-	let certificate = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
+	let privateKey  = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
+	let certificate = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
 	let credentials = {key: privateKey, cert: certificate};
 	httpsServer = https.createServer(credentials, app);
 	httpsServer.listen(configs.ssl_api.API_PORT);
+	console.log("[+] Running secured on port:", configs.ssl_api.API_PORT)
 }
 else {
+	console.log("[+] Running in-secured on port:", configs.api.API_PORT)
 	app.listen(configs.api.API_PORT, console.log(`Server is running on port ${configs.api.API_PORT}`));
 }
