@@ -343,7 +343,8 @@ module.exports = (app) => {
 	console.log(">> OURL:", originalURL)
         await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
                 auth_key: req.body.auth_key,
-                provider: req.body.provider
+                provider: req.body.provider,
+		origin : req.header('Origin')
             })
             .then(function (response) {
                 return res.status(200).json(response.data);
