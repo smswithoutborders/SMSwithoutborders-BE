@@ -20,8 +20,8 @@ var rootCas = require('ssl-root-cas').create()
 
 require('https').globalAgent.options.ca = rootCas
 
-if((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)){
-	rootCas.addFile('/var/www/ssl/server.pem')
+if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+    rootCas.addFile('/var/www/ssl/server.pem')
 }
 axios = Axios
 
@@ -323,13 +323,13 @@ module.exports = (app) => {
             return next(error);
         }
 
-	let port = app.runningPort
-	let originalURL = req.hostname
-	console.log(">> OURL:", originalURL)
+        let port = app.runningPort
+        let originalURL = req.hostname
+        console.log(">> OURL:", originalURL)
         await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
                 auth_key: req.body.auth_key,
                 provider: req.body.provider,
-		origin : req.header('Origin')
+                origin: req.header('Origin')
             })
             .then(function (response) {
                 return res.status(200).json(response.data);
@@ -589,8 +589,8 @@ module.exports = (app) => {
             return next(error);
         }
 
-	let port = app.runningPort
-	let originalURL = req.hostname
+        let port = app.runningPort
+        let originalURL = req.hostname
         await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
                 id: user[0].id,
                 providerId: provider[0].id

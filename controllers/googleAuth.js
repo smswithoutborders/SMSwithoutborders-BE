@@ -14,9 +14,9 @@ const {
 } = require('uuid');
 
 
-module.exports = (app) => { 
-	var oauth2ClientToken = ""
-	var token_url = ""
+module.exports = (app) => {
+    var oauth2ClientToken = ""
+    var token_url = ""
 
 
     // generate a url that asks permissions for Blogger and Google Calendar scopes
@@ -28,22 +28,22 @@ module.exports = (app) => {
 
     app.post('/oauth2/google/Tokens/', async (req, res, next) => {
         if (req.body.auth_key) {
-		// let originalURL = req.get('host')
-		let originalURL = req.body.origin
+            // let originalURL = req.get('host')
+            let originalURL = req.body.origin
 
-		oauth2ClientToken = new google.auth.OAuth2(
-			credentials.google.GOOGLE_CLIENT_ID,
-			credentials.google.GOOGLE_CLIENT_SECRET,
-			`${originalURL}/oauth2/google/Tokens/redirect/`
-		)
+            oauth2ClientToken = new google.auth.OAuth2(
+                credentials.google.GOOGLE_CLIENT_ID,
+                credentials.google.GOOGLE_CLIENT_SECRET,
+                `${originalURL}/oauth2/google/Tokens/redirect/`
+            )
 
-		token_url = oauth2ClientToken.generateAuthUrl({
-			// 'online' (default) or 'offline' (gets refresh_token)
-			access_type: 'offline',
+            token_url = oauth2ClientToken.generateAuthUrl({
+                // 'online' (default) or 'offline' (gets refresh_token)
+                access_type: 'offline',
 
-			// If you only need one scope you can pass it as a string
-			scope: token_scopes
-		});
+                // If you only need one scope you can pass it as a string
+                scope: token_scopes
+            });
 
             return res.status(200).json({
                 auth_key: req.body.auth_key,
