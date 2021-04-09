@@ -326,20 +326,32 @@
       }
     },
     "/oauth2/{provider}/Tokens/": {
-      "get": {
+      "post": {
         "tags": [
           "Oauth2 Token"
         ],
         "summary": "approve account access from providers conscent screen, //\"Redirect_url\" = /oauth2/:provider/Tokens/redirect",
-        "parameters": [{
-          "in": "path",
-          "name": "provider",
-          "description": "google or twitter",
+        "requestBody": {
           "required": true,
-          "schema": {
-            "type": "string"
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auth_key": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "type": "string"
+                  },
+                  "origin": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           }
-        }],
+        },
         "responses": {
           "200": {
             "description": "Successful",
@@ -348,7 +360,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "URL": {
+                    "auth_key": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "type": "string"
+                    },
+                    "url": {
                       "type": "string"
                     }
                   }
