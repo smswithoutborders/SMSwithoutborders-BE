@@ -97,7 +97,11 @@ var httpsServer = ""
 if((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) && fs.existsSync(configs.ssl_api.PEM)){
 	let privateKey  = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
 	let certificate = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
-	let credentials = {key: privateKey, cert: certificate};
+	// let certificate = fs.readFileSync(configs.ssl_api.PEM, 'utf8');
+	let ca = [
+		fs.readFileSync(configs.ssl_api.PEM)
+	]
+	let credentials = {key: privateKey, cert: certificate, ca: ca};
 	httpsServer = https.createServer(credentials, app);
 	httpsServer.listen(configs.ssl_api.API_PORT);
 	console.log("[+] Running secured on port:", configs.ssl_api.API_PORT)
