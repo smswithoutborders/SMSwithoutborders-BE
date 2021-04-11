@@ -171,6 +171,9 @@
                           },
                           "token": {
                             "type": "object"
+                          },
+                          "profile": {
+                            "type": "object"
                           }
                         }
                       }

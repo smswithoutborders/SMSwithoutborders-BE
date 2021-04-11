@@ -151,7 +151,8 @@ module.exports = (app) => {
                             refresh_token: token[i].refreshToken,
                             expiry_date: token[i].expiry_date,
                             scope: token[i].scope
-                        }
+                        },
+                        profile: token[i].profile
                     })
                 }
             }
@@ -183,7 +184,8 @@ module.exports = (app) => {
                             refresh_token: token[i].refreshToken,
                             expiry_date: token[i].expiry_date,
                             scope: token[i].scope
-                        }
+                        },
+                        profile: token[i].profile
                     })
                 }
             }
@@ -215,7 +217,8 @@ module.exports = (app) => {
                             refresh_token: token[i].refreshToken,
                             expiry_date: token[i].expiry_date,
                             scope: token[i].scope
-                        }
+                        },
+                        profile: token[i].profile
                     })
                 }
             }
