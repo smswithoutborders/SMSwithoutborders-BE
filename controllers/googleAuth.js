@@ -3,7 +3,7 @@ const {
 } = require('googleapis');
 const credentials = require("../credentials.json");
 const db = require("../models");
-var Oauth2 = db.oauth2;
+var Token = db.tokens;
 var User = db.users;
 var Provider = db.providers;
 const {
@@ -74,13 +74,13 @@ module.exports = (app) => {
 
         let profile = await gmail.userinfo.get();
 
-        let oauth2 = await Oauth2.findAll({
+        let token = await Token.findAll({
             where: {
                 profileId: profile.data.id
             }
         });
 
-        if (oauth2[0]) {
+        if (token[0]) {
             const error = new Error("Token already exist");
             error.httpStatusCode = 400;
             return next(error);
@@ -110,21 +110,14 @@ module.exports = (app) => {
             return next(error);
         }
 
-        await Oauth2.create({
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token,
-            expiry_date: tokens.expiry_date,
-            scope: tokens.scope.split(" "),
-            profile: profile,
-            profileId: profile.data.id
+        let new_token = await Token.create({
+            profileId: profile.data.id,
+            profile: JSON.stringify(profile),
+            token: JSON.stringify(tokens)
         });
 
-        await Oauth2.update({
+        await new_token.update({
             userId: user[0].id
-        }, {
-            where: {
-                profileId: profile.data.id
-            }
         })
 
         let provider = await Provider.findAll({
@@ -145,12 +138,8 @@ module.exports = (app) => {
             return next(error);
         }
 
-        await Oauth2.update({
+        await new_token.update({
             providerId: provider[0].id
-        }, {
-            where: {
-                profileId: profile.data.id
-            }
         })
 
         await user[0].update({
@@ -166,14 +155,6 @@ module.exports = (app) => {
     });
 
     app.post('/oauth2/google/Tokens/revoke', async (req, res, next) => {
-        let originalURL = req.body.origin
-
-        oauth2ClientToken = new google.auth.OAuth2(
-            credentials.google.GOOGLE_CLIENT_ID,
-            credentials.google.GOOGLE_CLIENT_SECRET,
-            `${originalURL}/oauth2/google/Tokens/redirect/`
-        )
-
         let user = await User.findAll({
             where: {
                 id: req.body.id
@@ -210,7 +191,7 @@ module.exports = (app) => {
             return next(error);
         };
 
-        let oauth2 = await Oauth2.findAll({
+        let token = await Token.findAll({
             where: {
                 [Op.and]: [{
                     userId: user[0].id
@@ -223,24 +204,36 @@ module.exports = (app) => {
             return next(error);
         });
 
-        if (oauth2.length < 1) {
+        if (token.length < 1) {
             const error = new Error("Token doesn't exist");
             error.httpStatusCode = 401;
             return next(error);
         }
 
-        if (oauth2.length > 1) {
+        if (token.length > 1) {
             const error = new Error("duplicate Tokens");
             error.httpStatusCode = 409;
             return next(error);
         };
 
-        await oauth2ClientToken.revokeToken(oauth2[0].accessToken).catch(error => {
+        let originalURL = req.body.origin
+
+        oauth2ClientToken = new google.auth.OAuth2(
+            credentials.google.GOOGLE_CLIENT_ID,
+            credentials.google.GOOGLE_CLIENT_SECRET,
+            `${originalURL}/oauth2/google/Tokens/redirect/`
+        );
+
+        let fetch_tokens = JSON.parse(token[0].token);
+
+        await oauth2ClientToken.setCredentials(fetch_tokens);
+
+        await oauth2ClientToken.revokeCredentials().catch(error => {
             error.httpStatusCode = 500
             return next(error);
         });
 
-        await oauth2[0].destroy().catch(error => {
+        await token[0].destroy().catch(error => {
             error.httpStatusCode = 500
             return next(error);
         });;

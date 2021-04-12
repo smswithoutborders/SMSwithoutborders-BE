@@ -1,7 +1,7 @@
 const configs = require("./../config.json");
 const db = require("../models");
 var User = db.users;
-var Providers = db.providers;
+var Provider = db.providers;
 const fs = require('fs')
 const {
     v4: uuidv4
@@ -11,10 +11,6 @@ const {
     QueryTypes
 } = require("sequelize");
 const Axios = require('axios');
-const {
-    providers
-} = require("../models");
-
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -112,7 +108,7 @@ module.exports = (app) => {
         }
 
         // GET ALL TOKENS UNDER CURRENT USER
-        let token = await user[0].getOauth2s();
+        let token = await user[0].getTokens();
 
         // RETURN = [], IF NO TOKEN EXIST UNDER CURRENT USER
         if (token.length < 1) {
@@ -146,13 +142,8 @@ module.exports = (app) => {
                     userData.user_token.push({
                         provider: provider.name,
                         platform: provider.platform,
-                        token: {
-                            access_token: token[i].accessToken,
-                            refresh_token: token[i].refreshToken,
-                            expiry_date: token[i].expiry_date,
-                            scope: token[i].scope
-                        },
-                        profile: token[i].profile
+                        token: JSON.parse(token[i].token),
+                        profile: JSON.parse(token[i].profile)
                     })
                 }
             }
@@ -179,13 +170,8 @@ module.exports = (app) => {
                     userData.user_token.push({
                         provider: provider.name,
                         platform: provider.platform,
-                        token: {
-                            access_token: token[i].accessToken,
-                            refresh_token: token[i].refreshToken,
-                            expiry_date: token[i].expiry_date,
-                            scope: token[i].scope
-                        },
-                        profile: token[i].profile
+                        token: JSON.parse(token[i].token),
+                        profile: JSON.parse(token[i].profile)
                     })
                 }
             }
@@ -212,45 +198,14 @@ module.exports = (app) => {
                     userData.user_token.push({
                         provider: provider.name,
                         platform: provider.platform,
-                        token: {
-                            access_token: token[i].accessToken,
-                            refresh_token: token[i].refreshToken,
-                            expiry_date: token[i].expiry_date,
-                            scope: token[i].scope
-                        },
-                        profile: token[i].profile
+                        token: JSON.parse(token[i].token),
+                        profile: JSON.parse(token[i].profile)
                     })
                 }
             }
             // RETURN STORED TOKEN AND PROVIDER
             return res.status(200).json(userData)
         }
-
-        // // LOOP THROUGH ALL TOKENS FOUND
-        // for (let i = 0; i < token.length; i++) {
-        //     // GET ALL TOKENS UNDER CURRENT USER
-        //     let provider = await token[i].getProvider().catch(error => {
-        //         error.httpStatusCode = 500
-        //         return next(error);
-        //     });
-
-        //     // IF PROVIDER FOUND
-        //     if (provider) {
-        //         userData.user_token.push({
-        //             provider: provider.name,
-        //             platform: provider.platform,
-        //             token: {
-        //                 access_token: token[i].accessToken,
-        //                 refresh_token: token[i].refreshToken,
-        //                 expiry_date: token[i].expiry_date,
-        //                 scope: token[i].scope
-        //             }
-        //         })
-        //     }
-        // }
-
-        // // RETURN STORED TOKENS AND PROVIDER
-        // return res.status(200).json(userData)
     })
 
     app.post("/users/tokens", async (req, res, next) => {
@@ -275,7 +230,7 @@ module.exports = (app) => {
         // ===============================================================
 
         // SEARCH FOR PROVIDER AND PLATFORM IN DB
-        let provider = await Providers.findAll({
+        let provider = await Provider.findAll({
             where: {
                 [Op.and]: [{
                     name: req.body.provider.toLowerCase()
@@ -470,7 +425,7 @@ module.exports = (app) => {
 
         let query = `SELECT t1.name, t1.platform 
         FROM providers t1 
-        LEFT JOIN (SELECT * FROM oauth2s WHERE oauth2s.userId = ${user[0].id}) AS t2 
+        LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = ${user[0].id}) AS t2 
         ON t2.providerId = t1.id 
         WHERE t2.providerId IS NULL `
 
@@ -488,7 +443,7 @@ module.exports = (app) => {
             }
         }
 
-        let token = await user[0].getOauth2s();
+        let token = await user[0].getTokens();
 
         if (token.length < 1) {
             return res.status(200).json(userData);
@@ -537,7 +492,7 @@ module.exports = (app) => {
         // ===============================================================
 
         // SEARCH FOR PROVIDER AND PLATFORM IN DB
-        let provider = await Providers.findAll({
+        let provider = await Provider.findAll({
             where: {
                 [Op.and]: [{
                     name: req.body.provider.toLowerCase()

@@ -39,8 +39,8 @@ __Providers table__
 |:-----------:|:-------------------------------------------:|:----------------------------------------------:|
 | PRIMARY KEY | Name of Provider (google, twitter) [STRING] | Name of service consume from Provider [STRING] |
 
-__Oauth2s table__
+__Tokens table__
 
-|              profileId             |       profile       | accessToken | refreshToken | scope | expiry_date |          userId         |          providerId         |
-|:----------------------------------:|:-------------------:|:-----------:|--------------|-------|:-----------:|:-----------------------:|:---------------------------:|
-| Providers Profile ID [PRIMARY KEY] | Users info [OBJECT] |    STRING   |    STRING    | ARRAY | DATE STRING | Users[id] [FOREIGN KEY] | Providers[id] [FOREIGN KEY] |
+|      id     |       profileId      |       profile       |         token         |          userId         |          providerId         |
+|:-----------:|:--------------------:|:-------------------:|:---------------------:|:-----------------------:|:---------------------------:|
+| PRIMARY KEY | Providers Profile ID | Users info [OBJECT] | Users tokens [OBJECT] | Users[id] [FOREIGN KEY] | Providers[id] [FOREIGN KEY] |
