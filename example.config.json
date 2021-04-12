@@ -8,5 +8,11 @@
     "api": {
         "API_PORT": "9000",
         "SESSION_SECRET": ""
+    },
+    "ssl_api" : {
+        "API_PORT": "",
+        "SESSION_SECRET": "",
+	"CERTIFICATE" : "",
+	"KEY": ""
     }
 }
