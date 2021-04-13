@@ -228,20 +228,26 @@ module.exports = (app) => {
 
         await oauth2ClientToken.setCredentials(fetch_tokens);
 
-        await oauth2ClientToken.revokeCredentials().catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
+        await oauth2ClientToken.getAccessToken(async (err, access_token) => {
+            if (err) {
+                error.httpStatusCode = 500
+                return next(err);
+            }
+
+            await oauth2ClientToken.revokeToken(access_token).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
+            });
+
+            await token[0].destroy().catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
+            });;
+
+            return res.status(200).json({
+                message: "Token revoke success"
+            });
         });
-
-        await token[0].destroy().catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });;
-
-        return res.status(200).json({
-            message: "Token revoke success"
-        });
-
     });
 
 }
