@@ -11,6 +11,7 @@
     "express": "^4.17.1",
     "express-session": "^1.17.1",
     "googleapis": "^39.2.0",
+    "js-sha512": "^0.8.0",
     "morgan": "^1.10.0",
     "mysql2": "^2.2.5",
     "passport": "^0.4.1",

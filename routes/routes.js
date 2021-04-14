@@ -11,6 +11,7 @@ const {
     QueryTypes
 } = require("sequelize");
 const Axios = require('axios');
+const hasher = require("../tools/hasher.js");
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -328,7 +329,7 @@ module.exports = (app) => {
 
         let newUser = await User.create({
             phone_number: req.body.phone_number,
-            password: req.body.password
+            password: hasher(req.body.password)
         }).catch(error => {
             error.httpStatusCode = 500
             return next(error);
@@ -357,7 +358,7 @@ module.exports = (app) => {
                 [Op.and]: [{
                     phone_number: req.body.phone_number
                 }, {
-                    password: req.body.password
+                    password: hasher(req.body.password)
                 }]
             }
         }).catch(error => {
