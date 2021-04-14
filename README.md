@@ -9,8 +9,15 @@ npm install
 
 ### Setup
 * Create configuration file
-    * To set up database and API, use the template in "example.config.json" file and rename to "config.json"
-    * To set up platform credentials, use the template in "example.credentials.json" file and rename to "credentials.json"
+
+    __root (./)__
+
+    * To set up database and API, copy the template file "example.config.json" and rename to "config.json"
+    * To set up platform credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
+
+    __tools (./tools)__
+
+    * To set up encryption credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
 ### Start Server
 * With NPM
 ```bash
@@ -41,6 +48,6 @@ __Providers table__
 
 __Tokens table__
 
-|      id     |       profileId      |       profile       |         token         |          userId         |          providerId         |
-|:-----------:|:--------------------:|:-------------------:|:---------------------:|:-----------------------:|:---------------------------:|
-| PRIMARY KEY | Providers Profile ID | Users info [OBJECT] | Users tokens [OBJECT] | Users[id] [FOREIGN KEY] | Providers[id] [FOREIGN KEY] |
+|      id     |       profile       |         token         |          userId         |          providerId         |       iv      |
+|:-----------:|:-------------------:|:---------------------:|:-----------------------:|:---------------------------:|:-------------:|
+| PRIMARY KEY | Users info [OBJECT] | Users tokens [OBJECT] | Users[id] [FOREIGN KEY] | Providers[id] [FOREIGN KEY] | Encryption IV |
