@@ -12,6 +12,11 @@ const {
 const {
     v4: uuidv4
 } = require('uuid');
+const {
+    encrypt,
+    decrypt,
+    IV
+} = require("../tools/encryption.js")
 
 
 module.exports = (app) => {
@@ -74,17 +79,17 @@ module.exports = (app) => {
 
         let profile = await gmail.userinfo.get();
 
-        let token = await Token.findAll({
-            where: {
-                profileId: profile.data.id
-            }
-        });
+        // let token = await Token.findAll({
+        //     where: {
+        //         profileId: profile.data.id
+        //     }
+        // });
 
-        if (token[0]) {
-            const error = new Error("Token already exist");
-            error.httpStatusCode = 400;
-            return next(error);
-        }
+        // if (token[0]) {
+        //     const error = new Error("Token already exist");
+        //     error.httpStatusCode = 400;
+        //     return next(error);
+        // }
 
         // SEARCH FOR USER IN DB
         let user = await User.findAll({
@@ -111,9 +116,9 @@ module.exports = (app) => {
         }
 
         let new_token = await Token.create({
-            profileId: profile.data.id,
-            profile: JSON.stringify(profile),
-            token: JSON.stringify(tokens)
+            profile: encrypt(JSON.stringify(profile)).e_info,
+            token: encrypt(JSON.stringify(tokens)).e_info,
+            iv: IV
         });
 
         await new_token.update({
@@ -224,7 +229,7 @@ module.exports = (app) => {
             `${originalURL}/oauth2/google/Tokens/redirect/`
         );
 
-        let fetch_tokens = JSON.parse(token[0].token);
+        let fetch_tokens = JSON.parse(decrypt(token[0].token, token[0].iv));
 
         await oauth2ClientToken.setCredentials(fetch_tokens);
 

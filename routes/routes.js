@@ -12,6 +12,10 @@ const {
 } = require("sequelize");
 const Axios = require('axios');
 const hasher = require("../tools/hasher.js");
+const {
+    decrypt
+} = require("../tools/encryption.js")
+
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -143,8 +147,8 @@ module.exports = (app) => {
                     userData.user_token.push({
                         provider: provider.name,
                         platform: provider.platform,
-                        token: JSON.parse(token[i].token),
-                        profile: JSON.parse(token[i].profile)
+                        token: JSON.parse(decrypt(token[i].token, token[i].iv)),
+                        profile: JSON.parse(decrypt(token[i].profile, token[i].iv))
                     })
                 }
             }
@@ -171,8 +175,8 @@ module.exports = (app) => {
                     userData.user_token.push({
                         provider: provider.name,
                         platform: provider.platform,
-                        token: JSON.parse(token[i].token),
-                        profile: JSON.parse(token[i].profile)
+                        token: JSON.parse(decrypt(token[i].token, token[i].iv)),
+                        profile: JSON.parse(decrypt(token[i].profile, token[i].iv))
                     })
                 }
             }
@@ -199,8 +203,8 @@ module.exports = (app) => {
                     userData.user_token.push({
                         provider: provider.name,
                         platform: provider.platform,
-                        token: JSON.parse(token[i].token),
-                        profile: JSON.parse(token[i].profile)
+                        token: JSON.parse(decrypt(token[i].token, token[i].iv)),
+                        profile: JSON.parse(decrypt(token[i].profile, token[i].iv))
                     })
                 }
             }
@@ -526,7 +530,7 @@ module.exports = (app) => {
                 [Op.and]: [{
                     auth_key: req.body.auth_key
                 }, {
-                    password: req.body.password
+                    password: hasher(req.body.password)
                 }]
             }
         }).catch(error => {

@@ -1,8 +1,8 @@
 module.exports = (sequelize, Sequelize) => {
     let Token = sequelize.define("token", {
-        profileId: Sequelize.STRING,
         profile: Sequelize.TEXT,
-        token: Sequelize.TEXT
+        token: Sequelize.TEXT,
+        iv: Sequelize.STRING
     });
 
     return Token;
