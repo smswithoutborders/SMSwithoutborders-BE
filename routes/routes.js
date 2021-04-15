@@ -316,6 +316,12 @@ module.exports = (app) => {
             return next(error);
         };
 
+        if (req.body.password.length < 15) {
+            const error = new Error("password is less than 15 characters");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
         let user = await User.findAll({
             where: {
                 phone_number: req.body.phone_number
