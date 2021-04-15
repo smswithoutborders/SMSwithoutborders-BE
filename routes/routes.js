@@ -363,6 +363,12 @@ module.exports = (app) => {
             return next(error);
         };
 
+        if (req.body.password.length < 15) {
+            const error = new Error("password is less than 15 characters");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
         let user = await User.findAll({
             where: {
                 [Op.and]: [{
@@ -485,6 +491,12 @@ module.exports = (app) => {
 
         if (!req.body.password) {
             const error = new Error("password cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (req.body.password.length < 15) {
+            const error = new Error("password is less than 15 characters");
             error.httpStatusCode = 400;
             return next(error);
         };
