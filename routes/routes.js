@@ -11,11 +11,8 @@ const {
     QueryTypes
 } = require("sequelize");
 const Axios = require('axios');
-const hasher = require("../tools/hasher.js");
-const {
-    decrypt
-} = require("../tools/encryption.js")
-
+const Security = require("../models/security.model.js");
+var security = new Security();
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -147,8 +144,8 @@ module.exports = (app) => {
                     userData.user_token.push({
                         provider: provider.name,
                         platform: provider.platform,
-                        token: JSON.parse(decrypt(token[i].token, token[i].iv)),
-                        profile: JSON.parse(decrypt(token[i].profile, token[i].iv))
+                        token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
+                        profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
                     })
                 }
             }
@@ -175,8 +172,8 @@ module.exports = (app) => {
                     userData.user_token.push({
                         provider: provider.name,
                         platform: provider.platform,
-                        token: JSON.parse(decrypt(token[i].token, token[i].iv)),
-                        profile: JSON.parse(decrypt(token[i].profile, token[i].iv))
+                        token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
+                        profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
                     })
                 }
             }
@@ -203,8 +200,8 @@ module.exports = (app) => {
                     userData.user_token.push({
                         provider: provider.name,
                         platform: provider.platform,
-                        token: JSON.parse(decrypt(token[i].token, token[i].iv)),
-                        profile: JSON.parse(decrypt(token[i].profile, token[i].iv))
+                        token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
+                        profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
                     })
                 }
             }
@@ -339,7 +336,7 @@ module.exports = (app) => {
 
         let newUser = await User.create({
             phone_number: req.body.phone_number,
-            password: hasher(req.body.password)
+            password: security.hash(req.body.password)
         }).catch(error => {
             error.httpStatusCode = 500
             return next(error);
@@ -374,7 +371,7 @@ module.exports = (app) => {
                 [Op.and]: [{
                     phone_number: req.body.phone_number
                 }, {
-                    password: hasher(req.body.password)
+                    password: security.hash(req.body.password)
                 }]
             }
         }).catch(error => {
@@ -548,7 +545,7 @@ module.exports = (app) => {
                 [Op.and]: [{
                     auth_key: req.body.auth_key
                 }, {
-                    password: hasher(req.body.password)
+                    password: security.hash(req.body.password)
                 }]
             }
         }).catch(error => {

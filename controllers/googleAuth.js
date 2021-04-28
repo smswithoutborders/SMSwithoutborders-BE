@@ -12,12 +12,8 @@ const {
 const {
     v4: uuidv4
 } = require('uuid');
-const {
-    encrypt,
-    decrypt,
-    IV
-} = require("../tools/encryption.js")
-
+const Security = require("../models/security.model.js");
+var security = new Security();
 
 module.exports = (app) => {
     var oauth2ClientToken = ""
@@ -116,9 +112,9 @@ module.exports = (app) => {
         }
 
         let new_token = await Token.create({
-            profile: encrypt(JSON.stringify(profile)).e_info,
-            token: encrypt(JSON.stringify(tokens)).e_info,
-            iv: IV
+            profile: security.encrypt(JSON.stringify(profile)).e_info,
+            token: security.encrypt(JSON.stringify(tokens)).e_info,
+            iv: security.iv
         });
 
         await new_token.update({
@@ -229,7 +225,7 @@ module.exports = (app) => {
             `${originalURL}/oauth2/google/Tokens/redirect/`
         );
 
-        let fetch_tokens = JSON.parse(decrypt(token[0].token, token[0].iv));
+        let fetch_tokens = JSON.parse(security.decrypt(token[0].token, token[0].iv));
 
         await oauth2ClientToken.setCredentials(fetch_tokens);
 
