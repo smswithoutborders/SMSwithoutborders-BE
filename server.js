@@ -10,6 +10,7 @@ const cors = require("cors");
 
 const swaggerDocument = require('./openapi.json');
 const db = require("./models");
+var Provider = db.providers;
 
 const https = require("https")
 
@@ -67,12 +68,29 @@ app.use([morgan('combined', {
 require("./controllers/googleAuth.js")(app);
 
 // DATABASE
-db.sequelize.sync({
-    alter: true,
-    alter: {
-        drop: false
-    }
-});
+(async () => {
+    await db.sequelize.sync({
+        alter: true,
+        alter: {
+            drop: false
+        }
+    });
+
+    // create default providers and platforms
+    let providers = await Provider.findAll();
+    // console.log(providers)
+
+    if (providers.length < 1) {
+        // Create default providers
+        Provider.bulkCreate([{
+            name: "google",
+            platform: "gmail"
+        }, {
+            name: "twitter",
+            platform: "twitter"
+        }])
+    };
+})();
 
 // ROUTES
 require("./routes/routes.js")(app);
@@ -94,24 +112,26 @@ let errorHandler = (err, req, res, next) => {
 app.use(errorHandler);
 
 var httpsServer = ""
-if((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) && fs.existsSync(configs.ssl_api.PEM)){
-	let privateKey  = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
-	let certificate = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
-	// let certificate = fs.readFileSync(configs.ssl_api.PEM, 'utf8');
-	let ca = [
-		fs.readFileSync(configs.ssl_api.PEM)
-	]
-	let credentials = {key: privateKey, cert: certificate, ca: ca};
-	httpsServer = https.createServer(credentials, app);
-	httpsServer.listen(configs.ssl_api.API_PORT);
-	console.log("[+] Running secured on port:", configs.ssl_api.API_PORT)
-	app.runningPort = configs.ssl_api.API_PORT
-	app.is_ssl = true
+if ((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) && fs.existsSync(configs.ssl_api.PEM)) {
+    let privateKey = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
+    let certificate = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
+    // let certificate = fs.readFileSync(configs.ssl_api.PEM, 'utf8');
+    let ca = [
+        fs.readFileSync(configs.ssl_api.PEM)
+    ]
+    let credentials = {
+        key: privateKey,
+        cert: certificate,
+        ca: ca
+    };
+    httpsServer = https.createServer(credentials, app);
+    httpsServer.listen(configs.ssl_api.API_PORT);
+    console.log("[+] Running secured on port:", configs.ssl_api.API_PORT)
+    app.runningPort = configs.ssl_api.API_PORT
+    app.is_ssl = true
+} else {
+    console.log("[+] Running in-secured on port:", configs.api.API_PORT)
+    app.listen(configs.api.API_PORT, console.log(`Server is running on port ${configs.api.API_PORT}`));
+    app.runningPort = configs.api.API_PORT
+    app.is_ssl = false
 }
-else {
-	console.log("[+] Running in-secured on port:", configs.api.API_PORT)
-	app.listen(configs.api.API_PORT, console.log(`Server is running on port ${configs.api.API_PORT}`));
-	app.runningPort = configs.api.API_PORT
-	app.is_ssl = false
-}
-

@@ -28,13 +28,4 @@ db.providers.hasOne(db.tokens, {
 });
 db.tokens.belongsTo(db.providers);
 
-// // Create default providers
-// db.providers.bulkCreate([{
-//     name: "google",
-//     platform: "gmail"
-// }, {
-//     name: "twitter",
-//     platform: "twitter"
-// }])
-
 module.exports = db;
