@@ -9,10 +9,11 @@
         "API_PORT": "9000",
         "SESSION_SECRET": ""
     },
-    "ssl_api" : {
+    "origin": ["http://localhost", "http://127.0.0.1"],
+    "ssl_api": {
         "API_PORT": "",
         "SESSION_SECRET": "",
-	"CERTIFICATE" : "",
-	"KEY": ""
+        "CERTIFICATE": "",
+        "KEY": ""
     }
 }

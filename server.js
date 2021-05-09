@@ -16,11 +16,11 @@ const https = require("https")
 
 var app = express();
 
-var whitelist = configs.origin.custom < 1 ? configs.origin.default : configs.origin.custom;
+var whitelist = configs.origin
 
 var corsOptions = {
     origin: function (origin, callback) {
-        if (whitelist.indexOf(origin) !== -1 || !origin) {
+        if (whitelist.indexOf(origin) !== -1) {
             callback(null, true)
         } else {
             const error = new Error("Forbidden");
