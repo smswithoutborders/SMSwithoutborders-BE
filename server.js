@@ -16,7 +16,22 @@ const https = require("https")
 
 var app = express();
 
-app.use(cors());
+var whitelist = configs.origin.custom < 1 ? configs.origin.default : configs.origin.custom;
+
+var corsOptions = {
+    origin: function (origin, callback) {
+        if (whitelist.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            const error = new Error("Forbidden");
+            error.httpStatusCode = 403;
+            return callback(error);
+        }
+    }
+}
+
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({
     extended: true
@@ -64,7 +79,6 @@ app.use([morgan('combined', {
 ])
 
 // Auths
-// require("./controllers/passportAuth.js")(app);
 require("./controllers/googleAuth.js")(app);
 
 // DATABASE
