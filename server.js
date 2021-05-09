@@ -25,6 +25,7 @@ var corsOptions = {
         } else {
             const error = new Error("Forbidden");
             error.httpStatusCode = 403;
+            console.log("unknown origin blocked")
             return callback(error);
         }
     }

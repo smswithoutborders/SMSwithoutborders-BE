@@ -24,6 +24,37 @@ if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.e
 axios = Axios
 
 module.exports = (app) => {
+    app.post("/locals/users/hash1", async (req, res, next) => {
+        // SEARCH FOR USER IN DB
+        let user = await User.findAll({
+            where: {
+                id: req.body.id
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        // RETURN = [], IF NO USER FOUND
+        if (user.length < 1) {
+            const error = new Error("user doesn't exist");
+            error.httpStatusCode = 401;
+            return next(error);
+        }
+
+        // IF RETURN HAS MORE THAN ONE ITEM
+        if (user.length > 1) {
+            const error = new Error("duplicate user");
+            error.httpStatusCode = 409;
+            return next(error);
+        }
+
+        // RETURN PASSWORD HASH
+        return res.status(200).json({
+            password_hash: user[0].password
+        });
+    });
+
     app.post("/users/profiles", async (req, res, next) => {
         if (req.body.phone_number) {
             // SEARCH FOR USER IN DB
