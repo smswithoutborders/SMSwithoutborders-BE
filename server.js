@@ -20,7 +20,7 @@ var whitelist = configs.origin.custom < 1 ? configs.origin.default : configs.ori
 
 var corsOptions = {
     origin: function (origin, callback) {
-        if (whitelist.indexOf(origin) !== -1) {
+        if (whitelist.indexOf(origin) !== -1 || !origin) {
             callback(null, true)
         } else {
             const error = new Error("Forbidden");
