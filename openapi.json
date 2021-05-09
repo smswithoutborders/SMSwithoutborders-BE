@@ -4,10 +4,13 @@
     "title": "SMSwithoutBorders API",
     "version": "1.0"
   },
-  "servers": [{
-    "url": "http://localhost:9000"
-  }],
-  "tags": [{
+  "servers": [
+    {
+      "url": "http://localhost:9000"
+    }
+  ],
+  "tags": [
+    {
       "name": "Profile",
       "description": "users gain access to profile with phone number"
     },
@@ -18,10 +21,6 @@
     {
       "name": "Get new tokens",
       "description": "sers can get new tokens with auth_key and provider"
-    },
-    {
-      "name": "Oauth2 Token",
-      "description": "users grant access to respective provider for refresh and access Token"
     },
     {
       "name": "Register",
@@ -318,58 +317,6 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/oauth2/{provider}/Tokens/": {
-      "post": {
-        "tags": [
-          "Oauth2 Token"
-        ],
-        "summary": "approve account access from providers conscent screen, //\"Redirect_url\" = /oauth2/:provider/Tokens/redirect",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "auth_key": {
-                    "type": "string"
-                  },
-                  "provider": {
-                    "type": "string"
-                  },
-                  "origin": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "auth_key": {
-                      "type": "string"
-                    },
-                    "provider": {
-                      "type": "string"
-                    },
-                    "url": {
                       "type": "string"
                     }
                   }
