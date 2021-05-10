@@ -18,20 +18,27 @@ var app = express();
 
 var whitelist = configs.origin
 
-var corsOptions = {
-    origin: function (origin, callback) {
-        if (whitelist.indexOf(origin) !== -1) {
-            callback(null, true)
-        } else {
-            const error = new Error("Forbidden");
-            error.httpStatusCode = 403;
-            console.log("unknown origin blocked")
-            return callback(error);
+var corsOptionsDelegate = (req, callback) => {
+    // console.log(req.hostname)
+    var corsOptions;
+    if (whitelist.indexOf(req.hostname) !== -1) {
+        corsOptions = {
+            origin: true
         }
+        console.log(req.hostname)
+        return callback(null, corsOptions)
+    } else {
+        const error = new Error("Forbidden");
+        error.httpStatusCode = 403;
+        corsOptions = {
+            origin: false
+        }
+        console.log(req.hostname + " blocked")
+        return callback(error, corsOptions);
     }
 }
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 
 app.use(express.json());
 app.use(express.urlencoded({
