@@ -349,6 +349,7 @@ module.exports = (app) => {
         await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
                 auth_key: req.body.auth_key,
                 provider: req.body.provider,
+                platform: req.body.platform,
                 origin: req.header('Origin')
             })
             .then(function (response) {
@@ -576,11 +577,16 @@ module.exports = (app) => {
         // SEARCH FOR PROVIDER AND PLATFORM IN DB
         let provider = await Provider.findAll({
             where: {
-                [Op.and]: [{
-                    name: req.body.provider.toLowerCase()
-                }, {
-                    platform: req.body.platform.toLowerCase()
-                }]
+                name: req.body.provider.toLowerCase()
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        let platform = await Platform.findAll({
+            where: {
+                name: req.body.platform.toLowerCase()
             }
         }).catch(error => {
             error.httpStatusCode = 500
@@ -588,18 +594,18 @@ module.exports = (app) => {
         });
 
         // RETURN = [], IF PROVIDER NOT FOUND
-        if (provider.length < 1) {
+        if (provider.length < 1 || platform.length < 1) {
             const error = new Error("invalid provider or platform");
             error.httpStatusCode = 401;
             return next(error);
         }
 
         // IF PROVIDER IS MORE THAN ONE IN DB
-        if (provider.length > 1) {
-            const error = new Error("Duplicate provider");
+        if (provider.length > 1 || platform.length > 1) {
+            const error = new Error("Duplicate provider or platform");
             error.httpStatusCode = 409;
             return next(error);
-        }
+        };
 
         // SEARCH FOR USER IN DB
         let user = await User.findAll({
@@ -634,6 +640,7 @@ module.exports = (app) => {
         await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/revoke`, {
                 id: user[0].id,
                 providerId: provider[0].id,
+                platformId: platform[0].id,
                 origin: req.header('Origin')
             })
             .then(function (response) {

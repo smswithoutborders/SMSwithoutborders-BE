@@ -6,6 +6,7 @@ const db = require("../models");
 var Token = db.tokens;
 var User = db.users;
 var Provider = db.providers;
+var Platform = db.platforms;
 const {
     Op
 } = require("sequelize");
@@ -30,6 +31,8 @@ module.exports = (app) => {
 
     app.post('/oauth2/google/Tokens/', async (req, res, next) => {
         if (req.body.auth_key) {
+            let auth_key = req.body.auth_key;
+
             // let originalURL = req.get('host')
             let originalURL = req.body.origin
 
@@ -47,15 +50,67 @@ module.exports = (app) => {
                 scope: token_scopes
             });
 
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    auth_key: auth_key
+                }
+            }).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
+            })
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                const error = new Error("Invalid key");
+                error.httpStatusCode = 401;
+                return next(error);
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                const error = new Error("duplicate Users");
+                error.httpStatusCode = 409;
+                return next(error);
+            }
+
+            await user[0].update({
+                auth_key: uuidv4()
+            }).catch(error => {
+                error.httpStatusCode = 500
+                return next(error);
+            });
+
             return res.status(200).json({
-                auth_key: req.body.auth_key,
+                auth_key: user[0].auth_key,
                 provider: req.body.provider,
+                platform: req.body.platform,
                 url: token_url
             });
         }
     });
 
     app.post('/google/auth/success', async (req, res, next) => {
+        // ==================== REQUEST BODY CHECKS ====================
+        if (!req.body.auth_key) {
+            const error = new Error("auth_key cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.provider) {
+            const error = new Error("provider cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.platform) {
+            const error = new Error("platform cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+        // ===============================================================
+
         let code = req.body.code;
         let auth_key = req.body.auth_key;
 
@@ -123,24 +178,39 @@ module.exports = (app) => {
 
         let provider = await Provider.findAll({
             where: {
-                name: req.body.provider
+                name: req.body.provider.toLowerCase()
             }
-        })
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
 
-        if (provider.length < 1) {
-            const error = new Error("Invalid Provider");
+        let platform = await Platform.findAll({
+            where: {
+                name: req.body.platform.toLowerCase()
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        // RETURN = [], IF PROVIDER NOT FOUND
+        if (provider.length < 1 || platform.length < 1) {
+            const error = new Error("invalid provider or platform");
             error.httpStatusCode = 401;
             return next(error);
         }
 
-        if (provider.length > 1) {
-            const error = new Error("duplicate providers");
-            error.httpStatusCode = 401;
+        // IF PROVIDER IS MORE THAN ONE IN DB
+        if (provider.length > 1 || platform.length > 1) {
+            const error = new Error("Duplicate provider or platform");
+            error.httpStatusCode = 409;
             return next(error);
-        }
+        };
 
         await new_token.update({
-            providerId: provider[0].id
+            providerId: provider[0].id,
+            platformId: platform[0].id
         })
 
         await user[0].update({
@@ -156,6 +226,20 @@ module.exports = (app) => {
     });
 
     app.post('/oauth2/google/Tokens/revoke', async (req, res, next) => {
+        // ==================== REQUEST BODY CHECKS ====================
+        if (!req.body.provider) {
+            const error = new Error("provider cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+
+        if (!req.body.platform) {
+            const error = new Error("platform cannot be empty");
+            error.httpStatusCode = 400;
+            return next(error);
+        };
+        // ===============================================================
+
         let user = await User.findAll({
             where: {
                 id: req.body.id
@@ -174,20 +258,20 @@ module.exports = (app) => {
             return next(error);
         }
 
-        let provider = await Provider.findAll({
+        let platform = await Platform.findAll({
             where: {
-                id: req.body.providerId
+                id: req.body.platformId
             }
         })
 
-        if (provider.length < 1) {
-            const error = new Error("Invalid Provider");
+        if (platform.length < 1) {
+            const error = new Error("Invalid Platform");
             error.httpStatusCode = 401;
             return next(error);
         }
 
-        if (provider.length > 1) {
-            const error = new Error("duplicate providers");
+        if (platform.length > 1) {
+            const error = new Error("duplicate Platforms");
             error.httpStatusCode = 401;
             return next(error);
         };
@@ -197,7 +281,7 @@ module.exports = (app) => {
                 [Op.and]: [{
                     userId: user[0].id
                 }, {
-                    providerId: provider[0].id
+                    platformId: provider[0].id
                 }]
             }
         }).catch(error => {
