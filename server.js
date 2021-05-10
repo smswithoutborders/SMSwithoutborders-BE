@@ -139,12 +139,14 @@ require("./controllers/googleAuth.js")(app);
 
         // Create default providers
         await Platform.bulkCreate([{
-            name: "gmail",
-            providerId: defaultGoogle[0].id
-        }, {
-            name: "twitter",
-            providerId: defaultTwitter[0].id
-        }])
+                name: "gmail",
+                providerId: defaultGoogle[0].id
+            },
+            {
+                name: "twitter",
+                providerId: defaultTwitter[0].id
+            }
+        ])
     };
 })();
 

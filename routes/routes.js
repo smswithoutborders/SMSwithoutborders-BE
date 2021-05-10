@@ -2,6 +2,7 @@ const configs = require("./../config.json");
 const db = require("../models");
 var User = db.users;
 var Provider = db.providers;
+var Platform = db.platforms;
 const fs = require('fs')
 const {
     v4: uuidv4
@@ -157,13 +158,18 @@ module.exports = (app) => {
             // LOOP THROUGH ALL TOKENS FOUND
             for (let i = 0; i < token.length; i++) {
                 // GET REQUESTED PROVIDER FOR CURRENT TOKEN
+                let platform = await token[i].getPlatform({
+                    where: {
+                        name: req.body.platform.toLowerCase()
+                    }
+                }).catch(error => {
+                    error.httpStatusCode = 500
+                    return next(error);
+                });
+
                 let provider = await token[i].getProvider({
                     where: {
-                        [Op.and]: [{
-                            name: req.body.provider.toLowerCase()
-                        }, {
-                            platform: req.body.platform.toLowerCase()
-                        }]
+                        name: req.body.provider.toLowerCase()
                     }
                 }).catch(error => {
                     error.httpStatusCode = 500
@@ -171,10 +177,10 @@ module.exports = (app) => {
                 });
 
                 // IF PROVIDER FOUND
-                if (provider) {
+                if (provider && platform) {
                     userData.user_token.push({
                         provider: provider.name,
-                        platform: provider.platform,
+                        platform: platform.name,
                         token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
                         profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
                     })
@@ -198,11 +204,20 @@ module.exports = (app) => {
                     return next(error);
                 });
 
+                let platform = await Platform.findAll({
+                    where: {
+                        id: token[i].platformId
+                    }
+                }).catch(error => {
+                    error.httpStatusCode = 500
+                    return next(error);
+                });
+
                 // IF PROVIDER FOUND
-                if (provider) {
+                if (provider && platform) {
                     userData.user_token.push({
                         provider: provider.name,
-                        platform: provider.platform,
+                        platform: platform.name,
                         token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
                         profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
                     })
@@ -216,10 +231,19 @@ module.exports = (app) => {
         if (req.body.platform) {
             // LOOP THROUGH ALL TOKENS FOUND
             for (let i = 0; i < token.length; i++) {
-                // GET REQUESTED PROVIDER FOR CURRENT TOKEN
-                let provider = await token[i].getProvider({
+                let platform = await token[i].getPlatform({
                     where: {
-                        platform: req.body.platform.toLowerCase()
+                        name: req.body.platform.toLowerCase()
+                    }
+                }).catch(error => {
+                    error.httpStatusCode = 500
+                    return next(error);
+                });
+
+                // GET REQUESTED PROVIDER FOR CURRENT TOKEN
+                let provider = await Provider.findAll({
+                    where: {
+                        id: token[i].providerId
                     }
                 }).catch(error => {
                     error.httpStatusCode = 500
@@ -227,10 +251,10 @@ module.exports = (app) => {
                 });
 
                 // IF PROVIDER FOUND
-                if (provider) {
+                if (provider && platform) {
                     userData.user_token.push({
                         provider: provider.name,
-                        platform: provider.platform,
+                        platform: platform.name,
                         token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
                         profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
                     })
@@ -265,11 +289,16 @@ module.exports = (app) => {
         // SEARCH FOR PROVIDER AND PLATFORM IN DB
         let provider = await Provider.findAll({
             where: {
-                [Op.and]: [{
-                    name: req.body.provider.toLowerCase()
-                }, {
-                    platform: req.body.platform.toLowerCase()
-                }]
+                name: req.body.provider.toLowerCase()
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        let platform = await Platform.findAll({
+            where: {
+                name: req.body.platform.toLowerCase()
             }
         }).catch(error => {
             error.httpStatusCode = 500
@@ -277,15 +306,15 @@ module.exports = (app) => {
         });
 
         // RETURN = [], IF PROVIDER NOT FOUND
-        if (provider.length < 1) {
+        if (provider.length < 1 || platform.length < 1) {
             const error = new Error("invalid provider or platform");
             error.httpStatusCode = 401;
             return next(error);
         }
 
         // IF PROVIDER IS MORE THAN ONE IN DB
-        if (provider.length > 1) {
-            const error = new Error("Duplicate provider");
+        if (provider.length > 1 || platform.length > 1) {
+            const error = new Error("Duplicate provider or platform");
             error.httpStatusCode = 409;
             return next(error);
         }
@@ -468,11 +497,12 @@ module.exports = (app) => {
             user_provider: []
         }
 
-        let query = `SELECT t1.name, t1.platform 
-        FROM providers t1 
+        let query = `SELECT t1.name , t3.name platform
+        FROM providers t1
+        INNER JOIN platforms t3 ON t1.id = t3.providerId
         LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = ${user[0].id}) AS t2 
-        ON t2.providerId = t1.id 
-        WHERE t2.providerId IS NULL `
+        ON t2.platformId = t3.id 
+        WHERE t2.platformId IS NULL `
 
         let defaultTokens = await db.sequelize.query(query, {
             type: QueryTypes.SELECT
@@ -497,11 +527,12 @@ module.exports = (app) => {
         // get all tokens
         for (let i = 0; i < token.length; i++) {
             let provider = await token[i].getProvider();
+            let platform = await token[i].getPlatform();
 
             if (provider) {
                 userData.user_provider.push({
                     provider: provider.name,
-                    platform: provider.platform
+                    platform: platform.name
                 })
             }
         }

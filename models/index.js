@@ -32,5 +32,9 @@ db.providers.hasMany(db.platforms, {
     foreignKey: "providerId"
 });
 db.platforms.belongsTo(db.providers);
+db.platforms.hasOne(db.tokens, {
+    foreignKey: "platformId"
+});
+db.tokens.belongsTo(db.platforms);
 
 module.exports = db;
