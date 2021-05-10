@@ -11,6 +11,7 @@ const cors = require("cors");
 const swaggerDocument = require('./openapi.json');
 const db = require("./models");
 var Provider = db.providers;
+var Platform = db.platforms;
 
 const https = require("https")
 
@@ -100,16 +101,49 @@ require("./controllers/googleAuth.js")(app);
 
     // create default providers and platforms
     let providers = await Provider.findAll();
-    // console.log(providers)
+    let platforms = await Platform.findAll();
 
     if (providers.length < 1) {
         // Create default providers
-        Provider.bulkCreate([{
-            name: "google",
-            platform: "gmail"
+        await Provider.bulkCreate([{
+            name: "google"
+        }, {
+            name: "twitter"
+        }])
+    };
+
+    if (platforms.length < 1) {
+        let defaultGoogle = await Provider.findAll({
+            where: {
+                name: "google"
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        let defaultTwitter = await Provider.findAll({
+            where: {
+                name: "twitter"
+            }
+        }).catch(error => {
+            error.httpStatusCode = 500
+            return next(error);
+        });
+
+        if (defaultGoogle.length > 1 || defaultTwitter.length > 1) {
+            const error = new Error("duplicate Providers");
+            error.httpStatusCode = 409;
+            return next(error);
+        }
+
+        // Create default providers
+        await Platform.bulkCreate([{
+            name: "gmail",
+            providerId: defaultGoogle[0].id
         }, {
             name: "twitter",
-            platform: "twitter"
+            providerId: defaultTwitter[0].id
         }])
     };
 })();
