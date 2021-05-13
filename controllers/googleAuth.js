@@ -39,7 +39,7 @@ module.exports = (app) => {
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${originalURL}/oauth2/google/Tokens/redirect/`
+                `${originalURL}dashboard/oauth2/google/Tokens/redirect/`
             )
 
             token_url = oauth2ClientToken.generateAuthUrl({
