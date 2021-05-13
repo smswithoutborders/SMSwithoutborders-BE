@@ -22,11 +22,11 @@ var whitelist = configs.origin
 var corsOptionsDelegate = (req, callback) => {
     // console.log(req.hostname)
     var corsOptions;
-    if (whitelist.indexOf(req.hostname) !== -1) {
+    if (whitelist.indexOf(req.connection.remoteAddress) !== -1) {
         corsOptions = {
             origin: true
         }
-        console.log(req.hostname)
+        console.log(req.connection.remoteAddress)
         return callback(null, corsOptions)
     } else {
         const error = new Error("Forbidden");
@@ -34,7 +34,7 @@ var corsOptionsDelegate = (req, callback) => {
         corsOptions = {
             origin: false
         }
-        console.log(req.hostname + " blocked")
+        console.log(req.connection.remoteAddress + " blocked")
         return callback(error, corsOptions);
     }
 }
