@@ -8,7 +8,8 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 
-const swaggerDocument = require('./openapi.json');
+const swaggerUserDocument = require('./openapi.json');
+const swaggerDevDocument = require("./openapi_dev.json");
 const db = require("./models");
 var Provider = db.providers;
 var Platform = db.platforms;
@@ -62,7 +63,8 @@ app.use(express.urlencoded({
 // app.use(express.static('public'));
 
 // Create swagger docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use("/api-docs", swaggerUi.serve, (...args) => swaggerUi.setup(swaggerUserDocument)(...args));
+app.use("/api-dev-docs", swaggerUi.serve, (...args) => swaggerUi.setup(swaggerDevDocument)(...args));
 
 // logger
 var successLogStream = fs.createWriteStream(path.join(__dirname, "logs/success.log"), {
