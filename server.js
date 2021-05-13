@@ -20,23 +20,24 @@ var app = express();
 var whitelist = configs.origin
 
 var corsOptionsDelegate = (req, callback) => {
-    // console.log(req.hostname)
-    var corsOptions;
-    if (whitelist.indexOf(req.connection.remoteAddress) !== -1) {
-        corsOptions = {
-            origin: true
+    for (let i = 0; i < whitelist.length; i++) {
+        var rs = new RegExp(`${whitelist[i]}$`, "g")
+
+        if (req.connection.remoteAddress.match(rs)) {
+            corsOptions = {
+                origin: true
+            }
+            console.log(req.connection.remoteAddress)
+            return callback(null, corsOptions)
         }
-        console.log(req.connection.remoteAddress)
-        return callback(null, corsOptions)
-    } else {
-        const error = new Error("Forbidden");
-        error.httpStatusCode = 403;
-        corsOptions = {
-            origin: false
-        }
-        console.log(req.connection.remoteAddress + " blocked")
-        return callback(error, corsOptions);
     }
+    corsOptions = {
+        origin: false
+    }
+    console.log(req.connection.remoteAddress + " blocked");
+    const error = new Error("Forbidden");
+    error.httpStatusCode = 403;
+    return callback(error, corsOptions);
 }
 
 app.use(cors(corsOptionsDelegate));
