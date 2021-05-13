@@ -12,7 +12,7 @@ const {
     QueryTypes
 } = require("sequelize");
 const Axios = require('axios');
-const Security = require("../models/security.model.js");
+const Security = require("../models/security.models.js");
 var security = new Security();
 
 var rootCas = require('ssl-root-cas').create()

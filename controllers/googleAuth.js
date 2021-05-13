@@ -13,7 +13,7 @@ const {
 const {
     v4: uuidv4
 } = require('uuid');
-const Security = require("../models/security.model.js");
+const Security = require("../models/security.models.js");
 var security = new Security();
 
 module.exports = (app) => {
