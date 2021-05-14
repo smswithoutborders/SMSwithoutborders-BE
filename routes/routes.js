@@ -310,12 +310,12 @@ module.exports = (app) => {
 
             // IF PROVIDER IS MORE THAN ONE IN DB
             if (provider.length > 1) {
-                throw new ErrorHandler(401, "DUPLICATE PROVIDERS");
+                throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
             }
 
             // IF PLATFORM IS MORE THAN ONE IN DB
             if (platform.length > 1) {
-                throw new ErrorHandler(401, "DUPLICATE PLATFORMS");
+                throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
             }
 
             // SEARCH FOR USER IN DB
@@ -584,12 +584,12 @@ module.exports = (app) => {
 
             // IF PROVIDER IS MORE THAN ONE IN DB
             if (provider.length > 1) {
-                throw new ErrorHandler(401, "DUPLICATE PROVIDERS");
+                throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
             }
 
             // IF PLATFORM IS MORE THAN ONE IN DB
             if (platform.length > 1) {
-                throw new ErrorHandler(401, "DUPLICATE PLATFORMS");
+                throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
             }
 
             // SEARCH FOR USER IN DB
