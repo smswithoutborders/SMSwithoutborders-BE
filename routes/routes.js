@@ -14,6 +14,9 @@ const {
 const Axios = require('axios');
 const Security = require("../models/security.models.js");
 var security = new Security();
+const {
+    ErrorHandler
+} = require('../controllers/error.js')
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -362,50 +365,46 @@ module.exports = (app) => {
     });
 
     app.post("/users/profiles/register", async (req, res, next) => {
-        if (!req.body.phone_number) {
-            const error = new Error("phone number cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.phone_number) {
+                throw new ErrorHandler(400, "phone number cannot be empty");
+            };
 
-        if (!req.body.password) {
-            const error = new Error("password cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+            if (!req.body.password) {
+                throw new ErrorHandler(400, "password cannot be empty");
+            };
 
-        if (req.body.password.length < 15) {
-            const error = new Error("password is less than 15 characters");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+            if (req.body.password.length < 15) {
+                throw new ErrorHandler(400, "password is less than 15 characters");
+            };
+            // ===============================================================
 
-        let user = await User.findAll({
-            where: {
-                phone_number: req.body.phone_number
-            }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
+            let user = await User.findAll({
+                where: {
+                    phone_number: req.body.phone_number
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
 
-        if (user.length > 0) {
-            const error = new Error("Duplicate phone numbers");
-            error.httpStatusCode = 409;
-            return next(error);
-        };
+            if (user.length > 0) {
+                throw new ErrorHandler(409, "Duplicate phone numbers");
+            };
 
-        let newUser = await User.create({
-            phone_number: req.body.phone_number,
-            password: security.hash(req.body.password)
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
+            let newUser = await User.create({
+                phone_number: req.body.phone_number,
+                password: security.hash(req.body.password)
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
 
-        return res.status(200).json({
-            message: `${newUser.phone_number} account sucessfully created`
-        })
+            return res.status(200).json({
+                message: `${newUser.phone_number} account sucessfully created`
+            })
+        } catch (error) {
+            next(error);
+        }
     });
 
     app.post("/users/profiles/login", async (req, res, next) => {

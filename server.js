@@ -7,6 +7,10 @@ const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
+const {
+    handleError,
+    ErrorHandler
+} = require("./controllers/error.js")
 
 const swaggerUserDocument = require('./openapi.json');
 const swaggerDevDocument = require("./openapi_dev.json");
@@ -36,9 +40,8 @@ var corsOptionsDelegate = (req, callback) => {
         origin: false
     }
     console.log(req.connection.remoteAddress + " blocked");
-    const error = new Error("Forbidden");
-    error.httpStatusCode = 403;
-    return callback(error, corsOptions);
+    const error = new ErrorHandler(403, "Forbidden");
+    return callback(error.message, corsOptions);
 }
 
 app.use(cors(corsOptionsDelegate));
@@ -95,62 +98,58 @@ require("./controllers/googleAuth.js")(app);
 
 // DATABASE
 (async () => {
-    await db.sequelize.sync({
-        alter: true,
-        alter: {
-            drop: false
-        }
-    });
+    try {
+        await db.sequelize.sync({
+            alter: true,
+            alter: {
+                drop: false
+            }
+        });
 
-    // create default providers and platforms
-    let providers = await Provider.findAll();
-    let platforms = await Platform.findAll();
+        // create default providers and platforms
+        let providers = await Provider.findAll();
+        let platforms = await Platform.findAll();
 
-    if (providers.length < 1) {
-        // Create default providers
-        await Provider.bulkCreate([{
-            name: "google"
-        }, {
-            name: "twitter"
-        }])
-    };
-
-    if (platforms.length < 1) {
-        let defaultGoogle = await Provider.findAll({
-            where: {
+        if (providers.length < 1) {
+            // Create default providers
+            await Provider.bulkCreate([{
                 name: "google"
-            }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
-
-        let defaultTwitter = await Provider.findAll({
-            where: {
+            }, {
                 name: "twitter"
-            }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
+            }])
+        };
 
-        if (defaultGoogle.length > 1 || defaultTwitter.length > 1) {
-            const error = new Error("duplicate Providers");
-            error.httpStatusCode = 409;
-            return next(error);
-        }
+        if (platforms.length < 1) {
+            let defaultGoogle = await Provider.findAll({
+                where: {
+                    name: "google"
+                }
+            })
 
-        // Create default providers
-        await Platform.bulkCreate([{
-                name: "gmail",
-                providerId: defaultGoogle[0].id
-            },
-            {
-                name: "twitter",
-                providerId: defaultTwitter[0].id
+            let defaultTwitter = await Provider.findAll({
+                where: {
+                    name: "twitter"
+                }
+            })
+
+            if (defaultGoogle.length > 1 || defaultTwitter.length > 1) {
+                throw new ErrorHandler(409, "duplicate Providers");
             }
-        ])
-    };
+
+            // Create default providers
+            await Platform.bulkCreate([{
+                    name: "gmail",
+                    providerId: defaultGoogle[0].id
+                },
+                {
+                    name: "twitter",
+                    providerId: defaultTwitter[0].id
+                }
+            ])
+        };
+    } catch (error) {
+        console.error(error)
+    }
 })();
 
 // ROUTES
@@ -158,16 +157,11 @@ require("./routes/routes.js")(app);
 
 // error handler
 let errorHandler = (err, req, res, next) => {
-    if (err.httpStatusCode === 500) {
-        console.error(err.httpStatusCode, err.stack);
-        return res.status(err.httpStatusCode).json({
-            error: "Something Broke!"
-        })
-    }
+    if (err.statusCode) {
+        return handleError(err, res);
+    };
 
-    res.status(err.httpStatusCode).json({
-        error: err.message
-    });
+    console.error(err)
 }
 
 app.use(errorHandler);
