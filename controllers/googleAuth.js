@@ -251,16 +251,16 @@ module.exports = (app) => {
     app.post('/oauth2/google/Tokens/revoke', async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
-            if (!req.body.provider) {
-                throw new ErrorHandler(400, "provider cannot be empty");
-            };
-
-            if (!req.body.platform) {
-                throw new ErrorHandler(400, "platform cannot be empty");
-            };
-
             if (!req.body.platformId) {
                 throw new ErrorHandler(400, "platformId cannot be empty");
+            };
+
+            if (!req.body.providerId) {
+                throw new ErrorHandler(400, "ProviderId cannot be empty");
+            };
+
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "UserId cannot be empty");
             };
 
             if (!req.body.origin) {
@@ -269,14 +269,6 @@ module.exports = (app) => {
             // ===============================================================
 
             let originalURL = req.body.origin
-
-            let user = await User.findAll({
-                where: {
-                    id: req.body.id
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
 
             // RTURN = [], IF USER IS NOT FOUND
             if (user.length < 1) {
@@ -287,14 +279,6 @@ module.exports = (app) => {
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
-
-            let platform = await Platform.findAll({
-                where: {
-                    id: req.body.platformId
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
 
             // RETURN = [], IF PLATFORM NOT FOUND
             if (platform.length < 1) {
@@ -309,9 +293,11 @@ module.exports = (app) => {
             let token = await Token.findAll({
                 where: {
                     [Op.and]: [{
-                        userId: user[0].id
+                        userId: req.body.id
                     }, {
-                        platformId: provider[0].id
+                        platformId: req.body.platformId
+                    }, {
+                        providerId: req.body.providerId
                     }]
                 }
             }).catch(error => {
