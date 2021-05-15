@@ -4,13 +4,10 @@
     "title": "SMSwithoutBorders API",
     "version": "0.1.0"
   },
-  "servers": [
-    {
-      "url": "http://localhost:9000"
-    }
-  ],
-  "tags": [
-    {
+  "servers": [{
+    "url": "http://localhost:9000"
+  }],
+  "tags": [{
       "name": "Get stored tokens",
       "description": "Get a user's stored token(s) by platform and/or provider"
     },
@@ -33,6 +30,10 @@
     {
       "name": "Revoke token",
       "description": "Delete token(s) locally and remotely"
+    },
+    {
+      "name": "Profile",
+      "description": "Get user's profile details"
     }
   ],
   "paths": {
@@ -324,17 +325,15 @@
           "Get new tokens"
         ],
         "summary": "Token InitSuccess",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "provider",
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "description": "Platform provider's name (e.g google, twitter)"
-          }
-        ],
+        "parameters": [{
+          "in": "path",
+          "name": "provider",
+          "schema": {
+            "type": "string"
+          },
+          "required": true,
+          "description": "Platform provider's name (e.g google, twitter)"
+        }],
         "requestBody": {
           "required": true,
           "content": {
@@ -930,6 +929,134 @@
           },
           "409": {
             "description": "Conflict (e.g Duplicate Users, Providers, Platforms found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/profiles/info": {
+      "post": {
+        "tags": [
+          "Profile"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auth_key": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "phone_number": {
+                      "type": "string"
+                    },
+                    "last_login": {
+                      "type": "string"
+                    },
+                    "created": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g missing required fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (e.g User not found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users found)",
             "content": {
               "application/json": {
                 "schema": {
