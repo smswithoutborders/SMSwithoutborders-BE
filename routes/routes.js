@@ -633,4 +633,42 @@ module.exports = (app) => {
             next(error);
         }
     });
+
+    app.post("/users/profiles/info", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+            // =============================================================
+
+            let user = await User.findAll({
+                where: {
+                    auth_key: req.body.auth_key
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            let profile_info = {
+                phone_number: user[0].phone_number,
+                last_login: user[0].updatedAt,
+                created: user[0].createdAt
+            }
+
+            return res.status(200).json(profile_info);
+        } catch (error) {
+            next(error)
+        }
+    });
 }
