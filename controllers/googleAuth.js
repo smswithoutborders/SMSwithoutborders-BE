@@ -270,26 +270,6 @@ module.exports = (app) => {
 
             let originalURL = req.body.origin
 
-            // RTURN = [], IF USER IS NOT FOUND
-            if (user.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
-            }
-
-            // IF MORE THAN ONE USER EXIST IN DATABASE
-            if (user.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
-            }
-
-            // RETURN = [], IF PLATFORM NOT FOUND
-            if (platform.length < 1) {
-                throw new ErrorHandler(401, "INVALD PLATFORM");
-            }
-
-            // IF PLATFORM IS MORE THAN ONE IN DB
-            if (platform.length > 1) {
-                throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
-            }
-
             let token = await Token.findAll({
                 where: {
                     [Op.and]: [{
