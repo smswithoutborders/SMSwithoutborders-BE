@@ -15,9 +15,10 @@ npm install
     * To set up database and API, copy the template file "example.config.json" and rename to "config.json"
     * To set up platform credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
 
-    __tools (./tools)__
+    __models (./models)__
 
     * To set up encryption credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
+    * "Key" value most be a SHA512 hash generated string
 ### Start Server
 * With NPM
 ```bash
@@ -42,12 +43,18 @@ __Users table__
 
 __Providers table__
 
-|      id     |                      name                   |                     platform                   |
-|:-----------:|:-------------------------------------------:|:----------------------------------------------:|
-| PRIMARY KEY | Name of Provider (google, twitter) [STRING] | Name of service consume from Provider [STRING] |
+|      id     |                     name                   |                  
+|:-----------:|:------------------------------------------:|
+| PRIMARY KEY | Provider's name (google, twitter) [STRING] |
+
+__Platforms table__
+
+|      id     |       name      |       description      |   logo   |          providerId         |
+|:-----------:|:---------------:|:----------------------:|:--------:|:---------------------------:|
+| PRIMARY KEY | Platform's name | Platform's description | LOGO IMG | Providers[id] [FOREIGN KEY] |
 
 __Tokens table__
 
-|      id     |       profile       |         token         |          userId         |          providerId         |       iv      |
-|:-----------:|:-------------------:|:---------------------:|:-----------------------:|:---------------------------:|:-------------:|
-| PRIMARY KEY | Users info [OBJECT] | Users tokens [OBJECT] | Users[id] [FOREIGN KEY] | Providers[id] [FOREIGN KEY] | Encryption IV |
+|      id     |         profile        |           token          |            userId           |          providerId          |          platformId          |       iv      |
+|:-----------:|:----------------------:|:------------------------:|:---------------------------:|:----------------------------:|:----------------------------:|:-------------:|
+| PRIMARY KEY | Users info  [ OBJECT ] | Users tokens  [ OBJECT ] | Users [ id ]  [FOREIGN KEY] | Provider's[id] [FOREIGN KEY] | Platform's[id] [FOREIGN KEY] | Encryption IV |
