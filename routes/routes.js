@@ -485,11 +485,11 @@ module.exports = (app) => {
             }
 
             let query = `SELECT t1.name , t3.name platform
-                            FROM providers t1
-                            INNER JOIN platforms t3 ON t1.id = t3.providerId
-                            LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = ${user[0].id}) AS t2 
-                            ON t2.platformId = t3.id 
-                            WHERE t2.platformId IS NULL `
+                        FROM providers t1
+                        INNER JOIN platforms t3 ON t1.id = t3.providerId
+                        LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = ${user[0].id}) AS t2 
+                        ON t2.platformId = t3.id 
+                        WHERE t2.platformId IS NULL `
 
             let defaultTokens = await db.sequelize.query(query, {
                 type: QueryTypes.SELECT
@@ -519,7 +519,8 @@ module.exports = (app) => {
                 if (provider) {
                     userData.user_provider.push({
                         provider: provider.name,
-                        platform: platform.name
+                        platform: platform.name,
+                        email: JSON.parse(security.decrypt(token[i].profile.data.email, token[i].iv))
                     })
                 }
             }
