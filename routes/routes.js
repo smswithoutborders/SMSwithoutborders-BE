@@ -515,12 +515,13 @@ module.exports = (app) => {
             for (let i = 0; i < token.length; i++) {
                 let provider = await token[i].getProvider();
                 let platform = await token[i].getPlatform();
+                let profile = JSON.parse(security.decrypt(token[i].profile, token[i].iv))
 
                 if (provider) {
                     userData.user_provider.push({
                         provider: provider.name,
                         platform: platform.name,
-                        email: JSON.parse(security.decrypt(token[i].profile.data.email, token[i].iv))
+                        email: profile.data.email
                     })
                 }
             }
