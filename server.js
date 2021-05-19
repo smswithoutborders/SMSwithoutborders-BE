@@ -7,6 +7,7 @@ const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
+var ipaddr = require('ipaddr.js');
 const {
     handleError,
     ErrorHandler
@@ -25,21 +26,30 @@ var app = express();
 var whitelist = configs.origin
 
 var corsOptionsDelegate = (req, callback) => {
-    for (let i = 0; i < whitelist.length; i++) {
-        var rs = new RegExp(`${whitelist[i]}$`, "g")
+    var validIp = ipaddr.isValid(req.ip);
+    var address = ipaddr.process(req.ip);
 
-        if (req.connection.remoteAddress.match(rs)) {
+    for (let i = 0; i < whitelist.length; i++) {
+        var rs = new RegExp(`${whitelist[i]}`, "g")
+
+        if (req.ip.match(rs)) {
             corsOptions = {
                 origin: true
             }
-            console.log(req.connection.remoteAddress)
+
+            console.log("Valid IP: ", validIp);
+            console.log(address.kind());
+            console.log(req.ip);
+
             return callback(null, corsOptions)
         }
     }
     corsOptions = {
         origin: false
     }
-    console.log(req.connection.remoteAddress + " blocked");
+    console.log("Valid IP: ", validIp);
+    console.log(address.kind());
+    console.log(req.ip + " blocked");
     const error = new ErrorHandler(403, "Forbidden");
     return callback(error.message, corsOptions);
 }
