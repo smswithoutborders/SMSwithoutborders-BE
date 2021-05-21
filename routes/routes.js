@@ -663,6 +663,7 @@ module.exports = (app) => {
             }
 
             let profile_info = {
+                id: user[0].id,
                 phone_number: user[0].phone_number,
                 last_login: user[0].updatedAt,
                 created: user[0].createdAt

@@ -1002,6 +1002,9 @@
               "application/json": {
                 "schema": {
                   "properties": {
+                    "id": {
+                      "type": "string"
+                    },
                     "phone_number": {
                       "type": "string"
                     },
