@@ -26,7 +26,7 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "start": "concurrently --kill-others \"node server.js\" \"node serverDev.js\"",
+    "start": "concurrently --kill-others -c \"bgBlue.bold,bgMagenta.bold\" \"node server.js\" \"node serverDev.js\"",
     "startDev": "node serverDev.js",
     "startProd": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"

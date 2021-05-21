@@ -161,7 +161,7 @@ require("./controllers/googleAuth.js")(app);
 })();
 
 // ROUTES
-require("./routes/routes.js")(app);
+require("./routes/routes.js").development(app, configs, db);
 
 // error handler
 let errorHandler = (err, req, res, next) => {

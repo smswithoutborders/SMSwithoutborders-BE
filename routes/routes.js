@@ -1,8 +1,3 @@
-const configs = require("./../config.json");
-const db = require("../models");
-var User = db.users;
-var Provider = db.providers;
-var Platform = db.platforms;
 const fs = require('fs')
 const {
     v4: uuidv4
@@ -22,91 +17,18 @@ var rootCas = require('ssl-root-cas').create()
 
 require('https').globalAgent.options.ca = rootCas
 
-if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
-    rootCas.addFile('/var/www/ssl/server.pem')
-}
 axios = Axios
 // =========================================================================================================================
 
-module.exports = (app) => {
-    app.post("/locals/users/hash1", async (req, res, next) => {
-        try {
-            // ==================== REQUEST BODY CHECKS ====================
-            if (!req.body.id) {
-                throw new ErrorHandler(400, "Id cannot be empty");
-            };
-            // =============================================================
+// ==================== PRODUCTION ====================
+let production = (app, configs, db) => {
+    var User = db.users;
+    var Provider = db.providers;
+    var Platform = db.platforms;
 
-            // SEARCH FOR USER IN DB
-            let user = await User.findAll({
-                where: {
-                    id: req.body.id
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            // RETURN = [], IF NO USER FOUND
-            if (user.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
-            }
-
-            // IF RETURN HAS MORE THAN ONE ITEM
-            if (user.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
-            }
-
-            // RETURN PASSWORD HASH
-            return res.status(200).json({
-                password_hash: user[0].password
-            });
-        } catch (error) {
-            next(error);
-        }
-    });
-
-    app.post("/users/profiles", async (req, res, next) => {
-        try {
-            // ==================== REQUEST BODY CHECKS ====================
-            if (!req.body.phone_number) {
-                throw new ErrorHandler(400, "Phone_number cannot be empty");
-            };
-            // =============================================================
-
-            // SEARCH FOR USER IN DB
-            let user = await User.findAll({
-                where: {
-                    phone_number: req.body.phone_number
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            // RETURN = [], IF NO USER FOUND
-            if (user.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
-            }
-
-            // IF RETURN HAS MORE THAN ONE ITEM
-            if (user.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
-            }
-
-            // CREATE AUTH_KEY ON LOGIN
-            await user[0].update({
-                auth_key: uuidv4()
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            // RETURN AUTH_KEY
-            return res.status(200).json({
-                auth_key: user[0].auth_key
-            });
-        } catch (error) {
-            next(error);
-        }
-    });
+    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+        rootCas.addFile('/var/www/ssl/server.pem')
+    }
 
     app.post("/users/stored_tokens", async (req, res, next) => {
         try {
@@ -674,4 +596,101 @@ module.exports = (app) => {
             next(error)
         }
     });
+}
+// =============================================================
+
+// =========================================================================================================================
+
+// ==================== DEVELOPMENT ====================
+let development = (app, configs, db) => {
+    var User = db.users;
+
+    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+        rootCas.addFile('/var/www/ssl/server.pem')
+    }
+
+    app.post("/locals/users/hash1", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+            // =============================================================
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF NO USER FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF RETURN HAS MORE THAN ONE ITEM
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            // RETURN PASSWORD HASH
+            return res.status(200).json({
+                password_hash: user[0].password
+            });
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    app.post("/users/profiles", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.phone_number) {
+                throw new ErrorHandler(400, "Phone_number cannot be empty");
+            };
+            // =============================================================
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    phone_number: req.body.phone_number
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF NO USER FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF RETURN HAS MORE THAN ONE ITEM
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            // CREATE AUTH_KEY ON LOGIN
+            await user[0].update({
+                auth_key: uuidv4()
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN AUTH_KEY
+            return res.status(200).json({
+                auth_key: user[0].auth_key
+            });
+        } catch (error) {
+            next(error);
+        }
+    });
+}
+// =============================================================
+
+module.exports = {
+    production,
+    development
 }
