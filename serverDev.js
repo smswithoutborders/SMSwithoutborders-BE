@@ -1,7 +1,7 @@
-const configs = require("./config.json").production;
+const configs = require("./config.json").development;
 const express = require("express");
 const session = require("express-session");
-// var SequelizeStore = require("connect-session-sequelize")(session.Store);
+var SequelizeStore = require("connect-session-sequelize")(session.Store);
 const swaggerUi = require('swagger-ui-express');
 const morgan = require("morgan");
 const fs = require("fs");
@@ -13,8 +13,8 @@ const {
     ErrorHandler
 } = require("./controllers/error.js")
 
-const swaggerDocument = require("./openapi.json");
-const db = require("./models").db;
+const swaggerDocument = require("./openapi_dev.json");
+const db = require("./models").dbDev;
 var Provider = db.providers;
 var Platform = db.platforms;
 
@@ -189,12 +189,12 @@ if ((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFI
     };
     httpsServer = https.createServer(credentials, app);
     httpsServer.listen(configs.ssl_api.API_PORT);
-    console.log("Production [+] Running secured on port:", configs.ssl_api.API_PORT)
+    console.log("Development [+] Running secured on port:", configs.ssl_api.API_PORT)
     app.runningPort = configs.ssl_api.API_PORT
     app.is_ssl = true
 } else {
-    console.log("Production [+] Running in-secured on port:", configs.api.API_PORT)
-    app.listen(configs.api.API_PORT, console.log(`Prodcution server is running on port ${configs.api.API_PORT}`));
+    console.log("Development [+] Running in-secured on port:", configs.api.API_PORT)
+    app.listen(configs.api.API_PORT, console.log(`Development server is running on port ${configs.api.API_PORT}`));
     app.runningPort = configs.api.API_PORT
     app.is_ssl = false
 }
