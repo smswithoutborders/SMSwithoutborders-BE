@@ -687,6 +687,64 @@ let development = (app, configs, db) => {
             next(error);
         }
     });
+
+    app.post("/users/providers", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "ID cannot be empty");
+            };
+            // =============================================================
+
+            // store tokens from db
+            let userData = {
+                user_provider: []
+            }
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            let token = await user[0].getTokens();
+
+            if (token.length < 1) {
+                return res.status(200).json(userData);
+            }
+
+            // get all tokens
+            for (let i = 0; i < token.length; i++) {
+                let provider = await token[i].getProvider();
+                let platform = await token[i].getPlatform();
+                let profile = JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+
+                if (provider) {
+                    userData.user_provider.push({
+                        provider: provider.name,
+                        platform: platform.name,
+                        email: profile.data.email
+                    })
+                }
+            }
+
+            return res.status(200).json(userData);
+        } catch (error) {
+            next(error)
+        }
+    });
 }
 // =============================================================
 
