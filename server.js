@@ -115,46 +115,46 @@ require("./controllers/googleAuth.js")(app);
         });
 
         // create default providers and platforms
-        let providers = await Provider.findAll();
-        let platforms = await Platform.findAll();
+        // let providers = await Provider.findAll();
+        // let platforms = await Platform.findAll();
 
-        if (providers.length < 1) {
-            // Create default providers
-            await Provider.bulkCreate([{
-                name: "google"
-            }, {
-                name: "twitter"
-            }])
-        };
+        // if (providers.length < 1) {
+        //     // Create default providers
+        //     await Provider.bulkCreate([{
+        //         name: "google"
+        //     }, {
+        //         name: "twitter"
+        //     }])
+        // };
 
-        if (platforms.length < 1) {
-            let defaultGoogle = await Provider.findAll({
-                where: {
-                    name: "google"
-                }
-            })
+        // if (platforms.length < 1) {
+        //     let defaultGoogle = await Provider.findAll({
+        //         where: {
+        //             name: "google"
+        //         }
+        //     })
 
-            let defaultTwitter = await Provider.findAll({
-                where: {
-                    name: "twitter"
-                }
-            })
+        //     let defaultTwitter = await Provider.findAll({
+        //         where: {
+        //             name: "twitter"
+        //         }
+        //     })
 
-            if (defaultGoogle.length > 1 || defaultTwitter.length > 1) {
-                throw new ErrorHandler(409, "duplicate Providers");
-            }
+        //     if (defaultGoogle.length > 1 || defaultTwitter.length > 1) {
+        //         throw new ErrorHandler(409, "duplicate Providers");
+        //     }
 
-            // Create default providers
-            await Platform.bulkCreate([{
-                    name: "gmail",
-                    providerId: defaultGoogle[0].id
-                },
-                {
-                    name: "twitter",
-                    providerId: defaultTwitter[0].id
-                }
-            ])
-        };
+        //     // Create default providers
+        //     await Platform.bulkCreate([{
+        //             name: "gmail",
+        //             providerId: defaultGoogle[0].id
+        //         },
+        //         {
+        //             name: "twitter",
+        //             providerId: defaultTwitter[0].id
+        //         }
+        //     ])
+        // };
     } catch (error) {
         console.error(error)
     }

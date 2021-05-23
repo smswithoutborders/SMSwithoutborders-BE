@@ -8,7 +8,6 @@ const {
 } = require("sequelize");
 const Axios = require('axios');
 const Security = require("../models/security.models.js");
-var security = new Security();
 const {
     ErrorHandler
 } = require('../controllers/error.js')
@@ -33,6 +32,10 @@ let production = (app, configs, db) => {
     app.post("/users/stored_tokens", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -53,7 +56,7 @@ let production = (app, configs, db) => {
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
                 where: {
-                    auth_key: req.body.auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -67,6 +70,15 @@ let production = (app, configs, db) => {
             // IF RETURN HAS MORE THAN ONE ITEM
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
             // GET ALL TOKENS UNDER CURRENT USER
@@ -189,6 +201,10 @@ let production = (app, configs, db) => {
     app.post("/users/tokens", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -243,7 +259,7 @@ let production = (app, configs, db) => {
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
                 where: {
-                    auth_key: req.body.auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -257,6 +273,15 @@ let production = (app, configs, db) => {
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
             let port = app.runningPort
@@ -307,6 +332,8 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(409, "Duplicate phone numbers");
             };
 
+            var security = new Security();
+
             let newUser = await User.create({
                 phone_number: req.body.phone_number,
                 password: security.hash(req.body.password)
@@ -340,11 +367,7 @@ let production = (app, configs, db) => {
 
             let user = await User.findAll({
                 where: {
-                    [Op.and]: [{
-                        phone_number: req.body.phone_number
-                    }, {
-                        password: security.hash(req.body.password)
-                    }]
+                    phone_number: req.body.phone_number
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -360,14 +383,23 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
+            var security = new Security(user[0].password);
+
+            // PASSWORD AUTH
+            if (user[0].password != security.hash(req.body.password)) {
+                throw new ErrorHandler(401, "INVALID PASSWORD");
+            }
+
             await user[0].update({
-                auth_key: uuidv4()
+                auth_key: security.encrypt(uuidv4()).e_info,
+                iv: security.iv
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             return res.status(200).json({
-                auth_key: user[0].auth_key
+                id: user[0].id,
+                auth_key: security.decrypt(user[0].auth_key, user[0].iv)
             });
         } catch (error) {
             next(error);
@@ -377,6 +409,10 @@ let production = (app, configs, db) => {
     app.post("/users/providers", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -390,7 +426,7 @@ let production = (app, configs, db) => {
 
             let user = await User.findAll({
                 where: {
-                    auth_key: req.body.auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -404,6 +440,15 @@ let production = (app, configs, db) => {
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
             let query = `SELECT t1.name , t3.name platform
@@ -457,6 +502,10 @@ let production = (app, configs, db) => {
     app.post("/users/tokens/revoke", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -519,11 +568,7 @@ let production = (app, configs, db) => {
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
                 where: {
-                    [Op.and]: [{
-                        auth_key: req.body.auth_key
-                    }, {
-                        password: security.hash(req.body.password)
-                    }]
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -537,6 +582,20 @@ let production = (app, configs, db) => {
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // PASSWORD AUTH
+            if (user[0].password != security.hash(req.body.password)) {
+                throw new ErrorHandler(401, "INVALID PASSWORD");
+            }
+
+            // CHECK AUTH_KEY
+            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
             let port = app.runningPort
@@ -561,6 +620,10 @@ let production = (app, configs, db) => {
     app.post("/users/profiles/info", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -568,7 +631,7 @@ let production = (app, configs, db) => {
 
             let user = await User.findAll({
                 where: {
-                    auth_key: req.body.auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -582,6 +645,13 @@ let production = (app, configs, db) => {
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            // CHECK AUTH_KEY
+            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
             let profile_info = {
@@ -672,16 +742,19 @@ let development = (app, configs, db) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
+            var security = new Security(user[0].password);
+
             // CREATE AUTH_KEY ON LOGIN
             await user[0].update({
-                auth_key: uuidv4()
+                auth_key: security.encrypt(uuidv4()).e_info,
+                iv: security.iv
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
-            // RETURN AUTH_KEY
             return res.status(200).json({
-                auth_key: user[0].auth_key
+                id: user[0].id,
+                auth_key: security.decrypt(user[0].auth_key, user[0].iv)
             });
         } catch (error) {
             next(error);
@@ -718,6 +791,8 @@ let development = (app, configs, db) => {
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
+
+            var security = new Security(user[0].password);
 
             let token = await user[0].getTokens();
 

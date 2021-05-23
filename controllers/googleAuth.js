@@ -14,7 +14,6 @@ const {
     v4: uuidv4
 } = require('uuid');
 const Security = require("../models/security.models.js");
-var security = new Security();
 const {
     ErrorHandler
 } = require("./error.js");
@@ -111,6 +110,10 @@ module.exports = (app) => {
     app.post('/google/auth/success', async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -129,7 +132,6 @@ module.exports = (app) => {
             // =============================================================
 
             let code = req.body.code;
-            let auth_key = req.body.auth_key;
 
             const {
                 tokens
@@ -161,7 +163,7 @@ module.exports = (app) => {
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
                 where: {
-                    auth_key: auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -177,6 +179,15 @@ module.exports = (app) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
             let new_token = await Token.create({
                 profile: security.encrypt(JSON.stringify(profile)).e_info,
                 token: security.encrypt(JSON.stringify(tokens)).e_info,
@@ -186,7 +197,8 @@ module.exports = (app) => {
             });
 
             await new_token.update({
-                userId: user[0].id
+                auth_key: security.encrypt(uuidv4()).e_info,
+                iv: security.iv
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
@@ -235,13 +247,14 @@ module.exports = (app) => {
             });
 
             await user[0].update({
-                auth_key: uuidv4()
+                auth_key: security.encrypt(uuidv4()).e_info,
+                iv: security.iv
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             return res.status(200).json({
-                auth_key: user[0].auth_key
+                auth_key: security.decrypt(user[0].auth_key, user[0].iv)
             });
         } catch (error) {
             next(error)
@@ -267,6 +280,26 @@ module.exports = (app) => {
                 throw new ErrorHandler(400, "Origin cannot be empty");
             };
             // ===============================================================
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
 
             let originalURL = req.body.origin
 

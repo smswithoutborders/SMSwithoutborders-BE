@@ -1,12 +1,10 @@
 var crypto = require('crypto');
-const configs = require("./credentials.json");
-
 module.exports =
     class Security {
-        constructor() {
+        constructor(key) {
             this.algorithm = "aes-256-cbc";
-            this.key = configs.key.substr(0, 32)
-            this.iv = crypto.randomBytes(16).toString('hex').slice(0, 16)
+            this.key = key ? key.substr(0, 32) : "";
+            this.iv = crypto.randomBytes(16).toString('hex').slice(0, 16);
         };
 
         encrypt(data, iv) {
