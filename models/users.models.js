@@ -7,7 +7,6 @@ module.exports = (sequelize, Sequelize) => {
         },
         password: Sequelize.STRING,
         auth_key: Sequelize.STRING,
-        iv: Sequelize.STRING,
     });
 
     return Users;
