@@ -472,7 +472,7 @@ let production = (app, configs, db) => {
             let query = `SELECT t1.name , t3.name platform
                         FROM providers t1
                         INNER JOIN platforms t3 ON t1.id = t3.providerId
-                        LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = ${user[0].id}) AS t2 
+                        LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = "${user[0].id}") AS t2 
                         ON t2.platformId = t3.id 
                         WHERE t2.platformId IS NULL `
 
@@ -665,6 +665,14 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
+            let usersInfo = await user[0].getUsersInfos({
+                where: {
+                    userId: user[0].id
+                }
+            });
+
+            var security = new Security(user[0].password);
+
             // CHECK AUTH_KEY
             let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
 
@@ -674,7 +682,8 @@ let production = (app, configs, db) => {
 
             let profile_info = {
                 id: user[0].id,
-                phone_number: user[0].phone_number,
+                phone_number: usersInfo[0].phone_number,
+                name: usersInfo[0].name,
                 last_login: user[0].updatedAt,
                 created: user[0].createdAt
             }
@@ -692,6 +701,7 @@ let production = (app, configs, db) => {
 // ==================== DEVELOPMENT ====================
 let development = (app, configs, db) => {
     var User = db.users;
+    var UsersInfo = db.usersInfo;
 
     if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
         rootCas.addFile('/var/www/ssl/server.pem')
@@ -742,28 +752,30 @@ let development = (app, configs, db) => {
             // =============================================================
 
             // SEARCH FOR USER IN DB
-            let user = await User.findAll({
+            let usersInfo = await UsersInfo.findAll({
                 where: {
-                    phone_number: req.body.phone_number
+                    phone_number: GlobalSecurity.hash(req.body.phone_number)
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             // RETURN = [], IF NO USER FOUND
-            if (user.length < 1) {
+            if (usersInfo.length < 1) {
                 throw new ErrorHandler(401, "User doesn't exist");
             }
 
             // IF RETURN HAS MORE THAN ONE ITEM
-            if (user.length > 1) {
+            if (usersInfo.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
-            }
+            };
 
-            var security = new Security(user[0].password);
+            let user = await usersInfo[0].getUser();
+
+            var security = new Security(user.password);
 
             // CREATE AUTH_KEY ON LOGIN
-            await user[0].update({
+            await user.update({
                 auth_key: security.encrypt(uuidv4()).e_info,
                 iv: security.iv
             }).catch(error => {
@@ -771,8 +783,8 @@ let development = (app, configs, db) => {
             });
 
             return res.status(200).json({
-                id: user[0].id,
-                auth_key: security.decrypt(user[0].auth_key, user[0].iv)
+                id: user.id,
+                auth_key: security.decrypt(user.auth_key, user.iv)
             });
         } catch (error) {
             next(error);
