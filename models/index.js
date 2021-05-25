@@ -20,11 +20,16 @@ db.users = require("./users.models.js")(sequelize, Sequelize);
 db.tokens = require("./tokens.models.js")(sequelize, Sequelize);
 db.providers = require("./providers.models.js")(sequelize, Sequelize);
 db.platforms = require("./platforms.models.js")(sequelize, Sequelize);
+db.usersInfo = require("./usersInfo.models.js")(sequelize, Sequelize);
 
 db.users.hasMany(db.tokens, {
     foreignKey: "userId"
 });
 db.tokens.belongsTo(db.users);
+db.users.hasMany(db.usersInfo, {
+    foreignKey: "userId"
+});
+db.usersInfo.belongsTo(db.users);
 db.providers.hasOne(db.tokens, {
     foreignKey: "providerId"
 });
@@ -58,11 +63,16 @@ dbDev.users = require("./users.models.js")(sequelizeDev, Sequelize);
 dbDev.tokens = require("./tokens.models.js")(sequelizeDev, Sequelize);
 dbDev.providers = require("./providers.models.js")(sequelizeDev, Sequelize);
 dbDev.platforms = require("./platforms.models.js")(sequelizeDev, Sequelize);
+dbDev.usersInfo = require("./usersInfo.models.js")(sequelize, Sequelize);
 
 dbDev.users.hasMany(dbDev.tokens, {
     foreignKey: "userId"
 });
 dbDev.tokens.belongsTo(dbDev.users);
+dbDev.users.hasMany(dbDev.usersInfo, {
+    foreignKey: "userId"
+});
+dbDev.usersInfo.belongsTo(dbDev.users);
 dbDev.providers.hasOne(dbDev.tokens, {
     foreignKey: "providerId"
 });

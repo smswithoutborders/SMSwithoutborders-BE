@@ -8,6 +8,7 @@ const {
 } = require("sequelize");
 const Axios = require('axios');
 const Security = require("../models/security.models.js");
+const GlobalSecurity = new Security()
 const {
     ErrorHandler
 } = require('../controllers/error.js')
@@ -22,6 +23,7 @@ axios = Axios
 // ==================== PRODUCTION ====================
 let production = (app, configs, db) => {
     var User = db.users;
+    var UsersInfo = db.usersInfo;
     var Provider = db.providers;
     var Platform = db.platforms;
 
@@ -311,38 +313,47 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(400, "phone number cannot be empty");
             };
 
+            if (!req.body.name) {
+                throw new ErrorHandler(400, "User_name cannot be empty");
+            };
+
             if (!req.body.password) {
                 throw new ErrorHandler(400, "password cannot be empty");
             };
 
-            if (req.body.password.length < 15) {
-                throw new ErrorHandler(400, "password is less than 15 characters");
+            if (req.body.password.length < 8) {
+                throw new ErrorHandler(400, "password is less than 8 characters");
             };
             // ===============================================================
 
-            let user = await User.findAll({
+            let usersInfo = await UsersInfo.findAll({
                 where: {
-                    phone_number: req.body.phone_number
+                    phone_number: GlobalSecurity.hash(req.body.phone_number)
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
-            if (user.length > 0) {
+            if (usersInfo.length > 0) {
                 throw new ErrorHandler(409, "Duplicate phone numbers");
             };
 
-            var security = new Security();
-
             let newUser = await User.create({
-                phone_number: req.body.phone_number,
-                password: security.hash(req.body.password)
+                password: GlobalSecurity.hash(req.body.password)
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            let user = await UsersInfo.create({
+                phone_number: GlobalSecurity.hash(req.body.phone_number),
+                name: req.body.name,
+                userId: newUser.id
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             return res.status(200).json({
-                message: `${newUser.phone_number} account sucessfully created`
+                message: `${user.name}'s account sucessfully created`
             })
         } catch (error) {
             next(error);
@@ -360,37 +371,44 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(400, "password cannot be empty");
             };
 
-            if (req.body.password.length < 15) {
-                throw new ErrorHandler(400, "password is less than 15 characters");
+            if (req.body.password.length < 8) {
+                throw new ErrorHandler(400, "password is less than 8 characters");
             };
             // ===============================================================
 
-            let user = await User.findAll({
+            let usersInfo = await UsersInfo.findAll({
                 where: {
-                    phone_number: req.body.phone_number
+                    phone_number: GlobalSecurity.hash(req.body.phone_number)
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             // RTURN = [], IF USER IS NOT FOUND
-            if (user.length < 1) {
+            if (usersInfo.length < 1) {
                 throw new ErrorHandler(401, "User doesn't exist");
             }
 
             // IF MORE THAN ONE USER EXIST IN DATABASE
-            if (user.length > 1) {
+            if (usersInfo.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
-            var security = new Security(user[0].password);
+            let user = await usersInfo[0].getUser({
+                where: {
+                    password: GlobalSecurity.hash(req.body.password)
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
 
-            // PASSWORD AUTH
-            if (user[0].password != security.hash(req.body.password)) {
+            if (!user) {
                 throw new ErrorHandler(401, "INVALID PASSWORD");
-            }
+            };
 
-            await user[0].update({
+            var security = new Security(user.password);
+
+            await user.update({
                 auth_key: security.encrypt(uuidv4()).e_info,
                 iv: security.iv
             }).catch(error => {
@@ -398,8 +416,8 @@ let production = (app, configs, db) => {
             });
 
             return res.status(200).json({
-                id: user[0].id,
-                auth_key: security.decrypt(user[0].auth_key, user[0].iv)
+                id: user.id,
+                auth_key: security.decrypt(user.auth_key, user.iv)
             });
         } catch (error) {
             next(error);

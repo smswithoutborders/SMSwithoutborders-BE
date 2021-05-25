@@ -5,7 +5,6 @@ module.exports = (sequelize, Sequelize) => {
             defaultValue: Sequelize.UUIDV1,
             primaryKey: true
         },
-        phone_number: Sequelize.STRING,
         password: Sequelize.STRING,
         auth_key: Sequelize.STRING,
         iv: Sequelize.STRING,
