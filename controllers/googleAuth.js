@@ -247,14 +247,13 @@ module.exports = (app) => {
             });
 
             await user[0].update({
-                auth_key: security.encrypt(uuidv4()).e_info,
-                iv: security.iv
+                auth_key: uuidv4()
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             return res.status(200).json({
-                auth_key: security.decrypt(user[0].auth_key, user[0].iv)
+                auth_key: user[0].auth_key
             });
         } catch (error) {
             next(error)

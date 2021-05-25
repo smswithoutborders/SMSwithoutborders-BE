@@ -77,7 +77,7 @@ let production = (app, configs, db) => {
             var security = new Security(user[0].password);
 
             // CHECK AUTH_KEY
-            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+            let auth_key = user[0].auth_key;
 
             if (auth_key != req.body.auth_key) {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
@@ -280,7 +280,7 @@ let production = (app, configs, db) => {
             var security = new Security(user[0].password);
 
             // CHECK AUTH_KEY
-            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+            let auth_key = user[0].auth_key;
 
             if (auth_key != req.body.auth_key) {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
@@ -409,15 +409,14 @@ let production = (app, configs, db) => {
             var security = new Security(user.password);
 
             await user.update({
-                auth_key: security.encrypt(uuidv4()).e_info,
-                iv: security.iv
+                auth_key: uuidv4()
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             return res.status(200).json({
                 id: user.id,
-                auth_key: security.decrypt(user.auth_key, user.iv)
+                auth_key: user.auth_key
             });
         } catch (error) {
             next(error);
@@ -463,7 +462,7 @@ let production = (app, configs, db) => {
             var security = new Security(user[0].password);
 
             // CHECK AUTH_KEY
-            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+            let auth_key = user[0].auth_key;
 
             if (auth_key != req.body.auth_key) {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
@@ -610,7 +609,7 @@ let production = (app, configs, db) => {
             }
 
             // CHECK AUTH_KEY
-            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+            let auth_key = user[0].auth_key;
 
             if (auth_key != req.body.auth_key) {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
@@ -674,7 +673,7 @@ let production = (app, configs, db) => {
             var security = new Security(user[0].password);
 
             // CHECK AUTH_KEY
-            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+            let auth_key = user[0].auth_key;
 
             if (auth_key != req.body.auth_key) {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
@@ -776,15 +775,14 @@ let development = (app, configs, db) => {
 
             // CREATE AUTH_KEY ON LOGIN
             await user.update({
-                auth_key: security.encrypt(uuidv4()).e_info,
-                iv: security.iv
+                auth_key: uuidv4()
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             return res.status(200).json({
                 id: user.id,
-                auth_key: security.decrypt(user.auth_key, user.iv)
+                auth_key: user.auth_key
             });
         } catch (error) {
             next(error);
