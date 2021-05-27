@@ -63,7 +63,7 @@ module.exports = (app, configs) => {
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${app.is_ssl ? "https://" : "http://"}${originalURL}:9000/dashboard/oauth2/google/Tokens/redirect/`
+                `${app.is_ssl ? "https://" : "http://"}${originalURL}:18000/dashboard/oauth2/google/Tokens/redirect/`
             )
 
             token_url = oauth2ClientToken.generateAuthUrl({
@@ -139,7 +139,7 @@ module.exports = (app, configs) => {
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${app.is_ssl ? "https://" : "http://"}${originalURL}:9000/dashboard/oauth2/google/Tokens/redirect/`
+                `${app.is_ssl ? "https://" : "http://"}${originalURL}:18000/dashboard/oauth2/google/Tokens/redirect/`
             );
 
             let code = req.body.code;
@@ -337,7 +337,7 @@ module.exports = (app, configs) => {
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${originalURL}/oauth2/google/Tokens/redirect/`
+                `${app.is_ssl ? "https://" : "http://"}${originalURL}:18000/dashboard/oauth2/google/Tokens/redirect/`
             );
 
             let fetch_tokens = JSON.parse(security.decrypt(token[0].token, token[0].iv));
