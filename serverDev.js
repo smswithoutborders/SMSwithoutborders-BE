@@ -1,7 +1,7 @@
 const configs = require("./config.json");
 const express = require("express");
 const session = require("express-session");
-// var SequelizeStore = require("connect-session-sequelize")(session.Store);
+var SequelizeStore = require("connect-session-sequelize")(session.Store);
 const swaggerUi = require('swagger-ui-express');
 const morgan = require("morgan");
 const fs = require("fs");
@@ -13,7 +13,7 @@ const {
     ErrorHandler
 } = require("./controllers/error.js")
 
-const swaggerDocument = require("./openapi.json");
+const swaggerDocument = require("./openapi_dev.json");
 const db = require("./models");
 var Provider = db.providers;
 var Platform = db.platforms;
@@ -22,27 +22,22 @@ const https = require("https")
 
 var app = express();
 
-var whitelist = configs.origin
-
 var corsOptionsDelegate = (req, callback) => {
     var validIp = ipaddr.isValid(req.ip);
     var address = ipaddr.process(req.ip);
 
-    for (let i = 0; i < whitelist.length; i++) {
-        var rs = new RegExp(`${whitelist[i]}`, "g")
-
-        if (req.ip.match(rs)) {
-            corsOptions = {
-                origin: true
-            }
-
-            console.log("Valid IP: ", validIp);
-            console.log(address.kind());
-            console.log(req.ip);
-
-            return callback(null, corsOptions)
+    if (req.ip == "127.0.0.1") {
+        corsOptions = {
+            origin: true
         }
-    }
+
+        console.log("Valid IP: ", validIp);
+        console.log(address.kind());
+        console.log(req.ip);
+
+        return callback(null, corsOptions)
+    };
+
     corsOptions = {
         origin: false
     }
@@ -115,53 +110,42 @@ require("./controllers/googleAuth.js")(app, configs);
         });
 
         // create default providers and platforms
-        // let providers = await Provider.findAll();
-        // let platforms = await Platform.findAll();
+        let providers = await Provider.findAll();
+        let platforms = await Platform.findAll();
 
-        // if (providers.length < 1) {
-        //     // Create default providers
-        //     await Provider.bulkCreate([{
-        //         name: "google"
-        //     }, {
-        //         name: "twitter"
-        //     }])
-        // };
+        if (providers.length < 1) {
+            // Create default providers
+            await Provider.bulkCreate([{
+                name: "google",
+                description: "Made by Google Inc"
+            }])
+        };
 
-        // if (platforms.length < 1) {
-        //     let defaultGoogle = await Provider.findAll({
-        //         where: {
-        //             name: "google"
-        //         }
-        //     })
+        if (platforms.length < 1) {
+            let defaultGoogle = await Provider.findAll({
+                where: {
+                    name: "google"
+                }
+            })
 
-        //     let defaultTwitter = await Provider.findAll({
-        //         where: {
-        //             name: "twitter"
-        //         }
-        //     })
+            if (defaultGoogle.length > 1) {
+                throw new ErrorHandler(409, "duplicate Providers");
+            }
 
-        //     if (defaultGoogle.length > 1 || defaultTwitter.length > 1) {
-        //         throw new ErrorHandler(409, "duplicate Providers");
-        //     }
-
-        //     // Create default providers
-        //     await Platform.bulkCreate([{
-        //             name: "gmail",
-        //             providerId: defaultGoogle[0].id
-        //         },
-        //         {
-        //             name: "twitter",
-        //             providerId: defaultTwitter[0].id
-        //         }
-        //     ])
-        // };
+            // Create default providers
+            await Platform.bulkCreate([{
+                name: "gmail",
+                type: "email",
+                providerId: defaultGoogle[0].id
+            }])
+        };
     } catch (error) {
         console.error(error)
     }
 })();
 
 // ROUTES
-require("./routes/routes.js").production(app, configs, db);
+require("./routes/routes.js").development(app, configs, db);
 
 // error handler
 let errorHandler = (err, req, res, next) => {
@@ -188,13 +172,15 @@ if ((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFI
         ca: ca
     };
     httpsServer = https.createServer(credentials, app);
-    httpsServer.listen(configs.ssl_api.API_PORT);
-    console.log("Production [+] Running secured on port:", configs.ssl_api.API_PORT)
-    app.runningPort = configs.ssl_api.API_PORT
+    httpsServer.listen(configs.ssl_api.DEV_API_PORT, "127.0.0.1");
+    console.log("Development [+] Running secured on port:", configs.ssl_api.DEV_API_PORT)
+    app.runningPort = configs.ssl_api.DEV_API_PORT
     app.is_ssl = true
 } else {
-    console.log("Production [+] Running in-secured on port:", configs.api.API_PORT)
-    app.listen(configs.api.API_PORT, console.log(`Prodcution server is running on port ${configs.api.API_PORT}`));
-    app.runningPort = configs.api.API_PORT
+    console.log("Development [+] Running in-secured on port:", configs.api.DEV_API_PORT)
+    app.listen(configs.api.DEV_API_PORT, "127.0.0.1", 511, () => {
+        console.log(`Development server is running on port ${configs.api.DEV_API_PORT}`)
+    });
+    app.runningPort = configs.api.DEV_API_PORT
     app.is_ssl = false
 }

@@ -1,8 +1,3 @@
-const configs = require("./../config.json");
-const db = require("../models");
-var User = db.users;
-var Provider = db.providers;
-var Platform = db.platforms;
 const fs = require('fs')
 const {
     v4: uuidv4
@@ -13,7 +8,7 @@ const {
 } = require("sequelize");
 const Axios = require('axios');
 const Security = require("../models/security.models.js");
-var security = new Security();
+const GlobalSecurity = new Security()
 const {
     ErrorHandler
 } = require('../controllers/error.js')
@@ -22,95 +17,27 @@ var rootCas = require('ssl-root-cas').create()
 
 require('https').globalAgent.options.ca = rootCas
 
-if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
-    rootCas.addFile('/var/www/ssl/server.pem')
-}
 axios = Axios
 // =========================================================================================================================
 
-module.exports = (app) => {
-    app.post("/locals/users/hash1", async (req, res, next) => {
+// ==================== PRODUCTION ====================
+let production = (app, configs, db) => {
+    var User = db.users;
+    var UsersInfo = db.usersInfo;
+    var Provider = db.providers;
+    var Platform = db.platforms;
+
+    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+        rootCas.addFile('/var/www/ssl/server.pem')
+    }
+
+    app.post("/users/stored_tokens", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.id) {
                 throw new ErrorHandler(400, "Id cannot be empty");
             };
-            // =============================================================
 
-            // SEARCH FOR USER IN DB
-            let user = await User.findAll({
-                where: {
-                    id: req.body.id
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            // RETURN = [], IF NO USER FOUND
-            if (user.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
-            }
-
-            // IF RETURN HAS MORE THAN ONE ITEM
-            if (user.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
-            }
-
-            // RETURN PASSWORD HASH
-            return res.status(200).json({
-                password_hash: user[0].password
-            });
-        } catch (error) {
-            next(error);
-        }
-    });
-
-    app.post("/users/profiles", async (req, res, next) => {
-        try {
-            // ==================== REQUEST BODY CHECKS ====================
-            if (!req.body.phone_number) {
-                throw new ErrorHandler(400, "Phone_number cannot be empty");
-            };
-            // =============================================================
-
-            // SEARCH FOR USER IN DB
-            let user = await User.findAll({
-                where: {
-                    phone_number: req.body.phone_number
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            // RETURN = [], IF NO USER FOUND
-            if (user.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
-            }
-
-            // IF RETURN HAS MORE THAN ONE ITEM
-            if (user.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
-            }
-
-            // CREATE AUTH_KEY ON LOGIN
-            await user[0].update({
-                auth_key: uuidv4()
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            // RETURN AUTH_KEY
-            return res.status(200).json({
-                auth_key: user[0].auth_key
-            });
-        } catch (error) {
-            next(error);
-        }
-    });
-
-    app.post("/users/stored_tokens", async (req, res, next) => {
-        try {
-            // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -131,7 +58,7 @@ module.exports = (app) => {
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
                 where: {
-                    auth_key: req.body.auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -145,6 +72,15 @@ module.exports = (app) => {
             // IF RETURN HAS MORE THAN ONE ITEM
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
             // GET ALL TOKENS UNDER CURRENT USER
@@ -267,6 +203,10 @@ module.exports = (app) => {
     app.post("/users/tokens", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -321,7 +261,7 @@ module.exports = (app) => {
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
                 where: {
-                    auth_key: req.body.auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -335,6 +275,15 @@ module.exports = (app) => {
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
             let port = app.runningPort
@@ -364,36 +313,47 @@ module.exports = (app) => {
                 throw new ErrorHandler(400, "phone number cannot be empty");
             };
 
+            if (!req.body.name) {
+                throw new ErrorHandler(400, "User_name cannot be empty");
+            };
+
             if (!req.body.password) {
                 throw new ErrorHandler(400, "password cannot be empty");
             };
 
-            if (req.body.password.length < 15) {
-                throw new ErrorHandler(400, "password is less than 15 characters");
+            if (req.body.password.length < 8) {
+                throw new ErrorHandler(400, "password is less than 8 characters");
             };
             // ===============================================================
 
-            let user = await User.findAll({
+            let usersInfo = await UsersInfo.findAll({
                 where: {
-                    phone_number: req.body.phone_number
+                    phone_number: GlobalSecurity.hash(req.body.phone_number)
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
-            if (user.length > 0) {
+            if (usersInfo.length > 0) {
                 throw new ErrorHandler(409, "Duplicate phone numbers");
             };
 
             let newUser = await User.create({
-                phone_number: req.body.phone_number,
-                password: security.hash(req.body.password)
+                password: GlobalSecurity.hash(req.body.password)
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            let user = await UsersInfo.create({
+                phone_number: GlobalSecurity.hash(req.body.phone_number),
+                name: req.body.name,
+                userId: newUser.id
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             return res.status(200).json({
-                message: `${newUser.phone_number} account sucessfully created`
+                message: `${user.name}'s account sucessfully created`
             })
         } catch (error) {
             next(error);
@@ -411,41 +371,52 @@ module.exports = (app) => {
                 throw new ErrorHandler(400, "password cannot be empty");
             };
 
-            if (req.body.password.length < 15) {
-                throw new ErrorHandler(400, "password is less than 15 characters");
+            if (req.body.password.length < 8) {
+                throw new ErrorHandler(400, "password is less than 8 characters");
             };
             // ===============================================================
 
-            let user = await User.findAll({
+            let usersInfo = await UsersInfo.findAll({
                 where: {
-                    [Op.and]: [{
-                        phone_number: req.body.phone_number
-                    }, {
-                        password: security.hash(req.body.password)
-                    }]
+                    phone_number: GlobalSecurity.hash(req.body.phone_number)
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             // RTURN = [], IF USER IS NOT FOUND
-            if (user.length < 1) {
+            if (usersInfo.length < 1) {
                 throw new ErrorHandler(401, "User doesn't exist");
             }
 
             // IF MORE THAN ONE USER EXIST IN DATABASE
-            if (user.length > 1) {
+            if (usersInfo.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
-            await user[0].update({
+            let user = await usersInfo[0].getUser({
+                where: {
+                    password: GlobalSecurity.hash(req.body.password)
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            if (!user) {
+                throw new ErrorHandler(401, "INVALID PASSWORD");
+            };
+
+            var security = new Security(user.password);
+
+            await user.update({
                 auth_key: uuidv4()
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             return res.status(200).json({
-                auth_key: user[0].auth_key
+                id: user.id,
+                auth_key: user.auth_key
             });
         } catch (error) {
             next(error);
@@ -455,6 +426,10 @@ module.exports = (app) => {
     app.post("/users/providers", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -468,7 +443,7 @@ module.exports = (app) => {
 
             let user = await User.findAll({
                 where: {
-                    auth_key: req.body.auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -484,10 +459,19 @@ module.exports = (app) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
-            let query = `SELECT t1.name , t3.name platform
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let query = `SELECT t1.name , t1.description , t3.name platform_name , t3.type platform_type
                         FROM providers t1
                         INNER JOIN platforms t3 ON t1.id = t3.providerId
-                        LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = ${user[0].id}) AS t2 
+                        LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = "${user[0].id}") AS t2 
                         ON t2.platformId = t3.id 
                         WHERE t2.platformId IS NULL `
 
@@ -500,7 +484,11 @@ module.exports = (app) => {
                 for (let i = 0; i < defaultTokens.length; i++) {
                     userData.default_provider.push({
                         provider: defaultTokens[i].name,
-                        platform: defaultTokens[i].platform
+                        description: defaultTokens[i].description,
+                        platforms: [{
+                            name: defaultTokens[i].platform_name,
+                            type: defaultTokens[i].platform_type
+                        }]
                     })
                 }
             }
@@ -520,7 +508,11 @@ module.exports = (app) => {
                 if (provider) {
                     userData.user_provider.push({
                         provider: provider.name,
-                        platform: platform.name,
+                        description: provider.description,
+                        platforms: [{
+                            name: platform.name,
+                            type: platform.type
+                        }],
                         email: profile.data.email
                     })
                 }
@@ -535,6 +527,10 @@ module.exports = (app) => {
     app.post("/users/tokens/revoke", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -543,8 +539,8 @@ module.exports = (app) => {
                 throw new ErrorHandler(400, "Password cannot be empty");
             };
 
-            if (req.body.password.length < 15) {
-                throw new ErrorHandler(400, "password is less than 15 characters");
+            if (req.body.password.length < 8) {
+                throw new ErrorHandler(400, "password is less than 8 characters");
             };
 
             if (!req.body.provider) {
@@ -597,11 +593,7 @@ module.exports = (app) => {
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
                 where: {
-                    [Op.and]: [{
-                        auth_key: req.body.auth_key
-                    }, {
-                        password: security.hash(req.body.password)
-                    }]
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -615,6 +607,20 @@ module.exports = (app) => {
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // PASSWORD AUTH
+            if (user[0].password != security.hash(req.body.password)) {
+                throw new ErrorHandler(401, "INVALID PASSWORD");
+            }
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
             let port = app.runningPort
@@ -639,6 +645,10 @@ module.exports = (app) => {
     app.post("/users/profiles/info", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -646,7 +656,7 @@ module.exports = (app) => {
 
             let user = await User.findAll({
                 where: {
-                    auth_key: req.body.auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -662,9 +672,25 @@ module.exports = (app) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
+            let usersInfo = await user[0].getUsersInfos({
+                where: {
+                    userId: user[0].id
+                }
+            });
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
             let profile_info = {
                 id: user[0].id,
-                phone_number: user[0].phone_number,
+                phone_number: usersInfo[0].phone_number,
+                name: usersInfo[0].name,
                 last_login: user[0].updatedAt,
                 created: user[0].createdAt
             }
@@ -674,4 +700,166 @@ module.exports = (app) => {
             next(error)
         }
     });
+}
+// =============================================================
+
+// =========================================================================================================================
+
+// ==================== DEVELOPMENT ====================
+let development = (app, configs, db) => {
+    var User = db.users;
+    var UsersInfo = db.usersInfo;
+
+    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+        rootCas.addFile('/var/www/ssl/server.pem')
+    }
+
+    app.post("/locals/users/hash1", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+            // =============================================================
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF NO USER FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF RETURN HAS MORE THAN ONE ITEM
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            // RETURN PASSWORD HASH
+            return res.status(200).json({
+                password_hash: user[0].password
+            });
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    app.post("/users/profiles", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.phone_number) {
+                throw new ErrorHandler(400, "Phone_number cannot be empty");
+            };
+            // =============================================================
+
+            // SEARCH FOR USER IN DB
+            let usersInfo = await UsersInfo.findAll({
+                where: {
+                    phone_number: GlobalSecurity.hash(req.body.phone_number)
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF NO USER FOUND
+            if (usersInfo.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF RETURN HAS MORE THAN ONE ITEM
+            if (usersInfo.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            };
+
+            let user = await usersInfo[0].getUser();
+
+            var security = new Security(user.password);
+
+            // CREATE AUTH_KEY ON LOGIN
+            await user.update({
+                auth_key: uuidv4()
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            return res.status(200).json({
+                id: user.id,
+                auth_key: user.auth_key
+            });
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    app.post("/users/providers", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "ID cannot be empty");
+            };
+            // =============================================================
+
+            // store tokens from db
+            let userData = {
+                user_provider: []
+            }
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            let token = await user[0].getTokens();
+
+            if (token.length < 1) {
+                return res.status(200).json(userData);
+            }
+
+            // get all tokens
+            for (let i = 0; i < token.length; i++) {
+                let provider = await token[i].getProvider();
+                let platform = await token[i].getPlatform();
+                let profile = JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+
+                if (provider) {
+                    userData.user_provider.push({
+                        provider: provider.name,
+                        platform: platform.name,
+                        email: profile.data.email
+                    })
+                }
+            }
+
+            return res.status(200).json(userData);
+        } catch (error) {
+            next(error)
+        }
+    });
+}
+// =============================================================
+
+module.exports = {
+    production,
+    development
 }

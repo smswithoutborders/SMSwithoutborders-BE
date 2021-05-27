@@ -49,6 +49,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   },
@@ -77,6 +80,9 @@
                         "type": "object",
                         "properties": {
                           "provider": {
+                            "type": "string"
+                          },
+                          "platform": {
                             "type": "string"
                           },
                           "token": {
@@ -193,6 +199,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   },
@@ -341,6 +350,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   },
@@ -477,6 +489,9 @@
                   "phone_number": {
                     "type": "string"
                   },
+                  "name": {
+                    "type": "string"
+                  },
                   "password": {
                     "type": "string"
                   }
@@ -598,6 +613,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "id": {
+                      "type": "string"
+                    },
                     "auth_key": {
                       "type": "string"
                     }
@@ -705,6 +723,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   }
@@ -729,8 +750,22 @@
                           "provider": {
                             "type": "string"
                           },
-                          "platform": {
+                          "description": {
                             "type": "string"
+                          },
+                          "platforms": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "type": "string"
+                                }
+                              }
+                            }
                           },
                           "email": {
                             "type": "string"
@@ -746,8 +781,22 @@
                           "provider": {
                             "type": "string"
                           },
-                          "platform": {
+                          "description": {
                             "type": "string"
+                          },
+                          "platforms": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "type": "string"
+                                }
+                              }
+                            }
                           }
                         }
                       }
@@ -856,6 +905,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   },
@@ -987,6 +1039,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   }
@@ -1006,6 +1061,9 @@
                       "type": "string"
                     },
                     "phone_number": {
+                      "type": "string"
+                    },
+                    "name": {
                       "type": "string"
                     },
                     "last_login": {

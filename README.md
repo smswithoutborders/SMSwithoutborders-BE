@@ -15,43 +15,58 @@ npm install
     * To set up database and API, copy the template file "example.config.json" and rename to "config.json"
     * To set up platform credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
 
-    __models (./models)__
-
-    * To set up encryption credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
-    * "Key" value most be a SHA512 hash generated string
-### Start Server
+### Start Production Server
 * With NPM
 ```bash
-npm start
+npm run startProd
 ```
 * With Node
 ```bash
 node server.js
 ```
-
+### Start Development Server
+* With NPM
+```bash
+npm run startDev
+```
+* With Node
+```bash
+node serverDev.js
+```
+### Start both Production and Development Server
+* With NPM
+```bash
+npm start
+```
 ### API SandBox
 ```
-http://localhost:9000/api-docs
+http://localhost:{PORT}/api-docs
 ```
 
 ### Database tables
 __Users table__
 
-|      id     | phone_number | password | auth_key |
+|      id     | password | auth_key |
+|:-----------:|:--------:|:--------:|
+| PRIMARY KEY |  STRING  |  STRING  |
+
+__UsersInfos table__
+
+|      id     | phone_number |   name   |  userId  |
 |:-----------:|:------------:|:--------:|:--------:|
 | PRIMARY KEY |    STRING    |  STRING  |  STRING  |
 
 __Providers table__
 
-|      id     |                     name                   |                  
-|:-----------:|:------------------------------------------:|
-| PRIMARY KEY | Provider's name (google, twitter) [STRING] |
+|      id     |                     name                   |       description      |                  
+|:-----------:|:------------------------------------------:|:----------------------:|
+| PRIMARY KEY | Provider's name (google, twitter) [STRING] | Provider's description |
 
 __Platforms table__
 
-|      id     |       name      |       description      |   logo   |          providerId         |
-|:-----------:|:---------------:|:----------------------:|:--------:|:---------------------------:|
-| PRIMARY KEY | Platform's name | Platform's description | LOGO IMG | Providers[id] [FOREIGN KEY] |
+|      id     |       name      |       type      |       description      |   logo   |          providerId         |
+|:-----------:|:---------------:|:---------------:|:----------------------:|:--------:|:---------------------------:|
+| PRIMARY KEY | Platform's name | Platform's type | Platform's description | LOGO IMG | Providers[id] [FOREIGN KEY] |
 
 __Tokens table__
 

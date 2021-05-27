@@ -14,16 +14,18 @@ const {
     v4: uuidv4
 } = require('uuid');
 const Security = require("../models/security.models.js");
-var security = new Security();
 const {
     ErrorHandler
 } = require("./error.js");
 // =========================================================================================================================
 
-module.exports = (app) => {
+module.exports = (app, configs) => {
     var oauth2ClientToken = ""
     var token_url = ""
 
+    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+        rootCas.addFile('/var/www/ssl/server.pem')
+    }
 
     // generate a url that asks permissions for Blogger and Google Calendar scopes
     const token_scopes = [
@@ -61,7 +63,7 @@ module.exports = (app) => {
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
+                `${app.is_ssl ? "https://" : "http://"}${originalURL}:18000/dashboard/oauth2/google/Tokens/redirect/`
             )
 
             token_url = oauth2ClientToken.generateAuthUrl({
@@ -111,6 +113,10 @@ module.exports = (app) => {
     app.post('/google/auth/success', async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
             if (!req.body.auth_key) {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
@@ -128,8 +134,15 @@ module.exports = (app) => {
             };
             // =============================================================
 
+            let originalURL = req.hostname;
+
+            oauth2ClientToken = new google.auth.OAuth2(
+                credentials.google.GOOGLE_CLIENT_ID,
+                credentials.google.GOOGLE_CLIENT_SECRET,
+                `${app.is_ssl ? "https://" : "http://"}${originalURL}:18000/dashboard/oauth2/google/Tokens/redirect/`
+            );
+
             let code = req.body.code;
-            let auth_key = req.body.auth_key;
 
             const {
                 tokens
@@ -161,7 +174,7 @@ module.exports = (app) => {
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
                 where: {
-                    auth_key: auth_key
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -175,6 +188,15 @@ module.exports = (app) => {
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
             let new_token = await Token.create({
@@ -268,6 +290,26 @@ module.exports = (app) => {
             };
             // ===============================================================
 
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
             let originalURL = req.body.origin
 
             let token = await Token.findAll({
@@ -295,7 +337,7 @@ module.exports = (app) => {
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${originalURL}/oauth2/google/Tokens/redirect/`
+                `${app.is_ssl ? "https://" : "http://"}${originalURL}:18000/dashboard/oauth2/google/Tokens/redirect/`
             );
 
             let fetch_tokens = JSON.parse(security.decrypt(token[0].token, token[0].iv));
