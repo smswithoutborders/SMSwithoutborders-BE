@@ -1,9 +1,8 @@
 const configs = require("../config.json");
 const Sequelize = require("sequelize");
 
-// ==================== PRODUCTION ====================
-var sequelize = new Sequelize(configs.production.database.MYSQL_DATABASE, configs.production.database.MYSQL_USER, configs.production.database.MYSQL_PASSWORD, {
-    host: configs.production.database.MYSQL_HOST,
+var sequelize = new Sequelize(configs.database.MYSQL_DATABASE, configs.database.MYSQL_USER, configs.database.MYSQL_PASSWORD, {
+    host: configs.database.MYSQL_HOST,
     dialect: "mysql",
     logging: false,
     // define: {
@@ -42,52 +41,5 @@ db.platforms.hasOne(db.tokens, {
     foreignKey: "platformId"
 });
 db.tokens.belongsTo(db.platforms);
-// ====================================================
 
-// ==================== DEVELOPMENT ====================
-var sequelizeDev = new Sequelize(configs.development.database.MYSQL_DATABASE, configs.development.database.MYSQL_USER, configs.development.database.MYSQL_PASSWORD, {
-    host: configs.development.database.MYSQL_HOST,
-    dialect: "mysql",
-    logging: false,
-    // define: {
-    //     timestamps: false
-    // }
-});
-
-var dbDev = {};
-
-dbDev.sequelize = sequelizeDev;
-dbDev.Sequelize = Sequelize;
-
-dbDev.users = require("./users.models.js")(sequelizeDev, Sequelize);
-dbDev.tokens = require("./tokens.models.js")(sequelizeDev, Sequelize);
-dbDev.providers = require("./providers.models.js")(sequelizeDev, Sequelize);
-dbDev.platforms = require("./platforms.models.js")(sequelizeDev, Sequelize);
-dbDev.usersInfo = require("./usersInfo.models.js")(sequelize, Sequelize);
-
-dbDev.users.hasMany(dbDev.tokens, {
-    foreignKey: "userId"
-});
-dbDev.tokens.belongsTo(dbDev.users);
-dbDev.users.hasMany(dbDev.usersInfo, {
-    foreignKey: "userId"
-});
-dbDev.usersInfo.belongsTo(dbDev.users);
-dbDev.providers.hasOne(dbDev.tokens, {
-    foreignKey: "providerId"
-});
-dbDev.tokens.belongsTo(dbDev.providers);
-dbDev.providers.hasMany(dbDev.platforms, {
-    foreignKey: "providerId"
-});
-dbDev.platforms.belongsTo(dbDev.providers);
-dbDev.platforms.hasOne(dbDev.tokens, {
-    foreignKey: "platformId"
-});
-dbDev.tokens.belongsTo(dbDev.platforms);
-// =====================================================
-
-module.exports = {
-    db,
-    dbDev
-};
+module.exports = db;

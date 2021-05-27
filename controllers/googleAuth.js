@@ -2,7 +2,7 @@ const {
     google
 } = require('googleapis');
 const credentials = require("../credentials.json");
-const db = require("../models").db;
+const db = require("../models");
 var Token = db.tokens;
 var User = db.users;
 var Provider = db.providers;

@@ -1,4 +1,4 @@
-const configs = require("./config.json").production;
+const configs = require("./config.json");
 const express = require("express");
 const session = require("express-session");
 // var SequelizeStore = require("connect-session-sequelize")(session.Store);
@@ -14,7 +14,7 @@ const {
 } = require("./controllers/error.js")
 
 const swaggerDocument = require("./openapi.json");
-const db = require("./models").db;
+const db = require("./models");
 var Provider = db.providers;
 var Platform = db.platforms;
 

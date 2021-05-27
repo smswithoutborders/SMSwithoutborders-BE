@@ -1,4 +1,4 @@
-const configs = require("./config.json").development;
+const configs = require("./config.json");
 const express = require("express");
 const session = require("express-session");
 var SequelizeStore = require("connect-session-sequelize")(session.Store);
@@ -14,7 +14,7 @@ const {
 } = require("./controllers/error.js")
 
 const swaggerDocument = require("./openapi_dev.json");
-const db = require("./models").dbDev;
+const db = require("./models");
 var Provider = db.providers;
 var Platform = db.platforms;
 
@@ -22,27 +22,22 @@ const https = require("https")
 
 var app = express();
 
-var whitelist = configs.origin
-
 var corsOptionsDelegate = (req, callback) => {
     var validIp = ipaddr.isValid(req.ip);
     var address = ipaddr.process(req.ip);
 
-    for (let i = 0; i < whitelist.length; i++) {
-        var rs = new RegExp(`${whitelist[i]}`, "g")
-
-        if (req.ip.match(rs)) {
-            corsOptions = {
-                origin: true
-            }
-
-            console.log("Valid IP: ", validIp);
-            console.log(address.kind());
-            console.log(req.ip);
-
-            return callback(null, corsOptions)
+    if (req.ip == "127.0.0.1") {
+        corsOptions = {
+            origin: true
         }
-    }
+
+        console.log("Valid IP: ", validIp);
+        console.log(address.kind());
+        console.log(req.ip);
+
+        return callback(null, corsOptions)
+    };
+
     corsOptions = {
         origin: false
     }
@@ -188,13 +183,15 @@ if ((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFI
         ca: ca
     };
     httpsServer = https.createServer(credentials, app);
-    httpsServer.listen(configs.ssl_api.API_PORT);
-    console.log("Development [+] Running secured on port:", configs.ssl_api.API_PORT)
-    app.runningPort = configs.ssl_api.API_PORT
+    httpsServer.listen(configs.ssl_api.DEV_API_PORT, "127.0.0.1");
+    console.log("Development [+] Running secured on port:", configs.ssl_api.DEV_API_PORT)
+    app.runningPort = configs.ssl_api.DEV_API_PORT
     app.is_ssl = true
 } else {
-    console.log("Development [+] Running in-secured on port:", configs.api.API_PORT)
-    app.listen(configs.api.API_PORT, console.log(`Development server is running on port ${configs.api.API_PORT}`));
-    app.runningPort = configs.api.API_PORT
+    console.log("Development [+] Running in-secured on port:", configs.api.DEV_API_PORT)
+    app.listen(configs.api.DEV_API_PORT, "127.0.0.1", 511, () => {
+        console.log(`Development server is running on port ${configs.api.DEV_API_PORT}`)
+    });
+    app.runningPort = configs.api.DEV_API_PORT
     app.is_ssl = false
 }
