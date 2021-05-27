@@ -468,7 +468,7 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
-            let query = `SELECT t1.name , t3.name platform
+            let query = `SELECT t1.name , t1.description , t3.name platform_name , t3.type platform_type
                         FROM providers t1
                         INNER JOIN platforms t3 ON t1.id = t3.providerId
                         LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = "${user[0].id}") AS t2 
@@ -484,7 +484,11 @@ let production = (app, configs, db) => {
                 for (let i = 0; i < defaultTokens.length; i++) {
                     userData.default_provider.push({
                         provider: defaultTokens[i].name,
-                        platform: defaultTokens[i].platform
+                        description: defaultTokens[i].description,
+                        platforms: [{
+                            name: defaultTokens[i].platform_name,
+                            type: defaultTokens[i].platform_type
+                        }]
                     })
                 }
             }
@@ -504,7 +508,11 @@ let production = (app, configs, db) => {
                 if (provider) {
                     userData.user_provider.push({
                         provider: provider.name,
-                        platform: platform.name,
+                        description: provider.description,
+                        platforms: [{
+                            name: platform.name,
+                            type: platform.type
+                        }],
                         email: profile.data.email
                     })
                 }
