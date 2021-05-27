@@ -19,10 +19,13 @@ const {
 } = require("./error.js");
 // =========================================================================================================================
 
-module.exports = (app) => {
+module.exports = (app, configs) => {
     var oauth2ClientToken = ""
     var token_url = ""
 
+    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+        rootCas.addFile('/var/www/ssl/server.pem')
+    }
 
     // generate a url that asks permissions for Blogger and Google Calendar scopes
     const token_scopes = [
@@ -60,7 +63,7 @@ module.exports = (app) => {
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
+                `${app.is_ssl ? "https://" : "http://"}${originalURL}:9000/dashboard/oauth2/google/Tokens/redirect/`
             )
 
             token_url = oauth2ClientToken.generateAuthUrl({
@@ -131,6 +134,14 @@ module.exports = (app) => {
             };
             // =============================================================
 
+            let originalURL = req.hostname;
+
+            oauth2ClientToken = new google.auth.OAuth2(
+                credentials.google.GOOGLE_CLIENT_ID,
+                credentials.google.GOOGLE_CLIENT_SECRET,
+                `${app.is_ssl ? "https://" : "http://"}${originalURL}:9000/dashboard/oauth2/google/Tokens/redirect/`
+            );
+
             let code = req.body.code;
 
             const {
@@ -182,7 +193,7 @@ module.exports = (app) => {
             var security = new Security(user[0].password);
 
             // CHECK AUTH_KEY
-            let auth_key = security.decrypt(user[0].auth_key, user[0].iv);
+            let auth_key = user[0].auth_key;
 
             if (auth_key != req.body.auth_key) {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
@@ -197,8 +208,7 @@ module.exports = (app) => {
             });
 
             await new_token.update({
-                auth_key: security.encrypt(uuidv4()).e_info,
-                iv: security.iv
+                userId: user[0].id
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });

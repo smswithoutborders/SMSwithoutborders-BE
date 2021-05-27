@@ -97,7 +97,7 @@ app.use([morgan('combined', {
 ])
 
 // Auths
-require("./controllers/googleAuth.js")(app);
+require("./controllers/googleAuth.js")(app, configs);
 
 // DATABASE
 (async () => {
