@@ -58,15 +58,15 @@ __UsersInfos table__
 
 __Providers table__
 
-|      id     |                     name                   |                  
-|:-----------:|:------------------------------------------:|
-| PRIMARY KEY | Provider's name (google, twitter) [STRING] |
+|      id     |                     name                   |       description      |                  
+|:-----------:|:------------------------------------------:|:----------------------:|
+| PRIMARY KEY | Provider's name (google, twitter) [STRING] | Provider's description |
 
 __Platforms table__
 
-|      id     |       name      |       description      |   logo   |          providerId         |
-|:-----------:|:---------------:|:----------------------:|:--------:|:---------------------------:|
-| PRIMARY KEY | Platform's name | Platform's description | LOGO IMG | Providers[id] [FOREIGN KEY] |
+|      id     |       name      |       type      |       description      |   logo   |          providerId         |
+|:-----------:|:---------------:|:---------------:|:----------------------:|:--------:|:---------------------------:|
+| PRIMARY KEY | Platform's name | Platform's type | Platform's description | LOGO IMG | Providers[id] [FOREIGN KEY] |
 
 __Tokens table__
 

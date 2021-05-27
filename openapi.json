@@ -750,8 +750,22 @@
                           "provider": {
                             "type": "string"
                           },
-                          "platform": {
+                          "description": {
                             "type": "string"
+                          },
+                          "platforms": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "type": "string"
+                                }
+                              }
+                            }
                           },
                           "email": {
                             "type": "string"
@@ -767,8 +781,22 @@
                           "provider": {
                             "type": "string"
                           },
-                          "platform": {
+                          "description": {
                             "type": "string"
+                          },
+                          "platforms": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "type": "string"
+                                }
+                              }
+                            }
                           }
                         }
                       }
