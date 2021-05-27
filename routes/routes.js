@@ -539,8 +539,8 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(400, "Password cannot be empty");
             };
 
-            if (req.body.password.length < 15) {
-                throw new ErrorHandler(400, "password is less than 15 characters");
+            if (req.body.password.length < 8) {
+                throw new ErrorHandler(400, "password is less than 8 characters");
             };
 
             if (!req.body.provider) {
