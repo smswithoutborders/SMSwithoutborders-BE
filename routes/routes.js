@@ -708,7 +708,6 @@ let production = (app, configs, db) => {
 // ==================== DEVELOPMENT ====================
 let development = (app, configs, db) => {
     var User = db.users;
-    var UsersInfo = db.usersInfo;
 
     if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
         rootCas.addFile('/var/www/ssl/server.pem')
@@ -753,44 +752,40 @@ let development = (app, configs, db) => {
     app.post("/users/profiles", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
-            if (!req.body.phone_number) {
-                throw new ErrorHandler(400, "Phone_number cannot be empty");
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "ID cannot be empty");
             };
             // =============================================================
 
             // SEARCH FOR USER IN DB
-            let usersInfo = await UsersInfo.findAll({
+            let user = await User.findAll({
                 where: {
-                    phone_number: GlobalSecurity.hash(req.body.phone_number)
+                    id: req.body.id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             // RETURN = [], IF NO USER FOUND
-            if (usersInfo.length < 1) {
+            if (user.length < 1) {
                 throw new ErrorHandler(401, "User doesn't exist");
             }
 
             // IF RETURN HAS MORE THAN ONE ITEM
-            if (usersInfo.length > 1) {
+            if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
             };
 
-            let user = await usersInfo[0].getUser();
-
-            var security = new Security(user.password);
-
             // CREATE AUTH_KEY ON LOGIN
-            await user.update({
+            await user[0].update({
                 auth_key: uuidv4()
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             return res.status(200).json({
-                id: user.id,
-                auth_key: user.auth_key
+                id: user[0].id,
+                auth_key: user[0].auth_key
             });
         } catch (error) {
             next(error);

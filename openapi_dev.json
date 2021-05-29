@@ -33,7 +33,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "phone_number": {
+                  "id": {
                     "type": "string"
                   }
                 }
@@ -49,6 +49,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "id": {
+                      "type": "string"
+                    },
                     "auth_key": {
                       "type": "string"
                     }
