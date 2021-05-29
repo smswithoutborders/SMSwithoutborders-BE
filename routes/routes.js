@@ -776,12 +776,12 @@ let development = (app, configs, db) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             };
 
-            // CREATE AUTH_KEY ON LOGIN
-            await user[0].update({
-                auth_key: uuidv4()
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
+            // // CREATE AUTH_KEY ON LOGIN
+            // await user[0].update({
+            //     auth_key: uuidv4()
+            // }).catch(error => {
+            //     throw new ErrorHandler(500, error);
+            // });
 
             return res.status(200).json({
                 id: user[0].id,
