@@ -293,7 +293,7 @@ let production = (app, configs, db) => {
                     auth_key: req.body.auth_key,
                     provider: req.body.provider,
                     platform: req.body.platform,
-                    origin: req.header('Origin')
+                    origin: originalURL
                 })
                 .then(function (response) {
                     return res.status(200).json(response.data);
