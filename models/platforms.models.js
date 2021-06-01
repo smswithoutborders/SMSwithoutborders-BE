@@ -3,7 +3,8 @@ module.exports = (sequelize, Sequelize) => {
         name: Sequelize.STRING,
         description: Sequelize.STRING,
         logo: Sequelize.TEXT,
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        letter: Sequelize.STRING
     });
 
     return Platform;

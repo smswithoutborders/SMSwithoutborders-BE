@@ -117,7 +117,8 @@ require("./controllers/googleAuth.js")(app, configs);
             // Create default providers
             await Provider.bulkCreate([{
                 name: "google",
-                description: "Made by Google Inc"
+                description: "Made by Google Inc",
+                letter: "g"
             }])
         };
 
@@ -136,6 +137,7 @@ require("./controllers/googleAuth.js")(app, configs);
             await Platform.bulkCreate([{
                 name: "gmail",
                 type: "email",
+                letter: "g",
                 providerId: defaultGoogle[0].id
             }])
         };
