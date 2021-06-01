@@ -753,6 +753,9 @@
                           "description": {
                             "type": "string"
                           },
+                          "letter": {
+                            "type": "string"
+                          },
                           "platforms": {
                             "type": "array",
                             "items": {
@@ -762,6 +765,9 @@
                                   "type": "string"
                                 },
                                 "type": {
+                                  "type": "string"
+                                },
+                                "letter": {
                                   "type": "string"
                                 }
                               }
@@ -784,6 +790,9 @@
                           "description": {
                             "type": "string"
                           },
+                          "letter": {
+                            "type": "string"
+                          },
                           "platforms": {
                             "type": "array",
                             "items": {
@@ -793,6 +802,9 @@
                                   "type": "string"
                                 },
                                 "type": {
+                                  "type": "string"
+                                },
+                                "letter": {
                                   "type": "string"
                                 }
                               }
