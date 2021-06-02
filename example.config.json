@@ -15,6 +15,7 @@
         "API_PORT": "",
         "SESSION_SECRET": "",
         "CERTIFICATE": "",
-        "KEY": ""
+        "KEY": "",
+	"PEM": ""
     }
 }
