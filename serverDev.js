@@ -160,29 +160,8 @@ let errorHandler = (err, req, res, next) => {
 
 app.use(errorHandler);
 
-var httpsServer = ""
-if ((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) && fs.existsSync(configs.ssl_api.PEM)) {
-    let privateKey = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
-    let certificate = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
-    // let certificate = fs.readFileSync(configs.ssl_api.PEM, 'utf8');
-    let ca = [
-        fs.readFileSync(configs.ssl_api.PEM)
-    ]
-    let credentials = {
-        key: privateKey,
-        cert: certificate,
-        ca: ca
-    };
-    httpsServer = https.createServer(credentials, app);
-    httpsServer.listen(configs.ssl_api.DEV_API_PORT, "127.0.0.1");
-    console.log("Development [+] Running secured on port:", configs.ssl_api.DEV_API_PORT)
-    app.runningPort = configs.ssl_api.DEV_API_PORT
-    app.is_ssl = true
-} else {
-    console.log("Development [+] Running in-secured on port:", configs.api.DEV_API_PORT)
-    app.listen(configs.api.DEV_API_PORT, "127.0.0.1", 511, () => {
-        console.log(`Development server is running on port ${configs.api.DEV_API_PORT}`)
-    });
-    app.runningPort = configs.api.DEV_API_PORT
-    app.is_ssl = false
-}
+console.log("Development [+] Running in-secured on port:", configs.api.DEV_API_PORT)
+app.listen(configs.api.DEV_API_PORT, "127.0.0.1", 511, () => {
+console.log(`Development server is running on port ${configs.api.DEV_API_PORT}`)
+});
+app.runningPort = configs.api.DEV_API_PORT
