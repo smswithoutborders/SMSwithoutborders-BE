@@ -22,38 +22,40 @@ const https = require("https")
 
 var app = express();
 
-var whitelist = configs.origin
+// var whitelist = configs.origin
 
-var corsOptionsDelegate = (req, callback) => {
-    var validIp = ipaddr.isValid(req.ip);
-    var address = ipaddr.process(req.ip);
+// var corsOptionsDelegate = (req, callback) => {
+//     var validIp = ipaddr.isValid(req.ip);
+//     var address = ipaddr.process(req.ip);
 
-    for (let i = 0; i < whitelist.length; i++) {
-        var rs = new RegExp(`${whitelist[i]}`, "g")
+//     for (let i = 0; i < whitelist.length; i++) {
+//         var rs = new RegExp(`${whitelist[i]}`, "g")
 
-        if (req.ip.match(rs)) {
-            corsOptions = {
-                origin: true
-            }
+//         if (req.ip.match(rs)) {
+//             corsOptions = {
+//                 origin: true
+//             }
 
-            console.log("Valid IP: ", validIp);
-            console.log(address.kind());
-            console.log(req.ip);
+//             console.log("Valid IP: ", validIp);
+//             console.log(address.kind());
+//             console.log(req.ip);
 
-            return callback(null, corsOptions)
-        }
-    }
-    corsOptions = {
-        origin: false
-    }
-    console.log("Valid IP: ", validIp);
-    console.log(address.kind());
-    console.log(req.ip + " blocked");
-    const error = new ErrorHandler(403, "Forbidden");
-    return callback(error.message, corsOptions);
-}
+//             return callback(null, corsOptions)
+//         }
+//     }
+//     corsOptions = {
+//         origin: false
+//     }
+//     console.log("Valid IP: ", validIp);
+//     console.log(address.kind());
+//     console.log(req.ip + " blocked");
+//     const error = new ErrorHandler(403, "Forbidden");
+//     return callback(error.message, corsOptions);
+// }
 
-app.use(cors(corsOptionsDelegate));
+// app.use(cors(corsOptionsDelegate));
+
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({

@@ -22,33 +22,35 @@ const https = require("https")
 
 var app = express();
 
-var corsOptionsDelegate = (req, callback) => {
-    var validIp = ipaddr.isValid(req.ip);
-    var address = ipaddr.process(req.ip);
+// var corsOptionsDelegate = (req, callback) => {
+//     var validIp = ipaddr.isValid(req.ip);
+//     var address = ipaddr.process(req.ip);
 
-    if (req.ip == "127.0.0.1") {
-        corsOptions = {
-            origin: true
-        }
+//     if (req.ip == "127.0.0.1") {
+//         corsOptions = {
+//             origin: true
+//         }
 
-        console.log("Valid IP: ", validIp);
-        console.log(address.kind());
-        console.log(req.ip);
+//         console.log("Valid IP: ", validIp);
+//         console.log(address.kind());
+//         console.log(req.ip);
 
-        return callback(null, corsOptions)
-    };
+//         return callback(null, corsOptions)
+//     };
 
-    corsOptions = {
-        origin: false
-    }
-    console.log("Valid IP: ", validIp);
-    console.log(address.kind());
-    console.log(req.ip + " blocked");
-    const error = new ErrorHandler(403, "Forbidden");
-    return callback(error.message, corsOptions);
-}
+//     corsOptions = {
+//         origin: false
+//     }
+//     console.log("Valid IP: ", validIp);
+//     console.log(address.kind());
+//     console.log(req.ip + " blocked");
+//     const error = new ErrorHandler(403, "Forbidden");
+//     return callback(error.message, corsOptions);
+// }
 
-app.use(cors(corsOptionsDelegate));
+// app.use(cors(corsOptionsDelegate));
+
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({
@@ -160,8 +162,8 @@ let errorHandler = (err, req, res, next) => {
 
 app.use(errorHandler);
 
-console.log("Development [+] Running in-secured on port:", configs.api.DEV_API_PORT)
+// console.log("Development [+] Running in-secured on port:", configs.api.DEV_API_PORT)
 app.listen(configs.api.DEV_API_PORT, "127.0.0.1", 511, () => {
-console.log(`Development server is running on port ${configs.api.DEV_API_PORT}`)
+    console.log(`Development server is running on port ${configs.api.DEV_API_PORT}`)
 });
 app.runningPort = configs.api.DEV_API_PORT
