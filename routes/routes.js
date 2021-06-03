@@ -700,6 +700,7 @@ let production = (app, configs, db) => {
                 id: user[0].id,
                 phone_number: usersInfo[0].phone_number,
                 name: usersInfo[0].name,
+                country_code: usersInfo[0].country_code,
                 last_login: user[0].updatedAt,
                 created: user[0].createdAt
             }

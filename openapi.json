@@ -1081,6 +1081,9 @@
                     "name": {
                       "type": "string"
                     },
+                    "country_code": {
+                      "type": "string"
+                    },
                     "last_login": {
                       "type": "string"
                     },
