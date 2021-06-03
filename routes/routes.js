@@ -288,7 +288,7 @@ let production = (app, configs, db) => {
 
             let port = app.runningPort
             let originalURL = req.hostname
-            console.log(">> OURL:", originalURL)
+            // console.log(">> OURL:", originalURL)
             await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
                     auth_key: req.body.auth_key,
                     provider: req.body.provider,
@@ -633,7 +633,7 @@ let production = (app, configs, db) => {
                     id: user[0].id,
                     providerId: provider[0].id,
                     platformId: platform[0].id,
-                    origin: req.header('Origin')
+                    origin: originalURL
                 })
                 .then(function (response) {
                     return res.status(200).json(response.data);
