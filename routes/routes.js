@@ -317,6 +317,10 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(400, "User_name cannot be empty");
             };
 
+            if (!req.body.country_code) {
+                throw new ErrorHandler(400, "User_country_code cannot be empty");
+            };
+
             if (!req.body.password) {
                 throw new ErrorHandler(400, "password cannot be empty");
             };
@@ -347,6 +351,7 @@ let production = (app, configs, db) => {
             let user = await UsersInfo.create({
                 phone_number: GlobalSecurity.hash(req.body.phone_number),
                 name: req.body.name,
+                country_code: req.body.country_code,
                 userId: newUser.id
             }).catch(error => {
                 throw new ErrorHandler(500, error);

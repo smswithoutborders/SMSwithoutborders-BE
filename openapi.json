@@ -492,6 +492,9 @@
                   "name": {
                     "type": "string"
                   },
+                  "country_code": {
+                    "type": "string"
+                  },
                   "password": {
                     "type": "string"
                   }
