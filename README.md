@@ -52,21 +52,21 @@ __Users table__
 
 __UsersInfos table__
 
-|      id     | phone_number |   name   |  userId  |
-|:-----------:|:------------:|:--------:|:--------:|
-| PRIMARY KEY |    STRING    |  STRING  |  STRING  |
+|      id     | phone_number |   name   |  userId  |  country_code  |
+|:-----------:|:------------:|:--------:|:--------:|:--------------:|
+| PRIMARY KEY |    STRING    |  STRING  |  STRING  |     STRING     |
 
 __Providers table__
 
-|      id     |                     name                   |       description      |                  
-|:-----------:|:------------------------------------------:|:----------------------:|
-| PRIMARY KEY | Provider's name (google, twitter) [STRING] | Provider's description |
+|      id     |                     name                   |       description      |  letter  |                  
+|:-----------:|:------------------------------------------:|:----------------------:|:--------:|
+| PRIMARY KEY | Provider's name (google, twitter) [STRING] | Provider's description |  STRING  |
 
 __Platforms table__
 
-|      id     |       name      |       type      |       description      |   logo   |          providerId         |
-|:-----------:|:---------------:|:---------------:|:----------------------:|:--------:|:---------------------------:|
-| PRIMARY KEY | Platform's name | Platform's type | Platform's description | LOGO IMG | Providers[id] [FOREIGN KEY] |
+|      id     |       name      |       type      |       description      |   logo   |          providerId         |  letter  |
+|:-----------:|:---------------:|:---------------:|:----------------------:|:--------:|:---------------------------:|:--------:|
+| PRIMARY KEY | Platform's name | Platform's type | Platform's description | LOGO IMG | Providers[id] [FOREIGN KEY] |  STRING  |
 
 __Tokens table__
 
