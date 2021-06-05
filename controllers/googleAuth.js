@@ -19,13 +19,9 @@ const {
 } = require("./error.js");
 // =========================================================================================================================
 
-module.exports = (app, configs) => {
+module.exports = (app) => {
     var oauth2ClientToken = ""
     var token_url = ""
-
-    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
-        rootCas.addFile('/var/www/ssl/server.pem')
-    }
 
     // generate a url that asks permissions for Blogger and Google Calendar scopes
     const token_scopes = [
@@ -63,7 +59,7 @@ module.exports = (app, configs) => {
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${app.is_ssl ? "https://" : "http://"}${originalURL}:18000/dashboard/oauth2/google/Tokens/redirect/`
+                `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
             )
 
             token_url = oauth2ClientToken.generateAuthUrl({
@@ -134,12 +130,12 @@ module.exports = (app, configs) => {
             };
             // =============================================================
 
-            let originalURL = req.hostname;
+            let originalURL = req.header("Origin");
 
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${app.is_ssl ? "https://" : "http://"}${originalURL}:18000/dashboard/oauth2/google/Tokens/redirect/`
+                `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
             );
 
             let code = req.body.code;
@@ -337,7 +333,7 @@ module.exports = (app, configs) => {
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${app.is_ssl ? "https://" : "http://"}${originalURL}:18000/dashboard/oauth2/google/Tokens/redirect/`
+                `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
             );
 
             let fetch_tokens = JSON.parse(security.decrypt(token[0].token, token[0].iv));

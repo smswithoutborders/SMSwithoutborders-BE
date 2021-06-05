@@ -293,7 +293,7 @@ let production = (app, configs, db) => {
                     auth_key: req.body.auth_key,
                     provider: req.body.provider,
                     platform: req.body.platform,
-                    origin: originalURL
+                    origin: req.header("Origin")
                 })
                 .then(function (response) {
                     return res.status(200).json(response.data);
@@ -638,7 +638,7 @@ let production = (app, configs, db) => {
                     id: user[0].id,
                     providerId: provider[0].id,
                     platformId: platform[0].id,
-                    origin: originalURL
+                    origin: req.header("Origin")
                 })
                 .then(function (response) {
                     return res.status(200).json(response.data);
