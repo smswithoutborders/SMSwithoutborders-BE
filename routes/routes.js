@@ -710,6 +710,71 @@ let production = (app, configs, db) => {
             next(error)
         }
     });
+
+    app.post("/users/password/new", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+
+            if (!req.body.password) {
+                throw new ErrorHandler(400, "Password cannot be empty");
+            };
+
+            if (!req.body.new_password) {
+                throw new ErrorHandler(400, "New Password cannot be empty");
+            };
+            // =============================================================
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            // PASSWORD AUTH
+            if (user[0].password != GlobalSecurity.hash(req.body.password)) {
+                throw new ErrorHandler(401, "INVALID PASSWORD");
+            }
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let new_password = await user[0].update({
+                password: GlobalSecurity.hash(req.body.new_password),
+                auth_key: uuidv4()
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            return res.status(200).json({
+                auth_key: new_password.auth_key
+            });
+        } catch (error) {
+            next(error)
+        }
+    });
 }
 // =============================================================
 
