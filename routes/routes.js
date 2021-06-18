@@ -1,7 +1,3 @@
-const configs = require("./../config.json");
-const db = require("../models");
-var User = db.users;
-var Providers = db.providers;
 const fs = require('fs')
 const {
     v4: uuidv4
@@ -11,600 +7,929 @@ const {
     QueryTypes
 } = require("sequelize");
 const Axios = require('axios');
+const Security = require("../models/security.models.js");
+const GlobalSecurity = new Security()
 const {
-    providers
-} = require("../models");
-
+    ErrorHandler
+} = require('../controllers/error.js')
 
 var rootCas = require('ssl-root-cas').create()
 
 require('https').globalAgent.options.ca = rootCas
 
-if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
-    rootCas.addFile('/var/www/ssl/server.pem')
-}
 axios = Axios
+// =========================================================================================================================
 
-module.exports = (app) => {
-    app.post("/users/profiles", async (req, res, next) => {
-        if (req.body.phone_number) {
+// ==================== PRODUCTION ====================
+let production = (app, configs, db) => {
+    var User = db.users;
+    var UsersInfo = db.usersInfo;
+    var Provider = db.providers;
+    var Platform = db.platforms;
+
+    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+        rootCas.addFile('/var/www/ssl/server.pem')
+    }
+
+    app.post("/users/stored_tokens", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+
+            if (!req.body.provider) {
+                throw new ErrorHandler(400, "Provider cannot be empty");
+            };
+
+            if (!req.body.platform) {
+                throw new ErrorHandler(400, "Platform cannot be empty");
+            };
+            // =============================================================
+
+            let userData = {
+                user_token: []
+            }
+
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
                 where: {
-                    phone_number: req.body.phone_number
+                    id: req.body.id
                 }
             }).catch(error => {
-                error.httpStatusCode = 500
-                return next(error);
+                throw new ErrorHandler(500, error);
             });
 
-            // RETURN = [], IF NO USER FOUND
+            // RETURN = [], IF USER NOT FOUND
             if (user.length < 1) {
-                const error = new Error("phone number doesn't exist");
-                error.httpStatusCode = 401;
-                return next(error);
+                throw new ErrorHandler(401, "User doesn't exist");
             }
 
             // IF RETURN HAS MORE THAN ONE ITEM
             if (user.length > 1) {
-                const error = new Error("duplicate phone number");
-                error.httpStatusCode = 409;
-                return next(error);
+                throw new ErrorHandler(409, "Duplicate Users");
             }
 
-            // CREATE AUTH_KEY ON LOGIN
-            await user[0].update({
-                auth_key: uuidv4()
-            }).catch(error => {
-                error.httpStatusCode = 500
-                return next(error);
-            });
+            var security = new Security(user[0].password);
 
-            // RETURN AUTH_KEY
-            return res.status(200).json({
-                auth_key: user[0].auth_key
-            });
-        }
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
 
-        // IF PHONE NUMBER FIELD IS EMPTY
-        const error = new Error("phone number cannot be empty");
-        error.httpStatusCode = 400;
-        return next(error);
-    });
-
-    app.post("/users/stored_tokens", async (req, res, next) => {
-        // ==================== REQUEST BODY CHECKS ====================
-        if (!req.body.auth_key) {
-            const error = new Error("auth_key cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
-
-        if (!req.body.provider && !req.body.platform) {
-            const error = new Error("Provider and Platform cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
-        // =============================================================
-
-        // SEARCH FOR USER IN DB
-        let user = await User.findAll({
-            where: {
-                auth_key: req.body.auth_key
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
 
-        // RETURN = [], IF USER NOT FOUND
-        if (user.length < 1) {
-            const error = new Error("Invalid key");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
+            // GET ALL TOKENS UNDER CURRENT USER
+            let token = await user[0].getTokens();
 
-        // IF RETURN HAS MORE THAN ONE ITEM
-        if (user.length > 1) {
-            const error = new Error("duplicate Users");
-            error.httpStatusCode = 409;
-            return next(error);
-        }
+            // RETURN = [], IF NO TOKEN EXIST UNDER CURRENT USER
+            if (token.length < 1) {
+                return res.status(200).json([]);
+            }
 
-        // GET ALL TOKENS UNDER CURRENT USER
-        let token = await user[0].getOauth2s();
+            // FILTER TOKENS BY PROVIDER AND PLATFORM
+            if (req.body.provider && req.body.platform) {
+                // LOOP THROUGH ALL TOKENS FOUND
+                for (let i = 0; i < token.length; i++) {
+                    // GET REQUESTED PROVIDER FOR CURRENT TOKEN
+                    let platform = await token[i].getPlatform({
+                        where: {
+                            name: req.body.platform.toLowerCase()
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
 
-        // RETURN = [], IF NO TOKEN EXIST UNDER CURRENT USER
-        if (token.length < 1) {
-            return res.status(200).json([]);
-        }
-
-        let userData = {
-            user_token: []
-        }
-
-        // FILTER TOKENS BY PROVIDER AND PLATFORM
-        if (req.body.provider && req.body.platform) {
-            // LOOP THROUGH ALL TOKENS FOUND
-            for (let i = 0; i < token.length; i++) {
-                // GET REQUESTED PROVIDER FOR CURRENT TOKEN
-                let provider = await token[i].getProvider({
-                    where: {
-                        [Op.and]: [{
+                    let provider = await token[i].getProvider({
+                        where: {
                             name: req.body.provider.toLowerCase()
-                        }, {
-                            platform: req.body.platform.toLowerCase()
-                        }]
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // IF PROVIDER FOUND
+                    if (provider && platform) {
+                        userData.user_token.push({
+                            provider: provider.name,
+                            platform: platform.name,
+                            token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
+                            profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+                        })
                     }
-                }).catch(error => {
-                    error.httpStatusCode = 500
-                    return next(error);
-                });
-
-                // IF PROVIDER FOUND
-                if (provider) {
-                    userData.user_token.push({
-                        provider: provider.name,
-                        platform: provider.platform,
-                        token: {
-                            access_token: token[i].accessToken,
-                            refresh_token: token[i].refreshToken,
-                            expiry_date: token[i].expiry_date,
-                            scope: token[i].scope
-                        },
-                        profile: token[i].profile
-                    })
                 }
+                // RETURN STORED TOKEN AND PROVIDER
+                return res.status(200).json(userData)
             }
-            // RETURN STORED TOKEN AND PROVIDER
-            return res.status(200).json(userData)
-        }
 
-        // FILTER TOKENS BY PROVIDER
-        if (req.body.provider) {
-            // LOOP THROUGH ALL TOKENS FOUND
-            for (let i = 0; i < token.length; i++) {
-                // GET REQUESTED PROVIDER FOR CURRENT TOKEN
-                let provider = await token[i].getProvider({
-                    where: {
-                        name: req.body.provider.toLowerCase()
+            // FILTER TOKENS BY PROVIDER
+            if (req.body.provider) {
+                // LOOP THROUGH ALL TOKENS FOUND
+                for (let i = 0; i < token.length; i++) {
+                    // GET REQUESTED PROVIDER FOR CURRENT TOKEN
+                    let provider = await token[i].getProvider({
+                        where: {
+                            name: req.body.provider.toLowerCase()
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    let platform = await Platform.findAll({
+                        where: {
+                            id: token[i].platformId
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // IF PROVIDER FOUND
+                    if (provider && platform) {
+                        userData.user_token.push({
+                            provider: provider.name,
+                            platform: platform.name,
+                            token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
+                            profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+                        })
                     }
-                }).catch(error => {
-                    error.httpStatusCode = 500
-                    return next(error);
-                });
-
-                // IF PROVIDER FOUND
-                if (provider) {
-                    userData.user_token.push({
-                        provider: provider.name,
-                        platform: provider.platform,
-                        token: {
-                            access_token: token[i].accessToken,
-                            refresh_token: token[i].refreshToken,
-                            expiry_date: token[i].expiry_date,
-                            scope: token[i].scope
-                        },
-                        profile: token[i].profile
-                    })
                 }
+                // RETURN STORED TOKEN AND PROVIDER
+                return res.status(200).json(userData)
             }
-            // RETURN STORED TOKEN AND PROVIDER
-            return res.status(200).json(userData)
-        }
 
-        // FILTER TOKENS BY PROVIDER
-        if (req.body.platform) {
-            // LOOP THROUGH ALL TOKENS FOUND
-            for (let i = 0; i < token.length; i++) {
-                // GET REQUESTED PROVIDER FOR CURRENT TOKEN
-                let provider = await token[i].getProvider({
-                    where: {
-                        platform: req.body.platform.toLowerCase()
+            // FILTER TOKENS BY PROVIDER
+            if (req.body.platform) {
+                // LOOP THROUGH ALL TOKENS FOUND
+                for (let i = 0; i < token.length; i++) {
+                    let platform = await token[i].getPlatform({
+                        where: {
+                            name: req.body.platform.toLowerCase()
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // GET REQUESTED PROVIDER FOR CURRENT TOKEN
+                    let provider = await Provider.findAll({
+                        where: {
+                            id: token[i].providerId
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // IF PROVIDER FOUND
+                    if (provider && platform) {
+                        userData.user_token.push({
+                            provider: provider.name,
+                            platform: platform.name,
+                            token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
+                            profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+                        })
                     }
-                }).catch(error => {
-                    error.httpStatusCode = 500
-                    return next(error);
-                });
-
-                // IF PROVIDER FOUND
-                if (provider) {
-                    userData.user_token.push({
-                        provider: provider.name,
-                        platform: provider.platform,
-                        token: {
-                            access_token: token[i].accessToken,
-                            refresh_token: token[i].refreshToken,
-                            expiry_date: token[i].expiry_date,
-                            scope: token[i].scope
-                        },
-                        profile: token[i].profile
-                    })
                 }
+                // RETURN STORED TOKEN AND PROVIDER
+                return res.status(200).json(userData)
             }
-            // RETURN STORED TOKEN AND PROVIDER
-            return res.status(200).json(userData)
+        } catch (error) {
+            next(error)
         }
-
-        // // LOOP THROUGH ALL TOKENS FOUND
-        // for (let i = 0; i < token.length; i++) {
-        //     // GET ALL TOKENS UNDER CURRENT USER
-        //     let provider = await token[i].getProvider().catch(error => {
-        //         error.httpStatusCode = 500
-        //         return next(error);
-        //     });
-
-        //     // IF PROVIDER FOUND
-        //     if (provider) {
-        //         userData.user_token.push({
-        //             provider: provider.name,
-        //             platform: provider.platform,
-        //             token: {
-        //                 access_token: token[i].accessToken,
-        //                 refresh_token: token[i].refreshToken,
-        //                 expiry_date: token[i].expiry_date,
-        //                 scope: token[i].scope
-        //             }
-        //         })
-        //     }
-        // }
-
-        // // RETURN STORED TOKENS AND PROVIDER
-        // return res.status(200).json(userData)
     })
 
     app.post("/users/tokens", async (req, res, next) => {
-        // ==================== REQUEST BODY CHECKS ====================
-        if (!req.body.auth_key) {
-            const error = new Error("auth_key cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
 
-        if (!req.body.provider) {
-            const error = new Error("provider cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
 
-        if (!req.body.platform) {
-            const error = new Error("platform cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
-        // ===============================================================
+            if (!req.body.provider) {
+                throw new ErrorHandler(400, "Provider cannot be empty");
+            };
 
-        // SEARCH FOR PROVIDER AND PLATFORM IN DB
-        let provider = await Providers.findAll({
-            where: {
-                [Op.and]: [{
+            if (!req.body.platform) {
+                throw new ErrorHandler(400, "Platform cannot be empty");
+            };
+            // =============================================================
+
+            // SEARCH FOR PROVIDER IN DB
+            let provider = await Provider.findAll({
+                where: {
                     name: req.body.provider.toLowerCase()
-                }, {
-                    platform: req.body.platform.toLowerCase()
-                }]
-            }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
-
-        // RETURN = [], IF PROVIDER NOT FOUND
-        if (provider.length < 1) {
-            const error = new Error("invalid provider or platform");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
-
-        // IF PROVIDER IS MORE THAN ONE IN DB
-        if (provider.length > 1) {
-            const error = new Error("Duplicate provider");
-            error.httpStatusCode = 409;
-            return next(error);
-        }
-
-        // SEARCH FOR USER IN DB
-        let user = await User.findAll({
-            where: {
-                auth_key: req.body.auth_key
-            }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        })
-
-        // RTURN = [], IF USER IS NOT FOUND
-        if (user.length < 1) {
-            const error = new Error("Invalid key");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
-
-        // IF MORE THAN ONE USER EXIST IN DATABASE
-        if (user.length > 1) {
-            const error = new Error("duplicate Users");
-            error.httpStatusCode = 409;
-            return next(error);
-        }
-
-        let port = app.runningPort
-        let originalURL = req.hostname
-        console.log(">> OURL:", originalURL)
-        await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
-                auth_key: req.body.auth_key,
-                provider: req.body.provider,
-                origin: req.header('Origin')
-            })
-            .then(function (response) {
-                return res.status(200).json(response.data);
-            })
-            .catch(function (error) {
-                error.httpStatusCode = 500
-                return next(error);
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
             });
+
+            // SEARCH FOR PLATFORM IN DB
+            let platform = await Platform.findAll({
+                where: {
+                    name: req.body.platform.toLowerCase()
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF PROVIDER NOT FOUND
+            if (provider.length < 1) {
+                throw new ErrorHandler(401, "INVALD PROVIDER");
+            }
+
+            // RETURN = [], IF PLATFORM NOT FOUND
+            if (platform.length < 1) {
+                throw new ErrorHandler(401, "INVALD PLATFORM");
+            }
+
+            // IF PROVIDER IS MORE THAN ONE IN DB
+            if (provider.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
+            }
+
+            // IF PLATFORM IS MORE THAN ONE IN DB
+            if (platform.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
+            }
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            })
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let port = app.runningPort
+            let originalURL = req.hostname
+            // console.log(">> OURL:", originalURL)
+            await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
+                    auth_key: req.body.auth_key,
+                    provider: req.body.provider,
+                    platform: req.body.platform,
+                    origin: req.header("Origin")
+                })
+                .then(function (response) {
+                    return res.status(200).json(response.data);
+                })
+                .catch(function (error) {
+                    throw new ErrorHandler(500, error);
+                });
+        } catch (error) {
+            next(error);
+        }
     });
 
     app.post("/users/profiles/register", async (req, res, next) => {
-        if (!req.body.phone_number) {
-            const error = new Error("phone number cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.phone_number) {
+                throw new ErrorHandler(400, "phone number cannot be empty");
+            };
 
-        if (!req.body.password) {
-            const error = new Error("password cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+            if (!req.body.name) {
+                throw new ErrorHandler(400, "User_name cannot be empty");
+            };
 
-        let user = await User.findAll({
-            where: {
-                phone_number: req.body.phone_number
-            }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
+            if (!req.body.country_code) {
+                throw new ErrorHandler(400, "User_country_code cannot be empty");
+            };
 
-        if (user.length > 0) {
-            const error = new Error("Duplicate phone numbers");
-            error.httpStatusCode = 409;
-            return next(error);
-        };
+            if (!req.body.password) {
+                throw new ErrorHandler(400, "password cannot be empty");
+            };
 
-        let newUser = await User.create({
-            phone_number: req.body.phone_number,
-            password: req.body.password
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
+            if (req.body.password.length < 8) {
+                throw new ErrorHandler(400, "password is less than 8 characters");
+            };
+            // ===============================================================
 
-        return res.status(200).json({
-            message: `${newUser.phone_number} account sucessfully created`
-        })
+            let usersInfo = await UsersInfo.findAll({
+                where: {
+                    phone_number: GlobalSecurity.hash(req.body.phone_number)
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            if (usersInfo.length > 0) {
+                throw new ErrorHandler(409, "Duplicate phone numbers");
+            };
+
+            let newUser = await User.create({
+                password: GlobalSecurity.hash(req.body.password)
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            let user = await UsersInfo.create({
+                phone_number: GlobalSecurity.hash(req.body.phone_number),
+                name: req.body.name,
+                country_code: req.body.country_code,
+                userId: newUser.id
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            return res.status(200).json({
+                message: `${user.name}'s account sucessfully created`
+            })
+        } catch (error) {
+            next(error);
+        }
     });
 
     app.post("/users/profiles/login", async (req, res, next) => {
-        if (!req.body.phone_number) {
-            const error = new Error("phone number cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.phone_number) {
+                throw new ErrorHandler(400, "phone number cannot be empty");
+            };
 
-        if (!req.body.password) {
-            const error = new Error("password cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+            if (!req.body.password) {
+                throw new ErrorHandler(400, "password cannot be empty");
+            };
 
-        let user = await User.findAll({
-            where: {
-                [Op.and]: [{
-                    phone_number: req.body.phone_number
-                }, {
-                    password: req.body.password
-                }]
+            if (req.body.password.length < 8) {
+                throw new ErrorHandler(400, "password is less than 8 characters");
+            };
+            // ===============================================================
+
+            let usersInfo = await UsersInfo.findAll({
+                where: {
+                    phone_number: GlobalSecurity.hash(req.body.phone_number)
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (usersInfo.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
             }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
 
-        if (user.length < 1) {
-            const error = new Error("invalid phone number or password");
-            error.httpStatusCode = 401;
-            return next(error);
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (usersInfo.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            let user = await usersInfo[0].getUser({
+                where: {
+                    password: GlobalSecurity.hash(req.body.password)
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            if (!user) {
+                throw new ErrorHandler(401, "INVALID PASSWORD");
+            };
+
+            var security = new Security(user.password);
+
+            await user.update({
+                auth_key: uuidv4()
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            return res.status(200).json({
+                id: user.id,
+                auth_key: user.auth_key
+            });
+        } catch (error) {
+            next(error);
         }
-
-        if (user.length > 1) {
-            const error = new Error("duplicate phone number");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
-
-        await user[0].update({
-            auth_key: uuidv4()
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
-
-        return res.status(200).json({
-            auth_key: user[0].auth_key
-        });
     })
 
     app.post("/users/providers", async (req, res, next) => {
-        if (!req.body.auth_key) {
-            const error = new Error("auth_key cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
 
-        let user = await User.findAll({
-            where: {
-                auth_key: req.body.auth_key
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+            // =============================================================
+
+            // store tokens from db
+            let userData = {
+                default_provider: [],
+                user_provider: []
             }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
 
-        if (user.length < 1) {
-            const error = new Error("Invalid key");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
 
-        if (user.length > 1) {
-            const error = new Error("duplicate Users");
-            error.httpStatusCode = 409;
-            return next(error);
-        }
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
 
-        // store tokens from db
-        let userData = {
-            default_provider: [],
-            user_provider: []
-        }
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
 
-        let query = `SELECT t1.name, t1.platform 
-        FROM providers t1 
-        LEFT JOIN (SELECT * FROM oauth2s WHERE oauth2s.userId = ${user[0].id}) AS t2 
-        ON t2.providerId = t1.id 
-        WHERE t2.providerId IS NULL `
+            var security = new Security(user[0].password);
 
-        let defaultTokens = await db.sequelize.query(query, {
-            type: QueryTypes.SELECT
-        });
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
 
-        if (defaultTokens.length > 0) {
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let query = `SELECT t1.name , t1.description, t1.letter , t3.name platform_name , t3.type platform_type, t3.letter platform_letter
+                        FROM providers t1
+                        INNER JOIN platforms t3 ON t1.id = t3.providerId
+                        LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = "${user[0].id}") AS t2 
+                        ON t2.platformId = t3.id 
+                        WHERE t2.platformId IS NULL `
+
+            let defaultTokens = await db.sequelize.query(query, {
+                type: QueryTypes.SELECT
+            });
+
+            if (defaultTokens.length > 0) {
+                // get all tokens
+                for (let i = 0; i < defaultTokens.length; i++) {
+                    userData.default_provider.push({
+                        provider: defaultTokens[i].name,
+                        description: defaultTokens[i].description,
+                        letter: defaultTokens[i].letter,
+                        platforms: [{
+                            name: defaultTokens[i].platform_name,
+                            type: defaultTokens[i].platform_type,
+                            letter: defaultTokens[i].platform_letter
+                        }]
+                    })
+                }
+            }
+
+            let token = await user[0].getTokens();
+
+            if (token.length < 1) {
+                return res.status(200).json(userData);
+            }
+
             // get all tokens
-            for (let i = 0; i < defaultTokens.length; i++) {
-                userData.default_provider.push({
-                    provider: defaultTokens[i].name,
-                    platform: defaultTokens[i].platform
-                })
+            for (let i = 0; i < token.length; i++) {
+                let provider = await token[i].getProvider();
+                let platform = await token[i].getPlatform();
+                let profile = JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+
+                if (provider) {
+                    userData.user_provider.push({
+                        provider: provider.name,
+                        description: provider.description,
+                        letter: provider.letter,
+                        platforms: [{
+                            name: platform.name,
+                            type: platform.type,
+                            letter: platform.letter
+                        }],
+                        email: profile.data.email
+                    })
+                }
             }
-        }
 
-        let token = await user[0].getOauth2s();
-
-        if (token.length < 1) {
             return res.status(200).json(userData);
+        } catch (error) {
+            next(error)
         }
-
-        // get all tokens
-        for (let i = 0; i < token.length; i++) {
-            let provider = await token[i].getProvider();
-
-            if (provider) {
-                userData.user_provider.push({
-                    provider: provider.name,
-                    platform: provider.platform
-                })
-            }
-        }
-
-        return res.status(200).json(userData)
     });
 
     app.post("/users/tokens/revoke", async (req, res, next) => {
-        // ==================== REQUEST BODY CHECKS ====================
-        if (!req.body.auth_key) {
-            const error = new Error("auth_key cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
 
-        if (!req.body.password) {
-            const error = new Error("password cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
 
-        if (!req.body.provider) {
-            const error = new Error("provider cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
+            if (!req.body.password) {
+                throw new ErrorHandler(400, "Password cannot be empty");
+            };
 
-        if (!req.body.platform) {
-            const error = new Error("platform cannot be empty");
-            error.httpStatusCode = 400;
-            return next(error);
-        };
-        // ===============================================================
+            if (req.body.password.length < 8) {
+                throw new ErrorHandler(400, "password is less than 8 characters");
+            };
 
-        // SEARCH FOR PROVIDER AND PLATFORM IN DB
-        let provider = await Providers.findAll({
-            where: {
-                [Op.and]: [{
+            if (!req.body.provider) {
+                throw new ErrorHandler(400, "provider cannot be empty");
+            };
+
+            if (!req.body.platform) {
+                throw new ErrorHandler(400, "platform cannot be empty");
+            };
+            // ===============================================================
+
+            // SEARCH FOR PROVIDER IN DB
+            let provider = await Provider.findAll({
+                where: {
                     name: req.body.provider.toLowerCase()
-                }, {
-                    platform: req.body.platform.toLowerCase()
-                }]
-            }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
-
-        // RETURN = [], IF PROVIDER NOT FOUND
-        if (provider.length < 1) {
-            const error = new Error("invalid provider or platform");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
-
-        // IF PROVIDER IS MORE THAN ONE IN DB
-        if (provider.length > 1) {
-            const error = new Error("Duplicate provider");
-            error.httpStatusCode = 409;
-            return next(error);
-        }
-
-        // SEARCH FOR USER IN DB
-        let user = await User.findAll({
-            where: {
-                [Op.and]: [{
-                    auth_key: req.body.auth_key
-                }, {
-                    password: req.body.password
-                }]
-            }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        })
-
-        // RTURN = [], IF USER IS NOT FOUND
-        if (user.length < 1) {
-            const error = new Error("Invalid key or wrong password");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
-
-        // IF MORE THAN ONE USER EXIST IN DATABASE
-        if (user.length > 1) {
-            const error = new Error("duplicate Users");
-            error.httpStatusCode = 409;
-            return next(error);
-        }
-
-        let port = app.runningPort
-        let originalURL = req.hostname
-        await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/revoke`, {
-                id: user[0].id,
-                providerId: provider[0].id,
-                origin: req.header('Origin')
-            })
-            .then(function (response) {
-                return res.status(200).json(response.data);
-            })
-            .catch(function (error) {
-                error.httpStatusCode = 500
-                return next(error);
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
             });
+
+            // SEARCH FOR PLATFORM IN DB
+            let platform = await Platform.findAll({
+                where: {
+                    name: req.body.platform.toLowerCase()
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF PROVIDER NOT FOUND
+            if (provider.length < 1) {
+                throw new ErrorHandler(401, "INVALD PROVIDER");
+            }
+
+            // RETURN = [], IF PLATFORM NOT FOUND
+            if (platform.length < 1) {
+                throw new ErrorHandler(401, "INVALD PLATFORM");
+            }
+
+            // IF PROVIDER IS MORE THAN ONE IN DB
+            if (provider.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
+            }
+
+            // IF PLATFORM IS MORE THAN ONE IN DB
+            if (platform.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
+            }
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            })
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            // PASSWORD AUTH
+            if (user[0].password != security.hash(req.body.password)) {
+                throw new ErrorHandler(401, "INVALID PASSWORD");
+            }
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let port = app.runningPort
+            let originalURL = req.hostname
+            await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/revoke`, {
+                    id: user[0].id,
+                    providerId: provider[0].id,
+                    platformId: platform[0].id,
+                    origin: req.header("Origin")
+                })
+                .then(function (response) {
+                    return res.status(200).json(response.data);
+                })
+                .catch(function (error) {
+                    throw new ErrorHandler(500, error);
+                });
+        } catch (error) {
+            next(error);
+        }
     });
+
+    app.post("/users/profiles/info", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+            // =============================================================
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            let usersInfo = await user[0].getUsersInfos({
+                where: {
+                    userId: user[0].id
+                }
+            });
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let profile_info = {
+                id: user[0].id,
+                phone_number: usersInfo[0].phone_number,
+                name: usersInfo[0].name,
+                country_code: usersInfo[0].country_code,
+                last_login: user[0].updatedAt,
+                created: user[0].createdAt
+            }
+
+            return res.status(200).json(profile_info);
+        } catch (error) {
+            next(error)
+        }
+    });
+
+    app.post("/users/password/new", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+
+            if (!req.body.password) {
+                throw new ErrorHandler(400, "Password cannot be empty");
+            };
+
+            if (!req.body.new_password) {
+                throw new ErrorHandler(400, "New Password cannot be empty");
+            };
+            // =============================================================
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            // PASSWORD AUTH
+            if (user[0].password != GlobalSecurity.hash(req.body.password)) {
+                throw new ErrorHandler(401, "INVALID PASSWORD");
+            }
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let new_password = await user[0].update({
+                password: GlobalSecurity.hash(req.body.new_password),
+                auth_key: uuidv4()
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            return res.status(200).json({
+                auth_key: new_password.auth_key
+            });
+        } catch (error) {
+            next(error)
+        }
+    });
+}
+// =============================================================
+
+// =========================================================================================================================
+
+// ==================== DEVELOPMENT ====================
+let development = (app, configs, db) => {
+    var User = db.users;
+
+    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+        rootCas.addFile('/var/www/ssl/server.pem')
+    }
+
+    app.post("/locals/users/hash1", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+            // =============================================================
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF NO USER FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF RETURN HAS MORE THAN ONE ITEM
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            // RETURN PASSWORD HASH
+            return res.status(200).json({
+                password_hash: user[0].password
+            });
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    app.post("/users/profiles", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "ID cannot be empty");
+            };
+            // =============================================================
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF NO USER FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF RETURN HAS MORE THAN ONE ITEM
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            };
+
+            // // CREATE AUTH_KEY ON LOGIN
+            // await user[0].update({
+            //     auth_key: uuidv4()
+            // }).catch(error => {
+            //     throw new ErrorHandler(500, error);
+            // });
+
+            return res.status(200).json({
+                id: user[0].id,
+                auth_key: user[0].auth_key
+            });
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    app.post("/users/providers", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "ID cannot be empty");
+            };
+            // =============================================================
+
+            // store tokens from db
+            let userData = {
+                user_provider: []
+            }
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            var security = new Security(user[0].password);
+
+            let token = await user[0].getTokens();
+
+            if (token.length < 1) {
+                return res.status(200).json(userData);
+            }
+
+            // get all tokens
+            for (let i = 0; i < token.length; i++) {
+                let provider = await token[i].getProvider();
+                let platform = await token[i].getPlatform();
+                let profile = JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+
+                if (provider) {
+                    userData.user_provider.push({
+                        provider: provider.name,
+                        platform: platform.name,
+                        email: profile.data.email
+                    })
+                }
+            }
+
+            return res.status(200).json(userData);
+        } catch (error) {
+            next(error)
+        }
+    });
+}
+// =============================================================
+
+module.exports = {
+    production,
+    development
 }

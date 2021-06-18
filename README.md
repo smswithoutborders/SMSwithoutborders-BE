@@ -9,38 +9,67 @@ npm install
 
 ### Setup
 * Create configuration file
-    * To set up database and API, use the template in "example.config.json" file and rename to "config.json"
-    * To set up platform credentials, use the template in "example.credentials.json" file and rename to "credentials.json"
-### Start Server
+
+    __root (./)__
+
+    * To set up database and API, copy the template file "example.config.json" and rename to "config.json"
+    * To set up platform credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
+
+### Start Production Server
 * With NPM
 ```bash
-npm start
+npm run startProd
 ```
 * With Node
 ```bash
 node server.js
 ```
-
+### Start Development Server
+* With NPM
+```bash
+npm run startDev
+```
+* With Node
+```bash
+node serverDev.js
+```
+### Start both Production and Development Server
+* With NPM
+```bash
+npm start
+```
 ### API SandBox
 ```
-http://localhost:9000/api-docs
+http://localhost:{PORT}/api-docs
 ```
 
 ### Database tables
 __Users table__
 
-|      id     | phone_number | password | auth_key |
-|:-----------:|:------------:|:--------:|:--------:|
-| PRIMARY KEY |    STRING    |  STRING  |  STRING  |
+|      id     | password | auth_key |
+|:-----------:|:--------:|:--------:|
+| PRIMARY KEY |  STRING  |  STRING  |
+
+__UsersInfos table__
+
+|      id     | phone_number |   name   |  userId  |  country_code  |
+|:-----------:|:------------:|:--------:|:--------:|:--------------:|
+| PRIMARY KEY |    STRING    |  STRING  |  STRING  |     STRING     |
 
 __Providers table__
 
-|      id     |                      name                   |                     platform                   |
-|:-----------:|:-------------------------------------------:|:----------------------------------------------:|
-| PRIMARY KEY | Name of Provider (google, twitter) [STRING] | Name of service consume from Provider [STRING] |
+|      id     |                     name                   |       description      |  letter  |                  
+|:-----------:|:------------------------------------------:|:----------------------:|:--------:|
+| PRIMARY KEY | Provider's name (google, twitter) [STRING] | Provider's description |  STRING  |
 
-__Oauth2s table__
+__Platforms table__
 
-|              profileId             |       profile       | accessToken | refreshToken | scope | expiry_date |          userId         |          providerId         |
-|:----------------------------------:|:-------------------:|:-----------:|--------------|-------|:-----------:|:-----------------------:|:---------------------------:|
-| Providers Profile ID [PRIMARY KEY] | Users info [OBJECT] |    STRING   |    STRING    | ARRAY | DATE STRING | Users[id] [FOREIGN KEY] | Providers[id] [FOREIGN KEY] |
+|      id     |       name      |       type      |       description      |   logo   |          providerId         |  letter  |
+|:-----------:|:---------------:|:---------------:|:----------------------:|:--------:|:---------------------------:|:--------:|
+| PRIMARY KEY | Platform's name | Platform's type | Platform's description | LOGO IMG | Providers[id] [FOREIGN KEY] |  STRING  |
+
+__Tokens table__
+
+|      id     |         profile        |           token          |            userId           |          providerId          |          platformId          |       iv      |
+|:-----------:|:----------------------:|:------------------------:|:---------------------------:|:----------------------------:|:----------------------------:|:-------------:|
+| PRIMARY KEY | Users info  [ OBJECT ] | Users tokens  [ OBJECT ] | Users [ id ]  [FOREIGN KEY] | Provider's[id] [FOREIGN KEY] | Platform's[id] [FOREIGN KEY] | Encryption IV |

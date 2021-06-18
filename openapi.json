@@ -2,136 +2,50 @@
   "openapi": "3.0.1",
   "info": {
     "title": "SMSwithoutBorders API",
-    "version": "1.0"
+    "version": "0.1.0"
   },
   "servers": [{
     "url": "http://localhost:9000"
   }],
   "tags": [{
-      "name": "Profile",
-      "description": "users gain access to profile with phone number"
-    },
-    {
       "name": "Get stored tokens",
-      "description": "users can get stored token with auth_key, user_id and provider"
+      "description": "Get a user's stored token(s) by platform and/or provider"
     },
     {
       "name": "Get new tokens",
-      "description": "sers can get new tokens with auth_key and provider"
-    },
-    {
-      "name": "Oauth2 Token",
-      "description": "users grant access to respective provider for refresh and access Token"
+      "description": "Store new token(s) for a user by platform and provider"
     },
     {
       "name": "Register",
-      "description": "users create account with phone number and password"
+      "description": "Create a new user account"
     },
     {
       "name": "Login",
-      "description": "users login to account with phone number and password"
+      "description": "Access existing user account"
     },
     {
       "name": "Get providers",
-      "description": "users can see all providers stored and not stored"
+      "description": "Get user's activated and unactivated platforms"
     },
     {
       "name": "Revoke token",
-      "description": "users can revoke specific tokens"
+      "description": "Delete token(s) locally and remotely"
+    },
+    {
+      "name": "Profile",
+      "description": "Get user's profile details"
+    },
+    {
+      "name": "Change password",
+      "description": "Chnage users password"
     }
   ],
   "paths": {
-    "/users/profiles/": {
-      "post": {
-        "tags": [
-          "Profile"
-        ],
-        "summary": "request body should contain \"phone_number\"= //users phone number",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "phone_number": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "auth_key": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request (e.g missing required fields)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized (e.g Invalid phone_number)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/users/stored_tokens": {
       "post": {
         "tags": [
           "Get stored tokens"
         ],
-        "summary": "request body should contain \"auth_key\"= //users auth_key, \"platform\" = //authentication platform and \"provider\" = //authentication provider",
         "requestBody": {
           "required": true,
           "content": {
@@ -139,6 +53,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   },
@@ -169,6 +86,9 @@
                           "provider": {
                             "type": "string"
                           },
+                          "platform": {
+                            "type": "string"
+                          },
                           "token": {
                             "type": "object"
                           },
@@ -190,7 +110,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -199,13 +125,40 @@
             }
           },
           "401": {
-            "description": "Unauthorized (e.g Invalid auth_key)",
+            "description": "Unauthorized (e.g User not found)",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -220,7 +173,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -236,7 +195,7 @@
         "tags": [
           "Get new tokens"
         ],
-        "summary": "request body should contain \"auth_key\"= //users auth_key, \"provider\" = //authentication provider and \"platform\" = //authentication platform",
+        "summary": "Token Init",
         "requestBody": {
           "required": true,
           "content": {
@@ -244,6 +203,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   },
@@ -272,6 +234,9 @@
                     "provider": {
                       "type": "string"
                     },
+                    "platform": {
+                      "type": "string"
+                    },
                     "url": {
                       "type": "string"
                     }
@@ -287,7 +252,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -296,13 +267,40 @@
             }
           },
           "401": {
-            "description": "Unauthorized (e.g Invalid auth_key, provider or platform)",
+            "description": "Unauthorized (e.g User, Provder or Platform not found)",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users, Providers or Platforms found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -317,7 +315,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -328,12 +332,21 @@
         }
       }
     },
-    "/oauth2/{provider}/Tokens/": {
+    "/{provider}/auth/success": {
       "post": {
         "tags": [
-          "Oauth2 Token"
+          "Get new tokens"
         ],
-        "summary": "approve account access from providers conscent screen, //\"Redirect_url\" = /oauth2/:provider/Tokens/redirect",
+        "summary": "Token InitSuccess",
+        "parameters": [{
+          "in": "path",
+          "name": "provider",
+          "schema": {
+            "type": "string"
+          },
+          "required": true,
+          "description": "Platform provider's name (e.g google, twitter)"
+        }],
         "requestBody": {
           "required": true,
           "content": {
@@ -341,13 +354,19 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
+                    "type": "string"
+                  },
+                  "platform": {
                     "type": "string"
                   },
                   "provider": {
                     "type": "string"
                   },
-                  "origin": {
+                  "code": {
                     "type": "string"
                   }
                 }
@@ -365,11 +384,89 @@
                   "properties": {
                     "auth_key": {
                       "type": "string"
-                    },
-                    "provider": {
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g missing required fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
                       "type": "string"
                     },
-                    "url": {
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (e.g User, Provider or Platform not found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users, Providers or Platforms found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -385,7 +482,7 @@
         "tags": [
           "Register"
         ],
-        "summary": "request body should contain \"phone_number\"= //users new phone number and \"password\" = // users new password",
+        "summary": "Password most be atleast 15 characters long",
         "requestBody": {
           "required": true,
           "content": {
@@ -394,6 +491,12 @@
                 "type": "object",
                 "properties": {
                   "phone_number": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "country_code": {
                     "type": "string"
                   },
                   "password": {
@@ -427,7 +530,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -436,13 +545,19 @@
             }
           },
           "409": {
-            "description": "Conflict (e.g user already exist)",
+            "description": "Conflict (e.g Duplicate Users found)",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -457,7 +572,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -473,7 +594,6 @@
         "tags": [
           "Login"
         ],
-        "summary": "request body should contain \"phone_number\"= //users phone number and \"password\" = // users password",
         "requestBody": {
           "required": true,
           "content": {
@@ -500,6 +620,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "id": {
+                      "type": "string"
+                    },
                     "auth_key": {
                       "type": "string"
                     }
@@ -515,7 +638,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -524,13 +653,40 @@
             }
           },
           "401": {
-            "description": "Unauthorized (e.g Invalid phone_number or password)",
+            "description": "Unauthorized (e.g User not found)",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -545,7 +701,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -561,7 +723,6 @@
         "tags": [
           "Get providers"
         ],
-        "summary": "request body should contain \"auth_key\"= //users auth_key",
         "requestBody": {
           "required": true,
           "content": {
@@ -569,6 +730,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   }
@@ -579,7 +743,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful",
+            "description": "Successful (default_providers - availble but unactivated platforms; user_provider -  user activated platforms)",
             "content": {
               "application/json": {
                 "schema": {
@@ -593,7 +757,30 @@
                           "provider": {
                             "type": "string"
                           },
-                          "platform": {
+                          "description": {
+                            "type": "string"
+                          },
+                          "letter": {
+                            "type": "string"
+                          },
+                          "platforms": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "type": "string"
+                                },
+                                "letter": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          "email": {
                             "type": "string"
                           }
                         }
@@ -607,8 +794,28 @@
                           "provider": {
                             "type": "string"
                           },
-                          "platform": {
+                          "description": {
                             "type": "string"
+                          },
+                          "letter": {
+                            "type": "string"
+                          },
+                          "platforms": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "type": "string"
+                                },
+                                "letter": {
+                                  "type": "string"
+                                }
+                              }
+                            }
                           }
                         }
                       }
@@ -625,7 +832,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -634,13 +847,40 @@
             }
           },
           "401": {
-            "description": "Unauthorized (e.g Invalid auth_key)",
+            "description": "Unauthorized (e.g User not found)",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -655,7 +895,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -671,7 +917,6 @@
         "tags": [
           "Revoke token"
         ],
-        "summary": "request body should contain \"auth_key\"= //users auth_key, \"password\" = //Users password, \"provider\" = //authentication provider and \"platform\" = //authentication platform",
         "requestBody": {
           "required": true,
           "content": {
@@ -679,6 +924,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string"
+                  },
                   "auth_key": {
                     "type": "string"
                   },
@@ -718,7 +966,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -727,13 +981,40 @@
             }
           },
           "401": {
-            "description": "Unauthorized (e.g Invalid auth_key, provider, platform, password)",
+            "description": "Unauthorized (e.g User, Provider, Platform not found)",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users, Providers, Platforms found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }
@@ -748,7 +1029,284 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/profiles/info": {
+      "post": {
+        "tags": [
+          "Profile"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "auth_key": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "phone_number": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "country_code": {
+                      "type": "string"
+                    },
+                    "last_login": {
+                      "type": "string"
+                    },
+                    "created": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g missing required fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (e.g User not found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "users/password/new": {
+      "post": {
+        "tags": [
+          "Change password"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "auth_key": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "new_password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "auth_key": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g missing required fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (e.g User not found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "statusCode": {
+                      "type": "string"
+                    },
+                    "message": {
                       "type": "string"
                     }
                   }

@@ -1,11 +1,12 @@
 module.exports = (sequelize, Sequelize) => {
     let Users = sequelize.define("users", {
-        phone_number: Sequelize.STRING,
+        id: {
+            type: Sequelize.STRING(64),
+            defaultValue: Sequelize.UUIDV1,
+            primaryKey: true
+        },
         password: Sequelize.STRING,
         auth_key: Sequelize.STRING,
-        // username: Sequelize.STRING,
-        // profileId: Sequelize.STRING,
-        // email: Sequelize.STRING
     });
 
     return Users;

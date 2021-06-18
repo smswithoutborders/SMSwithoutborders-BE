@@ -3,21 +3,25 @@ const {
 } = require('googleapis');
 const credentials = require("../credentials.json");
 const db = require("../models");
-var Oauth2 = db.oauth2;
+var Token = db.tokens;
 var User = db.users;
 var Provider = db.providers;
+var Platform = db.platforms;
 const {
     Op
 } = require("sequelize");
 const {
     v4: uuidv4
 } = require('uuid');
-
+const Security = require("../models/security.models.js");
+const {
+    ErrorHandler
+} = require("./error.js");
+// =========================================================================================================================
 
 module.exports = (app) => {
     var oauth2ClientToken = ""
     var token_url = ""
-
 
     // generate a url that asks permissions for Blogger and Google Calendar scopes
     const token_scopes = [
@@ -28,14 +32,34 @@ module.exports = (app) => {
     ];
 
     app.post('/oauth2/google/Tokens/', async (req, res, next) => {
-        if (req.body.auth_key) {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+
+            if (!req.body.origin) {
+                throw new ErrorHandler(400, "Origin cannot be empty");
+            };
+
+            if (!req.body.provider) {
+                throw new ErrorHandler(400, "Provider cannot be empty");
+            };
+
+            if (!req.body.platform) {
+                throw new ErrorHandler(400, "Platform cannot be empty");
+            };
+            // ===============================================================
+
+            let auth_key = req.body.auth_key;
+
             // let originalURL = req.get('host')
             let originalURL = req.body.origin
 
             oauth2ClientToken = new google.auth.OAuth2(
                 credentials.google.GOOGLE_CLIENT_ID,
                 credentials.google.GOOGLE_CLIENT_SECRET,
-                `${originalURL}/oauth2/google/Tokens/redirect/`
+                `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
             )
 
             token_url = oauth2ClientToken.generateAuthUrl({
@@ -46,209 +70,295 @@ module.exports = (app) => {
                 scope: token_scopes
             });
 
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    auth_key: auth_key
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            })
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
+
+            await user[0].update({
+                auth_key: uuidv4()
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
             return res.status(200).json({
-                auth_key: req.body.auth_key,
+                auth_key: user[0].auth_key,
                 provider: req.body.provider,
+                platform: req.body.platform,
                 url: token_url
             });
+        } catch (error) {
+            next(error)
         }
     });
 
     app.post('/google/auth/success', async (req, res, next) => {
-        let code = req.body.code;
-        let auth_key = req.body.auth_key;
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
 
-        const {
-            tokens
-        } = await oauth2ClientToken.getToken(code).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
-        oauth2ClientToken.setCredentials(tokens);
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
 
-        // get profile data
-        var gmail = google.oauth2({
-            auth: oauth2ClientToken,
-            version: 'v2'
-        });
+            if (!req.body.provider) {
+                throw new ErrorHandler(400, "Provider cannot be empty");
+            };
 
-        let profile = await gmail.userinfo.get();
+            if (!req.body.platform) {
+                throw new ErrorHandler(400, "Platform cannot be empty");
+            };
 
-        let oauth2 = await Oauth2.findAll({
-            where: {
-                profileId: profile.data.id
+            if (!req.body.code) {
+                throw new ErrorHandler(400, "Code cannot be empty");
+            };
+            // =============================================================
+
+            let originalURL = req.header("Origin");
+
+            oauth2ClientToken = new google.auth.OAuth2(
+                credentials.google.GOOGLE_CLIENT_ID,
+                credentials.google.GOOGLE_CLIENT_SECRET,
+                `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
+            );
+
+            let code = req.body.code;
+
+            const {
+                tokens
+            } = await oauth2ClientToken.getToken(code).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+            oauth2ClientToken.setCredentials(tokens);
+
+            // get profile data
+            var gmail = google.oauth2({
+                auth: oauth2ClientToken,
+                version: 'v2'
+            });
+
+            let profile = await gmail.userinfo.get();
+
+            // let token = await Token.findAll({
+            //     where: {
+            //         profileId: profile.data.id
+            //     }
+            // });
+
+            // if (token[0]) {
+            //     const error = new Error("Token already exist");
+            //     error.httpStatusCode = 400;
+            //     return next(error);
+            // }
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            })
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
             }
-        });
 
-        if (oauth2[0]) {
-            const error = new Error("Token already exist");
-            error.httpStatusCode = 400;
-            return next(error);
-        }
-
-        // SEARCH FOR USER IN DB
-        let user = await User.findAll({
-            where: {
-                auth_key: auth_key
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
             }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        })
 
-        // RTURN = [], IF USER IS NOT FOUND
-        if (user.length < 1) {
-            const error = new Error("Invalid key");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
+            var security = new Security(user[0].password);
 
-        // IF MORE THAN ONE USER EXIST IN DATABASE
-        if (user.length > 1) {
-            const error = new Error("duplicate Users");
-            error.httpStatusCode = 409;
-            return next(error);
-        }
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
 
-        await Oauth2.create({
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token,
-            expiry_date: tokens.expiry_date,
-            scope: tokens.scope.split(" "),
-            profile: profile,
-            profileId: profile.data.id
-        });
-
-        await Oauth2.update({
-            userId: user[0].id
-        }, {
-            where: {
-                profileId: profile.data.id
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
-        })
 
-        let provider = await Provider.findAll({
-            where: {
-                name: req.body.provider
+            let new_token = await Token.create({
+                profile: security.encrypt(JSON.stringify(profile)).e_info,
+                token: security.encrypt(JSON.stringify(tokens)).e_info,
+                iv: security.iv
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            await new_token.update({
+                userId: user[0].id
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            let provider = await Provider.findAll({
+                where: {
+                    name: req.body.provider.toLowerCase()
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            let platform = await Platform.findAll({
+                where: {
+                    name: req.body.platform.toLowerCase()
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF PROVIDER NOT FOUND
+            if (provider.length < 1) {
+                throw new ErrorHandler(401, "INVALD PROVIDER");
             }
-        })
 
-        if (provider.length < 1) {
-            const error = new Error("Invalid Provider");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
-
-        if (provider.length > 1) {
-            const error = new Error("duplicate providers");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
-
-        await Oauth2.update({
-            providerId: provider[0].id
-        }, {
-            where: {
-                profileId: profile.data.id
+            // RETURN = [], IF PLATFORM NOT FOUND
+            if (platform.length < 1) {
+                throw new ErrorHandler(401, "INVALD PLATFORM");
             }
-        })
 
-        await user[0].update({
-            auth_key: uuidv4()
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
+            // IF PROVIDER IS MORE THAN ONE IN DB
+            if (provider.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
+            }
 
-        return res.status(200).json({
-            auth_key: user[0].auth_key
-        });
+            // IF PLATFORM IS MORE THAN ONE IN DB
+            if (platform.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
+            }
+
+            await new_token.update({
+                providerId: provider[0].id,
+                platformId: platform[0].id
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            await user[0].update({
+                auth_key: uuidv4()
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            return res.status(200).json({
+                auth_key: user[0].auth_key
+            });
+        } catch (error) {
+            next(error)
+        }
     });
 
     app.post('/oauth2/google/Tokens/revoke', async (req, res, next) => {
-        let originalURL = req.body.origin
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.platformId) {
+                throw new ErrorHandler(400, "platformId cannot be empty");
+            };
 
-        oauth2ClientToken = new google.auth.OAuth2(
-            credentials.google.GOOGLE_CLIENT_ID,
-            credentials.google.GOOGLE_CLIENT_SECRET,
-            `${originalURL}/oauth2/google/Tokens/redirect/`
-        )
+            if (!req.body.providerId) {
+                throw new ErrorHandler(400, "ProviderId cannot be empty");
+            };
 
-        let user = await User.findAll({
-            where: {
-                id: req.body.id
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "UserId cannot be empty");
+            };
+
+            if (!req.body.origin) {
+                throw new ErrorHandler(400, "Origin cannot be empty");
+            };
+            // ===============================================================
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
             }
-        });
 
-        if (user.length < 1) {
-            const error = new Error("Invalid key");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
-
-        if (user.length > 1) {
-            const error = new Error("duplicate users");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
-
-        let provider = await Provider.findAll({
-            where: {
-                id: req.body.providerId
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
             }
-        })
 
-        if (provider.length < 1) {
-            const error = new Error("Invalid Provider");
-            error.httpStatusCode = 401;
-            return next(error);
-        }
+            var security = new Security(user[0].password);
 
-        if (provider.length > 1) {
-            const error = new Error("duplicate providers");
-            error.httpStatusCode = 401;
-            return next(error);
-        };
+            let originalURL = req.body.origin
 
-        let oauth2 = await Oauth2.findAll({
-            where: {
-                [Op.and]: [{
-                    userId: user[0].id
-                }, {
-                    providerId: provider[0].id
-                }]
+            let token = await Token.findAll({
+                where: {
+                    [Op.and]: [{
+                        userId: req.body.id
+                    }, {
+                        platformId: req.body.platformId
+                    }, {
+                        providerId: req.body.providerId
+                    }]
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            if (token.length < 1) {
+                throw new ErrorHandler(401, "TOKEN DOESN'T EXIST");
             }
-        }).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
 
-        if (oauth2.length < 1) {
-            const error = new Error("Token doesn't exist");
-            error.httpStatusCode = 401;
-            return next(error);
+            if (token.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE TOKENS");
+            };
+
+            oauth2ClientToken = new google.auth.OAuth2(
+                credentials.google.GOOGLE_CLIENT_ID,
+                credentials.google.GOOGLE_CLIENT_SECRET,
+                `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
+            );
+
+            let fetch_tokens = JSON.parse(security.decrypt(token[0].token, token[0].iv));
+
+            await oauth2ClientToken.setCredentials(fetch_tokens);
+
+            await oauth2ClientToken.getAccessToken(async (err, access_token) => {
+                if (err) {
+                    throw new ErrorHandler(500, error);
+                }
+
+                await oauth2ClientToken.revokeToken(access_token).catch(error => {
+                    throw new ErrorHandler(500, error);
+                });
+
+                await token[0].destroy().catch(error => {
+                    throw new ErrorHandler(500, error);
+                });;
+
+                return res.status(200).json({
+                    message: "Token revoke success"
+                });
+            });
+        } catch (error) {
+            next(error);
         }
-
-        if (oauth2.length > 1) {
-            const error = new Error("duplicate Tokens");
-            error.httpStatusCode = 409;
-            return next(error);
-        };
-
-        await oauth2ClientToken.revokeToken(oauth2[0].accessToken).catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });
-
-        await oauth2[0].destroy().catch(error => {
-            error.httpStatusCode = 500
-            return next(error);
-        });;
-
-        return res.status(200).json({
-            message: "Token revoke success"
-        });
-
     });
-
 }

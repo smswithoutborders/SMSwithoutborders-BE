@@ -4,10 +4,10 @@ const Sequelize = require("sequelize");
 var sequelize = new Sequelize(configs.database.MYSQL_DATABASE, configs.database.MYSQL_USER, configs.database.MYSQL_PASSWORD, {
     host: configs.database.MYSQL_HOST,
     dialect: "mysql",
-    // logging: false,
-    define: {
-        timestamps: false
-    }
+    logging: false,
+    // define: {
+    //     timestamps: false
+    // }
 });
 
 var db = {};
@@ -16,23 +16,30 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 db.users = require("./users.models.js")(sequelize, Sequelize);
-db.oauth2 = require("./oauth2.0.models.js")(sequelize, Sequelize);
+db.tokens = require("./tokens.models.js")(sequelize, Sequelize);
 db.providers = require("./providers.models.js")(sequelize, Sequelize);
+db.platforms = require("./platforms.models.js")(sequelize, Sequelize);
+db.usersInfo = require("./usersInfo.models.js")(sequelize, Sequelize);
 
-db.users.hasMany(db.oauth2, {
+db.users.hasMany(db.tokens, {
     foreignKey: "userId"
 });
-db.oauth2.belongsTo(db.users);
-db.providers.hasOne(db.oauth2, {
+db.tokens.belongsTo(db.users);
+db.users.hasMany(db.usersInfo, {
+    foreignKey: "userId"
+});
+db.usersInfo.belongsTo(db.users);
+db.providers.hasOne(db.tokens, {
     foreignKey: "providerId"
 });
-db.oauth2.belongsTo(db.providers);
-
-// // Create default providers
-// db.providers.bulkCreate([{
-//     name: "google"
-// }, {
-//     name: "twitter"
-// }])
+db.tokens.belongsTo(db.providers);
+db.providers.hasMany(db.platforms, {
+    foreignKey: "providerId"
+});
+db.platforms.belongsTo(db.providers);
+db.platforms.hasOne(db.tokens, {
+    foreignKey: "platformId"
+});
+db.tokens.belongsTo(db.platforms);
 
 module.exports = db;
