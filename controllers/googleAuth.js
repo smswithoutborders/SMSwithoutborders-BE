@@ -23,9 +23,8 @@ module.exports = (app) => {
     var oauth2ClientToken = ""
     var token_url = ""
 
-    // generate a url that asks permissions for Blogger and Google Calendar scopes
+    // requested scopes
     const token_scopes = [
-        'https://www.googleapis.com/auth/gmail.readonly',
         'https://www.googleapis.com/auth/gmail.send',
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email'
