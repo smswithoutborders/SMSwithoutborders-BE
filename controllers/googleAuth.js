@@ -137,6 +137,54 @@ module.exports = (app) => {
                 `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
             );
 
+            let provider = await Provider.findAll({
+                where: {
+                    name: req.body.provider.toLowerCase()
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            let platform = await Platform.findAll({
+                where: {
+                    name: req.body.platform.toLowerCase()
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF PROVIDER NOT FOUND
+            if (provider.length < 1) {
+                throw new ErrorHandler(401, "INVALD PROVIDER");
+            }
+
+            // RETURN = [], IF PLATFORM NOT FOUND
+            if (platform.length < 1) {
+                throw new ErrorHandler(401, "INVALD PLATFORM");
+            }
+
+            // IF PROVIDER IS MORE THAN ONE IN DB
+            if (provider.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
+            }
+
+            // IF PLATFORM IS MORE THAN ONE IN DB
+            if (platform.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
+            }
+
+            let token = await Token.findAll({
+                where: {
+                    userId: req.body.id,
+                    providerId: provider[0].id,
+                    platformId: platform[0].id
+                }
+            });
+
+            if (token[0]) {
+                throw new ErrorHandler(409, "DUPLICATE TOKENS");
+            }
+
             let code = req.body.code;
 
             const {
@@ -153,18 +201,6 @@ module.exports = (app) => {
             });
 
             let profile = await gmail.userinfo.get();
-
-            // let token = await Token.findAll({
-            //     where: {
-            //         profileId: profile.data.id
-            //     }
-            // });
-
-            // if (token[0]) {
-            //     const error = new Error("Token already exist");
-            //     error.httpStatusCode = 400;
-            //     return next(error);
-            // }
 
             // SEARCH FOR USER IN DB
             let user = await User.findAll({
@@ -207,42 +243,6 @@ module.exports = (app) => {
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
-
-            let provider = await Provider.findAll({
-                where: {
-                    name: req.body.provider.toLowerCase()
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            let platform = await Platform.findAll({
-                where: {
-                    name: req.body.platform.toLowerCase()
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            // RETURN = [], IF PROVIDER NOT FOUND
-            if (provider.length < 1) {
-                throw new ErrorHandler(401, "INVALD PROVIDER");
-            }
-
-            // RETURN = [], IF PLATFORM NOT FOUND
-            if (platform.length < 1) {
-                throw new ErrorHandler(401, "INVALD PLATFORM");
-            }
-
-            // IF PROVIDER IS MORE THAN ONE IN DB
-            if (provider.length > 1) {
-                throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
-            }
-
-            // IF PLATFORM IS MORE THAN ONE IN DB
-            if (platform.length > 1) {
-                throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
-            }
 
             await new_token.update({
                 providerId: provider[0].id,
