@@ -185,6 +185,34 @@ module.exports = (app) => {
                 throw new ErrorHandler(409, "DUPLICATE TOKENS");
             }
 
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            })
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            }
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
             let code = req.body.code;
 
             const {
@@ -202,34 +230,6 @@ module.exports = (app) => {
 
             let profile = await gmail.userinfo.get();
 
-            // SEARCH FOR USER IN DB
-            let user = await User.findAll({
-                where: {
-                    id: req.body.id
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            })
-
-            // RTURN = [], IF USER IS NOT FOUND
-            if (user.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
-            }
-
-            // IF MORE THAN ONE USER EXIST IN DATABASE
-            if (user.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
-            }
-
-            var security = new Security(user[0].password);
-
-            // CHECK AUTH_KEY
-            let auth_key = user[0].auth_key;
-
-            if (auth_key != req.body.auth_key) {
-                throw new ErrorHandler(401, "INVALID AUTH_KEY");
-            }
-
             let new_token = await Token.create({
                 profile: security.encrypt(JSON.stringify(profile)).e_info,
                 token: security.encrypt(JSON.stringify(tokens)).e_info,
@@ -239,12 +239,7 @@ module.exports = (app) => {
             });
 
             await new_token.update({
-                userId: user[0].id
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            await new_token.update({
+                userId: user[0].id,
                 providerId: provider[0].id,
                 platformId: platform[0].id
             }).catch(error => {
