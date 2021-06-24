@@ -26,6 +26,7 @@ let production = (app, configs, db) => {
     var UsersInfo = db.usersInfo;
     var Provider = db.providers;
     var Platform = db.platforms;
+    var SmsVerification = db.smsVerification;
 
     if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
         rootCas.addFile('/var/www/ssl/server.pem')
@@ -332,18 +333,29 @@ let production = (app, configs, db) => {
 
             let usersInfo = await UsersInfo.findAll({
                 where: {
-                    phone_number: GlobalSecurity.hash(req.body.phone_number)
+                    full_phone_number: GlobalSecurity.hash(req.body.country_code + req.body.phone_number)
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             if (usersInfo.length > 0) {
-                throw new ErrorHandler(409, "Duplicate phone numbers");
+                for (let i = 0; i < usersInfo.length; i++) {
+                    let user = usersInfo[i].getUser({
+                        where: {
+                            status: "verified"
+                        }
+                    });
+
+                    if (user) {
+                        throw new ErrorHandler(409, "DUPLICATE PHONE NUMBERS");
+                    }
+                };
             };
 
             let newUser = await User.create({
-                password: GlobalSecurity.hash(req.body.password)
+                password: GlobalSecurity.hash(req.body.password),
+                auth_key: uuidv4()
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
@@ -352,13 +364,22 @@ let production = (app, configs, db) => {
                 phone_number: GlobalSecurity.hash(req.body.phone_number),
                 name: req.body.name,
                 country_code: req.body.country_code,
+                full_phone_number: GlobalSecurity.hash(req.body.country_code + req.body.phone_number),
                 userId: newUser.id
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
+            let SV = await SmsVerification.create({
+                code: "1234",
+                session_id: newUser.auth_key
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
             return res.status(200).json({
-                message: `${user.name}'s account sucessfully created`
+                session_id: SV.session_id,
+                svid: SV.svid
             })
         } catch (error) {
             next(error);

@@ -20,6 +20,7 @@ db.tokens = require("./tokens.models.js")(sequelize, Sequelize);
 db.providers = require("./providers.models.js")(sequelize, Sequelize);
 db.platforms = require("./platforms.models.js")(sequelize, Sequelize);
 db.usersInfo = require("./usersInfo.models.js")(sequelize, Sequelize);
+db.smsVerification = require("./smsVerification.models.js")(sequelize, Sequelize);
 
 db.users.hasMany(db.tokens, {
     foreignKey: "userId"
