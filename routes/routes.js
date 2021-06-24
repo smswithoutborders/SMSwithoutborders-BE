@@ -341,7 +341,7 @@ let production = (app, configs, db) => {
 
             if (usersInfo.length > 0) {
                 for (let i = 0; i < usersInfo.length; i++) {
-                    let user = usersInfo[i].getUser({
+                    let user = await usersInfo[i].getUser({
                         where: {
                             status: "verified"
                         }
@@ -380,6 +380,101 @@ let production = (app, configs, db) => {
             return res.status(200).json({
                 session_id: SV.session_id,
                 svid: SV.svid
+            })
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    app.post("/users/profiles/register/2fa", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.code) {
+                throw new ErrorHandler(400, "Code cannot be empty");
+            };
+
+            if (!req.body.session_id) {
+                throw new ErrorHandler(400, "Session ID cannot be empty");
+            };
+
+            if (!req.body.svid) {
+                throw new ErrorHandler(400, "SVID cannot be empty");
+            };
+            // ===============================================================
+
+            let user = await User.findAll({
+                where: {
+                    auth_key: req.body.session_id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            };
+
+            if (user[0].status == "verified") {
+                throw new ErrorHandler(403, "ACCOUNT ALREADY VERIFIED");
+            }
+
+            let SV = await SmsVerification.findAll({
+                where: {
+                    [Op.and]: [{
+                            code: req.body.code
+                        },
+                        {
+                            svid: req.body.svid
+                        }
+                    ]
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            if (SV.length < 1) {
+                throw new ErrorHandler(401, "INVALID VERIFICATION");
+            };
+
+            if (SV.length > 1) {
+                throw new ErrorHandler(401, "DUPLICATE VERIFICATIONS");
+            };
+
+            await SV[0].changed("updatedAt", true);
+            await SV[0].update({
+                updatedAt: new Date()
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            let mTime = Date.parse(SV[0].updatedAt);
+            let rTime = Date.parse(SV[0].createdAt);
+            let time = (mTime - rTime) / 60000;
+
+            if (time > 5) {
+                await user[0].update({
+                    auth_key: uuidv4()
+                }).catch(error => {
+                    throw new ErrorHandler(500, error);
+                });
+
+                throw new ErrorHandler(401, "VERIFICATION CODE EXPIRED");
+            }
+
+            await user[0].update({
+                status: "verified"
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            return res.status(200).json({
+                message: "ACCOUNT CREATED SUCCESSFULLY"
             })
         } catch (error) {
             next(error);
