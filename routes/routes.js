@@ -722,6 +722,10 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(400, "Auth_key cannot be empty");
             };
 
+            if (req.body.new_password.length < 8) {
+                throw new ErrorHandler(400, "New Password is less than 8 characters");
+            };
+
             if (!req.body.password) {
                 throw new ErrorHandler(400, "Password cannot be empty");
             };
@@ -770,6 +774,111 @@ let production = (app, configs, db) => {
 
             return res.status(200).json({
                 auth_key: new_password.auth_key
+            });
+        } catch (error) {
+            next(error)
+        }
+    });
+
+    app.delete("/users/profiles/delete", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+
+            if (!req.body.password) {
+                throw new ErrorHandler(400, "Password cannot be empty");
+            };
+            // =============================================================
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            }
+
+            // PASSWORD AUTH
+            if (user[0].password != GlobalSecurity.hash(req.body.password)) {
+                throw new ErrorHandler(401, "INVALID PASSWORD");
+            }
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let tokens = await user[0].getTokens();
+            let usersInfo = await user[0].getUsersInfos({
+                where: {
+                    userId: user[0].id
+                }
+            });
+
+            if (tokens.length > 0) {
+                let port = app.runningPort
+                let originalURL = req.hostname
+                for (let i = 0; i < tokens.length; i++) {
+                    let provider = await Provider.findAll({
+                        where: {
+                            id: tokens[i].providerId
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // RETURN = [], IF PROVIDER NOT FOUND
+                    if (provider.length < 1) {
+                        throw new ErrorHandler(401, "INVALD PROVIDER");
+                    }
+
+                    // IF PROVIDER IS MORE THAN ONE IN DB
+                    if (provider.length > 1) {
+                        throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
+                    }
+
+                    await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/revoke`, {
+                            id: user[0].id,
+                            providerId: tokens[i].providerId,
+                            platformId: tokens[i].platformId,
+                            origin: req.header("Origin")
+                        })
+                        .then(function (response) {
+                            console.log(response.data);
+                        })
+                        .catch(function (error) {
+                            throw new ErrorHandler(500, error);
+                        });
+                }
+            }
+
+            await user[0].destroy().catch(error => {
+                throw new ErrorHandler(500, error);
+            });;
+            await usersInfo[0].destroy().catch(error => {
+                throw new ErrorHandler(500, error);
+            });;
+
+            return res.status(200).json({
+                message: "ACCOUNT SUCCESSFULLY DELETED"
             });
         } catch (error) {
             next(error)

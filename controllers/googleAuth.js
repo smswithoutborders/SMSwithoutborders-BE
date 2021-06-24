@@ -137,77 +137,6 @@ module.exports = (app) => {
                 `${originalURL}/dashboard/oauth2/google/Tokens/redirect/`
             );
 
-            let code = req.body.code;
-
-            const {
-                tokens
-            } = await oauth2ClientToken.getToken(code).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-            oauth2ClientToken.setCredentials(tokens);
-
-            // get profile data
-            var gmail = google.oauth2({
-                auth: oauth2ClientToken,
-                version: 'v2'
-            });
-
-            let profile = await gmail.userinfo.get();
-
-            // let token = await Token.findAll({
-            //     where: {
-            //         profileId: profile.data.id
-            //     }
-            // });
-
-            // if (token[0]) {
-            //     const error = new Error("Token already exist");
-            //     error.httpStatusCode = 400;
-            //     return next(error);
-            // }
-
-            // SEARCH FOR USER IN DB
-            let user = await User.findAll({
-                where: {
-                    id: req.body.id
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            })
-
-            // RTURN = [], IF USER IS NOT FOUND
-            if (user.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
-            }
-
-            // IF MORE THAN ONE USER EXIST IN DATABASE
-            if (user.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
-            }
-
-            var security = new Security(user[0].password);
-
-            // CHECK AUTH_KEY
-            let auth_key = user[0].auth_key;
-
-            if (auth_key != req.body.auth_key) {
-                throw new ErrorHandler(401, "INVALID AUTH_KEY");
-            }
-
-            let new_token = await Token.create({
-                profile: security.encrypt(JSON.stringify(profile)).e_info,
-                token: security.encrypt(JSON.stringify(tokens)).e_info,
-                iv: security.iv
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            await new_token.update({
-                userId: user[0].id
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
             let provider = await Provider.findAll({
                 where: {
                     name: req.body.provider.toLowerCase()
@@ -244,7 +173,73 @@ module.exports = (app) => {
                 throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
             }
 
+            let token = await Token.findAll({
+                where: {
+                    userId: req.body.id,
+                    providerId: provider[0].id,
+                    platformId: platform[0].id
+                }
+            });
+
+            if (token[0]) {
+                throw new ErrorHandler(409, "DUPLICATE TOKENS");
+            }
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            })
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            }
+
+            var security = new Security(user[0].password);
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let code = req.body.code;
+
+            const {
+                tokens
+            } = await oauth2ClientToken.getToken(code).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+            oauth2ClientToken.setCredentials(tokens);
+
+            // get profile data
+            var gmail = google.oauth2({
+                auth: oauth2ClientToken,
+                version: 'v2'
+            });
+
+            let profile = await gmail.userinfo.get();
+
+            let new_token = await Token.create({
+                profile: security.encrypt(JSON.stringify(profile)).e_info,
+                token: security.encrypt(JSON.stringify(tokens)).e_info,
+                iv: security.iv
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
             await new_token.update({
+                userId: user[0].id,
                 providerId: provider[0].id,
                 platformId: platform[0].id
             }).catch(error => {
