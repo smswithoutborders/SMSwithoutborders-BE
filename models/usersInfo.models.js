@@ -17,6 +17,11 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false,
             unique: true
         },
+        role: {
+            type: Sequelize.ENUM(['primary', 'secondary']),
+            defaultValue: "primary",
+            allowNull: false
+        },
         iv: {
             type: Sequelize.STRING,
             allowNull: false,
