@@ -42,5 +42,9 @@ db.platforms.hasOne(db.tokens, {
     foreignKey: "platformId"
 });
 db.tokens.belongsTo(db.platforms);
+db.users.hasMany(db.smsVerification, {
+    foreignKey: "userId"
+});
+db.smsVerification.belongsTo(db.users);
 
 module.exports = db;

@@ -6,7 +6,11 @@ module.exports = (sequelize, Sequelize) => {
             primaryKey: true
         },
         code: Sequelize.STRING,
-        session_id: Sequelize.STRING
+        session_id: {
+            type: Sequelize.STRING,
+            allowNull: false,
+            unique: true
+        },
     });
 
     return SmsVerification;
