@@ -10,12 +10,13 @@
         "DEV_API_PORT": "10000",
         "SESSION_SECRET": ""
     },
+    "TWILIO_ENDPOINT": [],
     "origin": ["::ffff:127.0.0.1", "::1"],
     "ssl_api": {
         "API_PORT": "",
         "SESSION_SECRET": "",
         "CERTIFICATE": "",
         "KEY": "",
-	"PEM": ""
+        "PEM": ""
     }
 }

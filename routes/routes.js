@@ -8,6 +8,7 @@ const {
 } = require("sequelize");
 const Axios = require('axios');
 const Security = require("../models/security.models.js");
+const credentials = require("../credentials.json");
 const GlobalSecurity = new Security()
 const {
     ErrorHandler
@@ -355,32 +356,44 @@ let production = (app, configs, db) => {
 
             let newUser = await User.create({
                 password: GlobalSecurity.hash(req.body.password),
-                auth_key: uuidv4()
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
+
+            var security = new Security(newUser.password);
 
             let user = await UsersInfo.create({
-                phone_number: GlobalSecurity.hash(req.body.phone_number),
-                name: req.body.name,
-                country_code: req.body.country_code,
-                full_phone_number: GlobalSecurity.hash(req.body.country_code + req.body.phone_number),
-                userId: newUser.id
+                phone_number: security.hash(req.body.phone_number),
+                name: security.encrypt(req.body.name).e_info,
+                country_code: security.encrypt(req.body.country_code).e_info,
+                full_phone_number: security.hash(req.body.country_code + req.body.phone_number),
+                userId: newUser.id,
+                iv: security.iv
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
-            let SV = await SmsVerification.create({
-                code: "1234",
-                session_id: newUser.auth_key
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
+            await axios.post(configs.TWILIO_ENDPOINT[0], {
+                    number: req.body.country_code + req.body.phone_number,
+                    auth_token: credentials.twilio.AUTH_TOKEN,
+                })
+                .then(async function (response) {
+                    let twilio_verification = response.data;
 
-            return res.status(200).json({
-                session_id: SV.session_id,
-                svid: SV.svid
-            })
+                    let SV = await SmsVerification.create({
+                        userId: newUser.id,
+                        session_id: twilio_verification.service_sid
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    return res.status(200).json({
+                        session_id: SV.session_id,
+                    })
+                })
+                .catch(function (error) {
+                    throw new ErrorHandler(500, error);
+                });
         } catch (error) {
             next(error);
         }
@@ -396,86 +409,82 @@ let production = (app, configs, db) => {
             if (!req.body.session_id) {
                 throw new ErrorHandler(400, "Session ID cannot be empty");
             };
-
-            if (!req.body.svid) {
-                throw new ErrorHandler(400, "SVID cannot be empty");
-            };
             // ===============================================================
-
-            let user = await User.findAll({
-                where: {
-                    auth_key: req.body.session_id
-                }
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
-
-            // RTURN = [], IF USER IS NOT FOUND
-            if (user.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
-            }
-
-            // IF MORE THAN ONE USER EXIST IN DATABASE
-            if (user.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
-            };
-
-            if (user[0].status == "verified") {
-                throw new ErrorHandler(403, "ACCOUNT ALREADY VERIFIED");
-            }
 
             let SV = await SmsVerification.findAll({
                 where: {
-                    [Op.and]: [{
-                            code: req.body.code
-                        },
-                        {
-                            svid: req.body.svid
-                        }
-                    ]
+                    session_id: req.body.session_id
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
             if (SV.length < 1) {
-                throw new ErrorHandler(401, "INVALID VERIFICATION");
+                throw new ErrorHandler(401, "INVALID VERIFICATION SESSION");
             };
 
             if (SV.length > 1) {
                 throw new ErrorHandler(401, "DUPLICATE VERIFICATIONS");
             };
 
-            await SV[0].changed("updatedAt", true);
-            await SV[0].update({
-                updatedAt: new Date()
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
+            let user = await SV[0].getUser();
 
-            let mTime = Date.parse(SV[0].updatedAt);
-            let rTime = Date.parse(SV[0].createdAt);
-            let time = (mTime - rTime) / 60000;
-
-            if (time > 5) {
-                await user[0].update({
-                    auth_key: uuidv4()
-                }).catch(error => {
-                    throw new ErrorHandler(500, error);
-                });
-
-                throw new ErrorHandler(401, "VERIFICATION CODE EXPIRED");
+            if (!user) {
+                throw new ErrorHandler(401, "User doesn't exist");
             }
 
-            await user[0].update({
-                status: "verified"
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
+            if (user.status == "verified") {
+                throw new ErrorHandler(403, "ACCOUNT ALREADY VERIFIED");
+            }
 
-            return res.status(200).json({
-                message: "ACCOUNT CREATED SUCCESSFULLY"
-            })
+            // await SV[0].changed("updatedAt", true);
+            // await SV[0].update({
+            //     updatedAt: new Date()
+            // }).catch(error => {
+            //     throw new ErrorHandler(500, error);
+            // });
+
+            // let mTime = Date.parse(SV[0].updatedAt);
+            // let rTime = Date.parse(SV[0].createdAt);
+            // let time = (mTime - rTime) / 60000;
+
+            // if (time > 5) {
+            //     await user[0].update({
+            //         auth_key: uuidv4()
+            //     }).catch(error => {
+            //         throw new ErrorHandler(500, error);
+            //     });
+
+            //     throw new ErrorHandler(401, "VERIFICATION CODE EXPIRED");
+            // }
+
+            await axios.post(configs.TWILIO_ENDPOINT[1], {
+                    session_id: req.body.session_id,
+                    code: req.body.code,
+                    auth_token: credentials.twilio.AUTH_TOKEN,
+                })
+                .then(async function (response) {
+                    if (response.data.status == "approved") {
+                        await user[0].update({
+                            status: "verified"
+                        }).catch(error => {
+                            throw new ErrorHandler(500, error);
+                        });
+
+                        return res.status(200).json({
+                            message: "ACCOUNT CREATED SUCCESSFULLY"
+                        })
+                    };
+
+                    if (response.data.status == "pending") {
+                        return res.status(200).json({
+                            message: "INVALID VERIFICATION CODE"
+                        })
+                    };
+                })
+                .catch(function (error) {
+                    throw new ErrorHandler(500, error);
+                });
         } catch (error) {
             next(error);
         }
