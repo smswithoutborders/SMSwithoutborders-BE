@@ -46,15 +46,15 @@ http://localhost:{PORT}/api-docs
 ### Database tables
 __Users table__
 
-|      id     | password | auth_key |
-|:-----------:|:--------:|:--------:|
-| PRIMARY KEY |  STRING  |  STRING  |
+|      id     | password | auth_key | status |
+|:-----------:|:--------:|:--------:|:------:|
+| PRIMARY KEY |  STRING  |  STRING  |  ENUM  |
 
 __UsersInfos table__
 
-|      id     | phone_number |   name   |  userId  |  country_code  |
-|:-----------:|:------------:|:--------:|:--------:|:--------------:|
-| PRIMARY KEY |    STRING    |  STRING  |  STRING  |     STRING     |
+|      id     | phone_number |   name   |  userId  |  country_code  | full_phone_number | role |   iv   |
+|:-----------:|:------------:|:--------:|:--------:|:--------------:|:-----------------:|:----:|:------:|
+| PRIMARY KEY |    STRING    |  STRING  |  STRING  |     STRING     |       STRING      | ENUM | STRING |
 
 __Providers table__
 
@@ -73,3 +73,9 @@ __Tokens table__
 |      id     |         profile        |           token          |            userId           |          providerId          |          platformId          |       iv      |
 |:-----------:|:----------------------:|:------------------------:|:---------------------------:|:----------------------------:|:----------------------------:|:-------------:|
 | PRIMARY KEY | Users info  [ OBJECT ] | Users tokens  [ OBJECT ] | Users [ id ]  [FOREIGN KEY] | Provider's[id] [FOREIGN KEY] | Platform's[id] [FOREIGN KEY] | Encryption IV |
+
+__SmsVerification table__
+
+|  svid  |  code  | auth_key | session_id | userId |
+|:------:|:------:|:--------:|:----------:|:------:|
+| STRING | STRING |  STRING  |   STRING   | STRING |

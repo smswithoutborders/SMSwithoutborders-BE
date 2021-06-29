@@ -361,7 +361,7 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(500, error);
             });
 
-            let user = await UsersInfo.create({
+            await UsersInfo.create({
                 phone_number: req.body.phone_number,
                 name: req.body.name,
                 country_code: req.body.country_code,
@@ -921,6 +921,31 @@ let production = (app, configs, db) => {
             return res.status(200).json({
                 auth_key: new_password.auth_key
             });
+        } catch (error) {
+            next(error)
+        }
+    });
+
+    app.post("/users/profiles/info/new_number", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+
+            // =============================================================
+
+
+        } catch (error) {
+            next(error)
+        }
+    });
+
+
+    app.post("/users/profiles/info/new_number/2fa", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+
+            // =============================================================
+
+
         } catch (error) {
             next(error)
         }
