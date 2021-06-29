@@ -379,16 +379,18 @@ let production = (app, configs, db) => {
 
             let _2fa_data = await _2fa.send(url, number, auth_token, next);
 
-            let SV = await SmsVerification.create({
-                userId: newUser.id,
-                session_id: _2fa_data.service_sid
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
+            if (_2fa_data) {
+                let SV = await SmsVerification.create({
+                    userId: newUser.id,
+                    session_id: _2fa_data.service_sid
+                }).catch(error => {
+                    throw new ErrorHandler(500, error);
+                });
 
-            return res.status(200).json({
-                session_id: SV.session_id,
-            })
+                return res.status(200).json({
+                    session_id: SV.session_id,
+                })
+            }
         } catch (error) {
             next(error);
         }
@@ -444,6 +446,8 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
+            let security = new Security(user.password);
+
             let _2fa = new _2FA();
 
             let url = configs.TWILIO_ENDPOINT[1];
@@ -453,24 +457,25 @@ let production = (app, configs, db) => {
             let auth_token = credentials.twilio.AUTH_TOKEN;
 
             let _2fa_data = await _2fa.verify(url, number, session_id, code, auth_token, next);
-            console.log(_2fa_data)
 
-            if (_2fa_data.verification_status == "approved") {
-                await usersInfo[0].update({
-                    phone_number: security.hash(usersInfo[0].phone_number),
-                    name: security.encrypt(usersInfo[0].name).e_info,
-                    country_code: security.encrypt(usersInfo[0].country_code).e_info,
-                    full_phone_number: security.hash(usersInfo[0].country_code + usersInfo[0].phone_number),
-                    iv: security.iv
-                }).catch(error => {
-                    throw new ErrorHandler(500, error);
-                });
-            };
+            if (_2fa_data) {
+                if (_2fa_data.verification_status == "approved") {
+                    await usersInfo[0].update({
+                        phone_number: security.hash(usersInfo[0].phone_number),
+                        name: security.encrypt(usersInfo[0].name).e_info,
+                        country_code: security.encrypt(usersInfo[0].country_code).e_info,
+                        full_phone_number: security.hash(usersInfo[0].country_code + usersInfo[0].phone_number),
+                        iv: security.iv
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+                };
 
-            if (_2fa_data.verification_status == "pending") {
-                return res.status(401).json({
-                    message: "INVALID VERIFICATION CODE"
-                })
+                if (_2fa_data.verification_status == "pending") {
+                    return res.status(401).json({
+                        message: "INVALID VERIFICATION CODE"
+                    })
+                }
             }
         } catch (error) {
             next(error);

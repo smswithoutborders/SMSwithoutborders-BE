@@ -32,6 +32,11 @@ module.exports =
                     auth_token: auth_token,
                     number: number
                 }).catch(function (error) {
+                    // console.log(error.response.data)
+                    if (error.response.data.message == "failed") {
+                        throw new ErrorHandler(401, "INVALID 2FA, TRY AGAIN");
+                    }
+
                     throw new ErrorHandler(500, error);
                 });
 
