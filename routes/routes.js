@@ -361,7 +361,7 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(500, error);
             });
 
-            await UsersInfo.create({
+            let user = await UsersInfo.create({
                 phone_number: req.body.phone_number,
                 name: req.body.name,
                 country_code: req.body.country_code,
@@ -382,13 +382,15 @@ let production = (app, configs, db) => {
             if (_2fa_data) {
                 let SV = await SmsVerification.create({
                     userId: newUser.id,
-                    session_id: _2fa_data.service_sid
+                    session_id: _2fa_data.service_sid,
+                    auth_key: uuidv4()
                 }).catch(error => {
                     throw new ErrorHandler(500, error);
                 });
 
                 return res.status(200).json({
                     session_id: SV.session_id,
+                    auth_key: SV.auth_key
                 })
             }
         } catch (error) {
@@ -406,11 +408,21 @@ let production = (app, configs, db) => {
             if (!req.body.session_id) {
                 throw new ErrorHandler(400, "Session ID cannot be empty");
             };
+
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
             // ===============================================================
 
             let SV = await SmsVerification.findAll({
                 where: {
-                    session_id: req.body.session_id
+                    [Op.and]: [{
+                            session_id: req.body.session_id
+                        },
+                        {
+                            auth_key: req.body.auth_key
+                        }
+                    ]
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -420,9 +432,9 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(401, "INVALID VERIFICATION SESSION");
             };
 
-            // if (SV.length > 1) {
-            //     throw new ErrorHandler(401, "DUPLICATE VERIFICATIONS");
-            // };
+            if (SV.length > 1) {
+                throw new ErrorHandler(401, "DUPLICATE VERIFICATIONS");
+            };
 
             let user = await SV[0].getUser();
 
@@ -469,6 +481,16 @@ let production = (app, configs, db) => {
                     }).catch(error => {
                         throw new ErrorHandler(500, error);
                     });
+
+                    await user.update({
+                        status: "verified"
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    return res.status(200).json({
+                        message: "ACCOUNT SUCCESFULLY CREATED"
+                    })
                 };
 
                 if (_2fa_data.verification_status == "pending") {
@@ -500,7 +522,7 @@ let production = (app, configs, db) => {
 
             let usersInfo = await UsersInfo.findAll({
                 where: {
-                    phone_number: GlobalSecurity.hash(req.body.phone_number)
+                    full_phone_number: GlobalSecurity.hash(req.body.phone_number)
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -511,10 +533,19 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(401, "User doesn't exist");
             }
 
-            // IF MORE THAN ONE USER EXIST IN DATABASE
-            if (usersInfo.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
-            }
+            if (usersInfo.length > 0) {
+                for (let i = 0; i < usersInfo.length; i++) {
+                    let user = await usersInfo[i].getUser({
+                        where: {
+                            status: "verified"
+                        }
+                    });
+
+                    if (user) {
+                        throw new ErrorHandler(409, "DUPLICATE PHONE NUMBERS");
+                    }
+                };
+            };
 
             let user = await usersInfo[0].getUser({
                 where: {
@@ -527,8 +558,6 @@ let production = (app, configs, db) => {
             if (!user) {
                 throw new ErrorHandler(401, "INVALID PASSWORD");
             };
-
-            var security = new Security(user.password);
 
             await user.update({
                 auth_key: uuidv4()

@@ -6,6 +6,10 @@ module.exports = (sequelize, Sequelize) => {
             primaryKey: true
         },
         code: Sequelize.STRING,
+        auth_key: {
+            type: Sequelize.STRING,
+            unique: true
+        },
         session_id: {
             type: Sequelize.STRING,
             allowNull: false
