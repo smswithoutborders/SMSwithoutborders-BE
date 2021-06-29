@@ -530,7 +530,7 @@ let production = (app, configs, db) => {
 
             // RTURN = [], IF USER IS NOT FOUND
             if (usersInfo.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
             }
 
             if (usersInfo.length > 0) {
@@ -541,8 +541,8 @@ let production = (app, configs, db) => {
                         }
                     });
 
-                    if (user) {
-                        throw new ErrorHandler(409, "DUPLICATE PHONE NUMBERS");
+                    if (!user) {
+                        throw new ErrorHandler(401, "USER DOESN'T EXIST");
                     }
                 };
             };
