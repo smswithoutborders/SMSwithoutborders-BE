@@ -13,6 +13,7 @@ const GlobalSecurity = new Security()
 const {
     ErrorHandler
 } = require('../controllers/error.js')
+const _2FA = require("../models/2fa.models.js");
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -360,40 +361,34 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(500, error);
             });
 
-            var security = new Security(newUser.password);
-
-            let user = await UsersInfo.create({
-                phone_number: security.hash(req.body.phone_number),
-                name: security.encrypt(req.body.name).e_info,
-                country_code: security.encrypt(req.body.country_code).e_info,
-                full_phone_number: security.hash(req.body.country_code + req.body.phone_number),
-                userId: newUser.id,
-                iv: security.iv
+            await UsersInfo.create({
+                phone_number: req.body.phone_number,
+                name: req.body.name,
+                country_code: req.body.country_code,
+                full_phone_number: req.body.country_code + req.body.phone_number,
+                userId: newUser.id
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
-            await axios.post(configs.TWILIO_ENDPOINT[0], {
-                    number: req.body.country_code + req.body.phone_number,
-                    auth_token: credentials.twilio.AUTH_TOKEN,
-                })
-                .then(async function (response) {
-                    let twilio_verification = response.data;
+            let _2fa = new _2FA();
 
-                    let SV = await SmsVerification.create({
-                        userId: newUser.id,
-                        session_id: twilio_verification.service_sid
-                    }).catch(error => {
-                        throw new ErrorHandler(500, error);
-                    });
+            let url = configs.TWILIO_ENDPOINT[0];
+            let number = req.body.country_code + req.body.phone_number;
+            let auth_token = credentials.twilio.AUTH_TOKEN;
 
-                    return res.status(200).json({
-                        session_id: SV.session_id,
-                    })
-                })
-                .catch(function (error) {
-                    throw new ErrorHandler(500, error);
-                });
+            let _2fa_data = await _2fa.send(url, number, auth_token, next);
+
+            let SV = await SmsVerification.create({
+                userId: newUser.id,
+                session_id: _2fa_data.service_sid
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            return res.status(200).json({
+                session_id: SV.session_id,
+            })
         } catch (error) {
             next(error);
         }
@@ -423,9 +418,9 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(401, "INVALID VERIFICATION SESSION");
             };
 
-            if (SV.length > 1) {
-                throw new ErrorHandler(401, "DUPLICATE VERIFICATIONS");
-            };
+            // if (SV.length > 1) {
+            //     throw new ErrorHandler(401, "DUPLICATE VERIFICATIONS");
+            // };
 
             let user = await SV[0].getUser();
 
@@ -437,54 +432,46 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(403, "ACCOUNT ALREADY VERIFIED");
             }
 
-            // await SV[0].changed("updatedAt", true);
-            // await SV[0].update({
-            //     updatedAt: new Date()
-            // }).catch(error => {
-            //     throw new ErrorHandler(500, error);
-            // });
+            let usersInfo = await user.getUsersInfos();
 
-            // let mTime = Date.parse(SV[0].updatedAt);
-            // let rTime = Date.parse(SV[0].createdAt);
-            // let time = (mTime - rTime) / 60000;
+            // RTURN = [], IF USER IS NOT FOUND
+            if (usersInfo.length < 1) {
+                throw new ErrorHandler(401, "User doesn't exist");
+            }
 
-            // if (time > 5) {
-            //     await user[0].update({
-            //         auth_key: uuidv4()
-            //     }).catch(error => {
-            //         throw new ErrorHandler(500, error);
-            //     });
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (usersInfo.length > 1) {
+                throw new ErrorHandler(409, "Duplicate Users");
+            }
 
-            //     throw new ErrorHandler(401, "VERIFICATION CODE EXPIRED");
-            // }
+            let _2fa = new _2FA();
 
-            await axios.post(configs.TWILIO_ENDPOINT[1], {
-                    session_id: req.body.session_id,
-                    code: req.body.code,
-                    auth_token: credentials.twilio.AUTH_TOKEN,
-                })
-                .then(async function (response) {
-                    if (response.data.status == "approved") {
-                        await user[0].update({
-                            status: "verified"
-                        }).catch(error => {
-                            throw new ErrorHandler(500, error);
-                        });
+            let url = configs.TWILIO_ENDPOINT[1];
+            let number = usersInfo[0].full_phone_number;
+            let code = req.body.code;
+            let session_id = req.body.session_id;
+            let auth_token = credentials.twilio.AUTH_TOKEN;
 
-                        return res.status(200).json({
-                            message: "ACCOUNT CREATED SUCCESSFULLY"
-                        })
-                    };
+            let _2fa_data = await _2fa.verify(url, number, session_id, code, auth_token, next);
+            console.log(_2fa_data)
 
-                    if (response.data.status == "pending") {
-                        return res.status(200).json({
-                            message: "INVALID VERIFICATION CODE"
-                        })
-                    };
-                })
-                .catch(function (error) {
+            if (_2fa_data.verification_status == "approved") {
+                await usersInfo[0].update({
+                    phone_number: security.hash(usersInfo[0].phone_number),
+                    name: security.encrypt(usersInfo[0].name).e_info,
+                    country_code: security.encrypt(usersInfo[0].country_code).e_info,
+                    full_phone_number: security.hash(usersInfo[0].country_code + usersInfo[0].phone_number),
+                    iv: security.iv
+                }).catch(error => {
                     throw new ErrorHandler(500, error);
                 });
+            };
+
+            if (_2fa_data.verification_status == "pending") {
+                return res.status(401).json({
+                    message: "INVALID VERIFICATION CODE"
+                })
+            }
         } catch (error) {
             next(error);
         }

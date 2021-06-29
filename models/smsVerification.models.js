@@ -8,8 +8,7 @@ module.exports = (sequelize, Sequelize) => {
         code: Sequelize.STRING,
         session_id: {
             type: Sequelize.STRING,
-            allowNull: false,
-            unique: true
+            allowNull: false
         },
     });
 

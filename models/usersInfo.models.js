@@ -14,8 +14,6 @@ module.exports = (sequelize, Sequelize) => {
         },
         full_phone_number: {
             type: Sequelize.STRING,
-            allowNull: false,
-            unique: true
         },
         role: {
             type: Sequelize.ENUM(['primary', 'secondary']),
@@ -23,8 +21,7 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false
         },
         iv: {
-            type: Sequelize.STRING,
-            allowNull: false,
+            type: Sequelize.STRING
         }
     });
 
