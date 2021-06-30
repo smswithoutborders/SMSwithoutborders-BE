@@ -335,25 +335,18 @@ let production = (app, configs, db) => {
 
             let usersInfo = await UsersInfo.findAll({
                 where: {
-                    full_phone_number: GlobalSecurity.hash(req.body.country_code + req.body.phone_number)
+                    full_phone_number: GlobalSecurity.hash(req.body.country_code + req.body.phone_number),
+                    role: "primary",
+                    status: "verified"
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
+            // IF MORE THAN ONE USER EXIST IN DATABASE
             if (usersInfo.length > 0) {
-                for (let i = 0; i < usersInfo.length; i++) {
-                    let user = await usersInfo[i].getUser({
-                        where: {
-                            status: "verified"
-                        }
-                    });
-
-                    if (user) {
-                        throw new ErrorHandler(409, "DUPLICATE PHONE NUMBERS");
-                    }
-                };
-            };
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            }
 
             let newUser = await User.create({
                 password: GlobalSecurity.hash(req.body.password),
@@ -383,14 +376,13 @@ let production = (app, configs, db) => {
                 let SV = await SmsVerification.create({
                     userId: newUser.id,
                     session_id: _2fa_data.service_sid,
-                    auth_key: uuidv4()
                 }).catch(error => {
                     throw new ErrorHandler(500, error);
                 });
 
                 return res.status(200).json({
                     session_id: SV.session_id,
-                    auth_key: SV.auth_key
+                    svid: SV.svid
                 })
             }
         } catch (error) {
@@ -409,20 +401,15 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(400, "Session ID cannot be empty");
             };
 
-            if (!req.body.auth_key) {
-                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            if (!req.body.svid) {
+                throw new ErrorHandler(400, "SVID cannot be empty");
             };
             // ===============================================================
 
             let SV = await SmsVerification.findAll({
                 where: {
-                    [Op.and]: [{
-                            session_id: req.body.session_id
-                        },
-                        {
-                            auth_key: req.body.auth_key
-                        }
-                    ]
+                    session_id: req.body.session_id,
+                    svid: req.body.svid
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
@@ -433,29 +420,25 @@ let production = (app, configs, db) => {
             };
 
             if (SV.length > 1) {
-                throw new ErrorHandler(401, "DUPLICATE VERIFICATIONS");
+                throw new ErrorHandler(401, "DUPLICATE VERIFICATION SESSIONS");
             };
 
             let user = await SV[0].getUser();
 
             if (!user) {
-                throw new ErrorHandler(401, "User doesn't exist");
-            }
-
-            if (user.status == "verified") {
-                throw new ErrorHandler(403, "ACCOUNT ALREADY VERIFIED");
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
             }
 
             let usersInfo = await user.getUsersInfos();
 
             // RTURN = [], IF USER IS NOT FOUND
             if (usersInfo.length < 1) {
-                throw new ErrorHandler(401, "User doesn't exist");
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
             }
 
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (usersInfo.length > 1) {
-                throw new ErrorHandler(409, "Duplicate Users");
+                throw new ErrorHandler(409, "DUPLICATE USERS");
             }
 
             let security = new Security(user.password);
@@ -477,13 +460,8 @@ let production = (app, configs, db) => {
                         name: security.encrypt(usersInfo[0].name).e_info,
                         country_code: security.encrypt(usersInfo[0].country_code).e_info,
                         full_phone_number: security.hash(usersInfo[0].country_code + usersInfo[0].phone_number),
+                        status: "verified",
                         iv: security.iv
-                    }).catch(error => {
-                        throw new ErrorHandler(500, error);
-                    });
-
-                    await user.update({
-                        status: "verified"
                     }).catch(error => {
                         throw new ErrorHandler(500, error);
                     });
@@ -522,30 +500,23 @@ let production = (app, configs, db) => {
 
             let usersInfo = await UsersInfo.findAll({
                 where: {
-                    full_phone_number: GlobalSecurity.hash(req.body.phone_number)
+                    full_phone_number: GlobalSecurity.hash(req.body.phone_number),
+                    role: "primary",
+                    status: "verified"
                 }
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
 
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (usersInfo.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE USERS EXIST");
+            }
+
             // RTURN = [], IF USER IS NOT FOUND
             if (usersInfo.length < 1) {
                 throw new ErrorHandler(401, "USER DOESN'T EXIST");
             }
-
-            if (usersInfo.length > 0) {
-                for (let i = 0; i < usersInfo.length; i++) {
-                    let user = await usersInfo[i].getUser({
-                        where: {
-                            status: "verified"
-                        }
-                    });
-
-                    if (!user) {
-                        throw new ErrorHandler(401, "USER DOESN'T EXIST");
-                    }
-                };
-            };
 
             let user = await usersInfo[0].getUser({
                 where: {

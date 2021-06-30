@@ -46,15 +46,15 @@ http://localhost:{PORT}/api-docs
 ### Database tables
 __Users table__
 
-|      id     | password | auth_key | status |
-|:-----------:|:--------:|:--------:|:------:|
-| PRIMARY KEY |  STRING  |  STRING  |  ENUM  |
+|      id     | password | auth_key |
+|:-----------:|:--------:|:--------:|
+| PRIMARY KEY |  STRING  |  STRING  |
 
 __UsersInfos table__
 
-|      id     | phone_number |   name   |  userId  |  country_code  | full_phone_number | role |   iv   |
-|:-----------:|:------------:|:--------:|:--------:|:--------------:|:-----------------:|:----:|:------:|
-| PRIMARY KEY |    STRING    |  STRING  |  STRING  |     STRING     |       STRING      | ENUM | STRING |
+|      id     | phone_number |   name   |  userId  |  country_code  | full_phone_number | role | status |   iv   |
+|:-----------:|:------------:|:--------:|:--------:|:--------------:|:-----------------:|:----:|:------:|:------:|
+| PRIMARY KEY |    STRING    |  STRING  |  STRING  |     STRING     |       STRING      | ENUM |  ENUM  | STRING |
 
 __Providers table__
 

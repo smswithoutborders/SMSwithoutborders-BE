@@ -20,6 +20,11 @@ module.exports = (sequelize, Sequelize) => {
             defaultValue: "primary",
             allowNull: false
         },
+        status: {
+            type: Sequelize.ENUM(['verified', 'unverified']),
+            defaultValue: "unverified",
+            allowNull: false
+        },
         iv: {
             type: Sequelize.STRING
         }

@@ -9,11 +9,6 @@ module.exports = (sequelize, Sequelize) => {
         auth_key: {
             type: Sequelize.STRING,
             unique: true
-        },
-        status: {
-            type: Sequelize.ENUM(['verified', 'unverified']),
-            defaultValue: "unverified",
-            allowNull: false
         }
     });
 
