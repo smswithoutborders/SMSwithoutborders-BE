@@ -804,9 +804,14 @@ let production = (app, configs, db) => {
 
             let usersInfo = await user[0].getUsersInfos({
                 where: {
-                    userId: user[0].id
+                    status: "verified"
                 }
             });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (usersInfo.length < 1) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
 
             var security = new Security(user[0].password);
 
