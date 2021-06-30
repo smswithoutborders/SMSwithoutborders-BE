@@ -366,7 +366,7 @@ let production = (app, configs, db) => {
 
             let _2fa = new _2FA();
 
-            let url = configs.TWILIO_ENDPOINT[0];
+            let url = `${configs.router.url}:${configs.router.port}/sms/twilio`;
             let number = req.body.country_code + req.body.phone_number;
             let auth_token = credentials.twilio.AUTH_TOKEN;
 
@@ -449,7 +449,7 @@ let production = (app, configs, db) => {
 
             let _2fa = new _2FA();
 
-            let url = configs.TWILIO_ENDPOINT[1];
+            let url = `${configs.router.url}:${configs.router.port}/sms/twilio/verification_token`;
             let number = usersInfo[0].full_phone_number;
             let code = req.body.code;
             let session_id = req.body.session_id;
