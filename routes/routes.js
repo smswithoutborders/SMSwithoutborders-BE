@@ -441,6 +441,10 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(409, "DUPLICATE USERS");
             }
 
+            if (usersInfo[0].status == "verified") {
+                throw new ErrorHandler(401, "USER ALREADY VERIFED");
+            }
+
             let security = new Security(user.password);
 
             let _2fa = new _2FA();
