@@ -522,7 +522,7 @@
                     "session_id": {
                       "type": "string"
                     },
-                    "auth_key": {
+                    "svid": {
                       "type": "string"
                     }
                   }
@@ -615,7 +615,7 @@
                   "session_id": {
                     "type": "string"
                   },
-                  "auth_key": {
+                  "svid": {
                     "type": "string"
                   }
                 }
