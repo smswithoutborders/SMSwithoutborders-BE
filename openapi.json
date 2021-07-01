@@ -1209,6 +1209,20 @@
                     },
                     "created": {
                       "type": "string"
+                    },
+                    "secondary_numbers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "country_code": {
+                            "type": "string"
+                          },
+                          "phone_number": {
+                            "type": "string"
+                          }
+                        }
+                      }
                     }
                   }
                 }

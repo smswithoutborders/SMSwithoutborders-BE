@@ -821,13 +821,25 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
+            let secondary_numbers = [];
+
+            for (let i = 0; i < usersInfo.length; i++) {
+                if (usersInfo[i].role == "secondary" && usersInfo[i].status == "verified") {
+                    secondary_numbers.push({
+                        country_code: security.decrypt(usersInfo[i].country_code, usersInfo[i].iv),
+                        phone_number: usersInfo[i].phone_number
+                    });
+                }
+            }
+
             let profile_info = {
                 id: user[0].id,
                 phone_number: usersInfo[0].phone_number,
                 name: security.decrypt(usersInfo[0].name, usersInfo[0].iv),
                 country_code: security.decrypt(usersInfo[0].country_code, usersInfo[0].iv),
                 last_login: user[0].updatedAt,
-                created: user[0].createdAt
+                created: user[0].createdAt,
+                secondary_numbers: secondary_numbers
             }
 
             return res.status(200).json(profile_info);
