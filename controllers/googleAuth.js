@@ -233,6 +233,7 @@ module.exports = (app) => {
             let new_token = await Token.create({
                 profile: security.encrypt(JSON.stringify(profile)).e_info,
                 token: security.encrypt(JSON.stringify(tokens)).e_info,
+                email: security.hash(profile.data.email),
                 iv: security.iv
             }).catch(error => {
                 throw new ErrorHandler(500, error);

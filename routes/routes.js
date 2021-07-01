@@ -459,7 +459,7 @@ let production = (app, configs, db) => {
             if (_2fa_data) {
                 if (_2fa_data.verification_status == "approved") {
                     await usersInfo[0].update({
-                        phone_number: security.hash(usersInfo[0].phone_number),
+                        phone_number: security.encrypt(usersInfo[0].phone_number).e_info,
                         name: security.encrypt(usersInfo[0].name).e_info,
                         country_code: security.encrypt(usersInfo[0].country_code).e_info,
                         full_phone_number: security.hash(usersInfo[0].country_code + usersInfo[0].phone_number),
@@ -1458,6 +1458,7 @@ let production = (app, configs, db) => {
 // ==================== DEVELOPMENT ====================
 let development = (app, configs, db) => {
     var User = db.users;
+    var Token = db.tokens;
 
     if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
         rootCas.addFile('/var/www/ssl/server.pem')
@@ -1594,6 +1595,70 @@ let development = (app, configs, db) => {
                         email: profile.data.email
                     })
                 }
+            }
+
+            return res.status(200).json(userData);
+        } catch (error) {
+            next(error)
+        }
+    });
+
+    app.post("/hash", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.email) {
+                throw new ErrorHandler(400, "Email cannot be empty");
+            };
+            // =============================================================
+            let tokens = await Token.findAll({
+                where: {
+                    email: GlobalSecurity.hash(req.body.email)
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (tokens.length < 1) {
+                throw new ErrorHandler(401, "TOKEN DOESN'T EXIST");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (tokens.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE TOKENS");
+            }
+
+            let user = await tokens[0].getUser();
+
+            if (!user) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            let usersInfo = await user.getUsersInfos({
+                where: {
+                    status: "verified",
+                    role: "primary"
+                }
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (usersInfo.length < 1) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (usersInfo.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            }
+
+            var security = new Security(user.password);
+            let userData = [];
+
+            for (let i = 0; i < usersInfo.length; i++) {
+                userData.push({
+                    country_code: security.decrypt(usersInfo[i].country_code, usersInfo[i].iv),
+                    phone_number: security.decrypt(usersInfo[i].phone_number, usersInfo[i].iv)
+                });
             }
 
             return res.status(200).json(userData);
