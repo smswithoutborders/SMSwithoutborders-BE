@@ -336,7 +336,6 @@ let production = (app, configs, db) => {
             let usersInfo = await UsersInfo.findAll({
                 where: {
                     full_phone_number: GlobalSecurity.hash(req.body.country_code + req.body.phone_number),
-                    role: "primary",
                     status: "verified"
                 }
             }).catch(error => {
@@ -909,23 +908,216 @@ let production = (app, configs, db) => {
     app.post("/users/profiles/info/new_number", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "ID cannot be empty");
+            };
 
+            if (!req.body.new_phone_number) {
+                throw new ErrorHandler(400, "New phone number cannot be empty");
+            };
+
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+
+            if (!req.body.country_code) {
+                throw new ErrorHandler(400, "User_country_code cannot be empty");
+            };
             // =============================================================
 
+            let usersInfo = await UsersInfo.findAll({
+                where: {
+                    full_phone_number: GlobalSecurity.hash(req.body.country_code + req.body.new_phone_number),
+                    status: "verified"
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
 
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (usersInfo.length > 0) {
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            }
+
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            };
+
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            }
+
+            let new_usersInfo = await user[0].getUsersInfos({
+                where: {
+                    role: "primary",
+                    status: "verified"
+                }
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (new_usersInfo.length < 1) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (new_usersInfo.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            };
+
+            let security = new Security(user[0].password);
+
+            let new_number = await UsersInfo.create({
+                phone_number: req.body.new_phone_number,
+                name: security.decrypt(new_usersInfo[0].name, new_usersInfo[0].iv),
+                country_code: req.body.country_code,
+                full_phone_number: req.body.country_code + req.body.new_phone_number,
+                userId: user[0].id
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            let _2fa = new _2FA();
+
+            let url = `${configs.router.url}:${configs.router.port}/sms/twilio`;
+            let number = req.body.country_code + req.body.new_phone_number;
+            let auth_token = credentials.twilio.AUTH_TOKEN;
+
+            let _2fa_data = await _2fa.send(url, number, auth_token, next);
+
+            if (_2fa_data) {
+                let SV = await SmsVerification.create({
+                    userId: user[0].id,
+                    session_id: _2fa_data.service_sid,
+                }).catch(error => {
+                    throw new ErrorHandler(500, error);
+                });
+
+                return res.status(200).json({
+                    session_id: SV.session_id,
+                    svid: SV.svid + ":" + new_number.id
+                })
+            }
         } catch (error) {
             next(error)
         }
     });
 
-
     app.post("/users/profiles/info/new_number/2fa", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.code) {
+                throw new ErrorHandler(400, "Code cannot be empty");
+            };
 
+            if (!req.body.session_id) {
+                throw new ErrorHandler(400, "Session ID cannot be empty");
+            };
+
+            if (!req.body.svid) {
+                throw new ErrorHandler(400, "SVID cannot be empty");
+            };
             // =============================================================
+            let str = req.body.svid.split(":");
+            let svid = str[0];
+            let uiid = str[1];
 
+            let SV = await SmsVerification.findAll({
+                where: {
+                    session_id: req.body.session_id,
+                    svid: svid
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
 
+            if (SV.length < 1) {
+                throw new ErrorHandler(401, "INVALID VERIFICATION SESSION");
+            };
+
+            if (SV.length > 1) {
+                throw new ErrorHandler(401, "DUPLICATE VERIFICATION SESSIONS");
+            };
+
+            let user = await SV[0].getUser();
+
+            if (!user) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            let usersInfo = await user.getUsersInfos({
+                where: {
+                    id: uiid
+                }
+            });
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (usersInfo.length < 1) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (usersInfo.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            }
+
+            if (usersInfo[0].status == "verified") {
+                throw new ErrorHandler(401, "USER ALREADY VERIFED");
+            }
+
+            let security = new Security(user.password);
+
+            let _2fa = new _2FA();
+
+            let url = `${configs.router.url}:${configs.router.port}/sms/twilio/verification_token`;
+            let number = usersInfo[0].full_phone_number;
+            let code = req.body.code;
+            let session_id = req.body.session_id;
+            let auth_token = credentials.twilio.AUTH_TOKEN;
+
+            let _2fa_data = await _2fa.verify(url, number, session_id, code, auth_token, next);
+
+            if (_2fa_data) {
+                if (_2fa_data.verification_status == "approved") {
+                    await usersInfo[0].update({
+                        phone_number: security.hash(usersInfo[0].phone_number),
+                        name: security.encrypt(usersInfo[0].name).e_info,
+                        country_code: security.encrypt(usersInfo[0].country_code).e_info,
+                        full_phone_number: security.hash(usersInfo[0].country_code + usersInfo[0].phone_number),
+                        status: "verified",
+                        role: "secondary",
+                        iv: security.iv
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    return res.status(200).json({
+                        message: "NUMBER ADDED SUCCESSFULLY"
+                    })
+                };
+
+                if (_2fa_data.verification_status == "pending") {
+                    return res.status(401).json({
+                        message: "INVALID VERIFICATION CODE"
+                    })
+                }
+            }
         } catch (error) {
             next(error)
         }
