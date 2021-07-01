@@ -1109,7 +1109,7 @@ let production = (app, configs, db) => {
             if (_2fa_data) {
                 if (_2fa_data.verification_status == "approved") {
                     await usersInfo[0].update({
-                        phone_number: security.hash(usersInfo[0].phone_number),
+                        phone_number: security.encrypt(usersInfo[0].phone_number).e_info,
                         name: security.encrypt(usersInfo[0].name).e_info,
                         country_code: security.encrypt(usersInfo[0].country_code).e_info,
                         full_phone_number: security.hash(usersInfo[0].country_code + usersInfo[0].phone_number),
@@ -1332,12 +1332,75 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
+            let tokens = await user[0].getTokens();
+            let usersInfo = await user[0].getUsersInfos({
+                where: {
+                    status: "verified"
+                }
+            });
+
+            if (tokens.length > 0) {
+                let port = app.runningPort
+                let originalURL = req.hostname
+                for (let i = 0; i < tokens.length; i++) {
+                    let provider = await Provider.findAll({
+                        where: {
+                            id: tokens[i].providerId
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // RETURN = [], IF PROVIDER NOT FOUND
+                    if (provider.length < 1) {
+                        throw new ErrorHandler(401, "INVALD PROVIDER");
+                    }
+
+                    // IF PROVIDER IS MORE THAN ONE IN DB
+                    if (provider.length > 1) {
+                        throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
+                    }
+
+                    await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/revoke`, {
+                            id: user[0].id,
+                            providerId: tokens[i].providerId,
+                            platformId: tokens[i].platformId,
+                            origin: req.header("Origin")
+                        })
+                        .then(function (response) {
+                            console.log(response.data);
+                        })
+                        .catch(function (error) {
+                            throw new ErrorHandler(500, error);
+                        });
+                }
+            };
+
+            let security = new Security(user[0].password)
+
             let new_password = await user[0].update({
                 password: GlobalSecurity.hash(req.body.new_password),
                 auth_key: uuidv4()
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
+
+            let security_new = new Security(new_password.password)
+
+            for (let j = 0; j < usersInfo.length; j++) {
+                let uname = security.decrypt(usersInfo[j].name, usersInfo[j].iv);
+                let pn = security.decrypt(usersInfo[j].phone_number, usersInfo[j].iv);
+                let cc = security.decrypt(usersInfo[j].country_code, usersInfo[j].iv);
+
+                await usersInfo[j].update({
+                    name: security_new.encrypt(uname).e_info,
+                    phone_number: security_new.encrypt(pn).e_info,
+                    country_code: security_new.encrypt(cc).e_info,
+                    iv: security_new.iv
+                }).catch(error => {
+                    throw new ErrorHandler(500, error);
+                });
+            }
 
             return res.status(200).json({
                 auth_key: new_password.auth_key
