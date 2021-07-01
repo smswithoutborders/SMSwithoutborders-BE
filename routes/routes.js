@@ -903,12 +903,51 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
+            let tokens = await user[0].getTokens();
+            let usersInfo = await user[0].getUsersInfos({
+                where: {
+                    status: "verified"
+                }
+            });
+
+            let security = new Security(user[0].password)
+
             let new_password = await user[0].update({
                 password: GlobalSecurity.hash(req.body.new_password),
                 auth_key: uuidv4()
             }).catch(error => {
                 throw new ErrorHandler(500, error);
             });
+
+            let security_new = new Security(new_password.password)
+
+            for (let j = 0; j < usersInfo.length; j++) {
+                let uname = security.decrypt(usersInfo[j].name, usersInfo[j].iv);
+                let pn = security.decrypt(usersInfo[j].phone_number, usersInfo[j].iv);
+                let cc = security.decrypt(usersInfo[j].country_code, usersInfo[j].iv);
+
+                await usersInfo[j].update({
+                    name: security_new.encrypt(uname).e_info,
+                    phone_number: security_new.encrypt(pn).e_info,
+                    country_code: security_new.encrypt(cc).e_info,
+                    iv: security_new.iv
+                }).catch(error => {
+                    throw new ErrorHandler(500, error);
+                });
+            };
+
+            for (let j = 0; j < tokens.length; j++) {
+                let p = JSON.parse(security.decrypt(tokens[j].profile, tokens[j].iv))
+                let t = JSON.parse(security.decrypt(tokens[j].token, tokens[j].iv))
+
+                await tokens[j].update({
+                    profile: security_new.encrypt(JSON.stringify(p)).e_info,
+                    token: security_new.encrypt(JSON.stringify(t)).e_info,
+                    iv: security_new.iv
+                }).catch(error => {
+                    throw new ErrorHandler(500, error);
+                });
+            }
 
             return res.status(200).json({
                 auth_key: new_password.auth_key
@@ -1459,7 +1498,7 @@ let production = (app, configs, db) => {
             let tokens = await user[0].getTokens();
             let usersInfo = await user[0].getUsersInfos({
                 where: {
-                    userId: user[0].id
+                    status: "verified"
                 }
             });
 
