@@ -834,9 +834,10 @@ let production = (app, configs, db) => {
 
             let profile_info = {
                 id: user[0].id,
-                phone_number: usersInfo[0].phone_number,
+                // phone_number: usersInfo[0].phone_number,
                 name: security.decrypt(usersInfo[0].name, usersInfo[0].iv),
-                country_code: security.decrypt(usersInfo[0].country_code, usersInfo[0].iv),
+                // country_code: security.decrypt(usersInfo[0].country_code, usersInfo[0].iv),
+                phonenumber_hash: usersInfo[0].full_phone_number,
                 last_login: user[0].updatedAt,
                 created: user[0].createdAt,
                 secondary_numbers: secondary_numbers
