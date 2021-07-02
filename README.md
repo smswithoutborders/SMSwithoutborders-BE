@@ -58,9 +58,9 @@ __Users table__
 
 __UsersInfos table__
 
-|      id     | phone_number |   name   |  userId  |  country_code  |
-|:-----------:|:------------:|:--------:|:--------:|:--------------:|
-| PRIMARY KEY |    STRING    |  STRING  |  STRING  |     STRING     |
+|      id     | phone_number |   name   |  userId  |  country_code  | full_phone_number | role | status |   iv   |
+|:-----------:|:------------:|:--------:|:--------:|:--------------:|:-----------------:|:----:|:------:|:------:|
+| PRIMARY KEY |    STRING    |  STRING  |  STRING  |     STRING     |       STRING      | ENUM |  ENUM  | STRING |
 
 __Providers table__
 
@@ -76,6 +76,12 @@ __Platforms table__
 
 __Tokens table__
 
-|      id     |         profile        |           token          |            userId           |          providerId          |          platformId          |       iv      |
-|:-----------:|:----------------------:|:------------------------:|:---------------------------:|:----------------------------:|:----------------------------:|:-------------:|
-| PRIMARY KEY | Users info  [ OBJECT ] | Users tokens  [ OBJECT ] | Users [ id ]  [FOREIGN KEY] | Provider's[id] [FOREIGN KEY] | Platform's[id] [FOREIGN KEY] | Encryption IV |
+|      id     |         profile        |           token          |            userId           |          providerId          |          platformId          |  email |       iv      |
+|:-----------:|:----------------------:|:------------------------:|:---------------------------:|:----------------------------:|:----------------------------:|:------:|:-------------:|
+| PRIMARY KEY | Users info  [ OBJECT ] | Users tokens  [ OBJECT ] | Users [ id ]  [FOREIGN KEY] | Provider's[id] [FOREIGN KEY] | Platform's[id] [FOREIGN KEY] | STRING | Encryption IV |
+
+__SmsVerification table__
+
+|  svid  |  code  | auth_key | session_id | userId |
+|:------:|:------:|:--------:|:----------:|:------:|
+| STRING | STRING |  STRING  |   STRING   | STRING |

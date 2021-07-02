@@ -109,12 +109,12 @@ require("./controllers/googleAuth.js")(app);
 // DATABASE
 (async () => {
     try {
-        await db.sequelize.sync({
-            alter: true,
-            alter: {
-                drop: false
-            }
-        });
+        // await db.sequelize.sync({
+        //     alter: true,
+        //     alter: {
+        //         drop: false
+        //     }
+        // });
 
         // create default providers and platforms
         // let providers = await Provider.findAll();

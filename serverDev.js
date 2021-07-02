@@ -72,7 +72,7 @@ app.use(express.urlencoded({
 // app.use(express.static('public'));
 
 // Create swagger docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // logger
 var successLogStream = fs.createWriteStream(path.join(__dirname, "logs/success.log"), {
