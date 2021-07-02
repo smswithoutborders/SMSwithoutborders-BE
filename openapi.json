@@ -1203,10 +1203,16 @@
                     "id": {
                       "type": "string"
                     },
-                    "name": {
+                    "phone_number": {
+                      "type": "string"
+                    },
+                    "country_code": {
                       "type": "string"
                     },
                     "phonenumber_hash": {
+                      "type": "string"
+                    },
+                    "name": {
                       "type": "string"
                     },
                     "last_login": {
