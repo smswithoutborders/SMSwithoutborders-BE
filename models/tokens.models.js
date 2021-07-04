@@ -2,7 +2,10 @@ module.exports = (sequelize, Sequelize) => {
     let Token = sequelize.define("token", {
         profile: Sequelize.TEXT,
         token: Sequelize.TEXT,
-        email: Sequelize.STRING,
+        email: {
+            type: Sequelize.STRING,
+            unique: true
+        },
         iv: Sequelize.STRING
     });
 
