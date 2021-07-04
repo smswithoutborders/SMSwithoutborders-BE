@@ -96,7 +96,9 @@ app.use([morgan('combined', {
         stream: errorLogStream
     })
 
-])
+]);
+
+app.use(morgan('dev'));
 
 // Auths
 require("./controllers/googleAuth.js")(app);
