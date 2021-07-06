@@ -88,11 +88,11 @@ module.exports = (app) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
-            await user[0].update({
-                auth_key: uuidv4()
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
+            // await user[0].update({
+            //     auth_key: uuidv4()
+            // }).catch(error => {
+            //     throw new ErrorHandler(500, error);
+            // });
 
             return res.status(200).json({
                 auth_key: user[0].auth_key,
@@ -181,7 +181,7 @@ module.exports = (app) => {
                 }
             });
 
-            if (token[0]) {
+            if (token.length > 0) {
                 throw new ErrorHandler(409, "DUPLICATE TOKENS");
             }
 
@@ -247,11 +247,11 @@ module.exports = (app) => {
                 throw new ErrorHandler(500, error);
             });
 
-            await user[0].update({
-                auth_key: uuidv4()
-            }).catch(error => {
-                throw new ErrorHandler(500, error);
-            });
+            // await user[0].update({
+            //     auth_key: uuidv4()
+            // }).catch(error => {
+            //     throw new ErrorHandler(500, error);
+            // });
 
             return res.status(200).json({
                 auth_key: user[0].auth_key
