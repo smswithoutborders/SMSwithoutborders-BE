@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "axios": "^0.21.1",
+    "chalk": "^4.1.1",
     "concurrently": "^6.1.0",
     "connect-session-sequelize": "^7.1.1",
     "cors": "^2.8.5",
