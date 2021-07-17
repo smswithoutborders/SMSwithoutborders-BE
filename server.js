@@ -15,8 +15,6 @@ const {
 
 const swaggerDocument = require("./openapi.json");
 const db = require("./models");
-var Provider = db.providers;
-var Platform = db.platforms;
 
 const https = require("https")
 
@@ -103,65 +101,6 @@ app.use([morgan('combined', {
 ]);
 
 app.use(morgan('dev'));
-
-// Auths
-require("./controllers/googleAuth.js")(app);
-
-// DATABASE
-(async () => {
-    try {
-        // await db.sequelize.sync({
-        //     alter: true,
-        //     alter: {
-        //         drop: false
-        //     }
-        // });
-
-        // create default providers and platforms
-        // let providers = await Provider.findAll();
-        // let platforms = await Platform.findAll();
-
-        // if (providers.length < 1) {
-        //     // Create default providers
-        //     await Provider.bulkCreate([{
-        //         name: "google"
-        //     }, {
-        //         name: "twitter"
-        //     }])
-        // };
-
-        // if (platforms.length < 1) {
-        //     let defaultGoogle = await Provider.findAll({
-        //         where: {
-        //             name: "google"
-        //         }
-        //     })
-
-        //     let defaultTwitter = await Provider.findAll({
-        //         where: {
-        //             name: "twitter"
-        //         }
-        //     })
-
-        //     if (defaultGoogle.length > 1 || defaultTwitter.length > 1) {
-        //         throw new ErrorHandler(409, "duplicate Providers");
-        //     }
-
-        //     // Create default providers
-        //     await Platform.bulkCreate([{
-        //             name: "gmail",
-        //             providerId: defaultGoogle[0].id
-        //         },
-        //         {
-        //             name: "twitter",
-        //             providerId: defaultTwitter[0].id
-        //         }
-        //     ])
-        // };
-    } catch (error) {
-        console.error(error)
-    }
-})();
 
 // ROUTES
 require("./routes/routes.js").production(app, configs, db);

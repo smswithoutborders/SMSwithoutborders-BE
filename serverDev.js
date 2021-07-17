@@ -2,24 +2,19 @@ const configs = require("./config.json");
 const express = require("express");
 const session = require("express-session");
 var SequelizeStore = require("connect-session-sequelize")(session.Store);
-const swaggerUi = require('swagger-ui-express');
 const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 const chalk = require("chalk");
-var ipaddr = require('ipaddr.js');
 const {
     handleError,
     ErrorHandler
 } = require("./controllers/error.js")
 
-const swaggerDocument = require("./openapi_dev.json");
 const db = require("./models");
 var Provider = db.providers;
 var Platform = db.platforms;
-
-const https = require("https")
 
 var app = express();
 
@@ -100,9 +95,6 @@ app.use([morgan('combined', {
 ]);
 
 app.use(morgan('dev'));
-
-// Auths
-require("./controllers/googleAuth.js")(app);
 
 // DATABASE
 (async () => {
