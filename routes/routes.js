@@ -21,13 +21,14 @@ require('https').globalAgent.options.ca = rootCas
 
 axios = Axios
 
-const GMAIL = require("../Providers/Google/Gmail.js");
+const GMAIL = fs.existsSync(__dirname + "/../Providers/Google/Gmail.js") ? require("../Providers/Google/Gmail.js") : false;
 const gmail_token_scopes = [
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email'
 ];
-let gmail = new GMAIL(credentials, gmail_token_scopes);
+
+let gmail = !GMAIL ? false : new GMAIL(credentials, gmail_token_scopes);
 // =========================================================================================================================
 
 // ==================== PRODUCTION ====================
