@@ -21,6 +21,9 @@ require('https').globalAgent.options.ca = rootCas
 
 axios = Axios
 
+// =========================================================================================================================
+
+// ==================== GMAIL ====================
 const GMAIL = fs.existsSync(__dirname + "/../Providers/Google/Gmail.js") ? require("../Providers/Google/Gmail.js") : false;
 const gmail_token_scopes = [
     'https://www.googleapis.com/auth/gmail.send',
@@ -29,6 +32,11 @@ const gmail_token_scopes = [
 ];
 
 let gmail = !GMAIL ? false : new GMAIL(credentials, gmail_token_scopes);
+
+// ==================== TWITTER ====================
+const TWITTER = fs.existsSync(__dirname + "/../Providers/Twitter/Twitter.js") ? require("../Providers/Twitter/Twitter.js") : false;
+
+let twitter = !TWITTER ? false : new TWITTER(credentials);
 // =========================================================================================================================
 
 // ==================== PRODUCTION ====================
@@ -316,6 +324,24 @@ let production = (app, configs, db) => {
                             throw new ErrorHandler(401, "INVALD PLATFORM");
                     }
                     break;
+                case provider[0].name == "twitter":
+                    switch (platform[0].name) {
+                        case "twitter":
+                            let originalURL = req.header("Origin");
+                            let result = await twitter.init(originalURL).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            return res.status(200).json({
+                                auth_key: user[0].auth_key,
+                                provider: provider[0].name,
+                                platform: platform[0].name,
+                                url: result.url
+                            });
+                        default:
+                            throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+                    break;
                 default:
                     throw new ErrorHandler(401, "INVALD PROVIDER");
             }
@@ -341,10 +367,6 @@ let production = (app, configs, db) => {
 
             if (!req.body.platform) {
                 throw new ErrorHandler(400, "Platform cannot be empty");
-            };
-
-            if (!req.body.code) {
-                throw new ErrorHandler(400, "Code cannot be empty");
             };
             // =============================================================
 
@@ -424,12 +446,16 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
-            let code = req.body.code;
-
             switch (true) {
                 case req.params.provider == "google":
                     switch (platform[0].name) {
                         case "gmail":
+                            if (!req.body.code) {
+                                throw new ErrorHandler(400, "Code cannot be empty");
+                            };
+
+                            let code = req.body.code;
+
                             let originalURL = req.header("Origin");
                             let result = await gmail.validate(originalURL, code).catch(error => {
                                 throw new ErrorHandler(500, error);
@@ -439,6 +465,47 @@ let production = (app, configs, db) => {
                                 profile: security.encrypt(JSON.stringify(result.profile)).e_info,
                                 token: security.encrypt(JSON.stringify(result.token)).e_info,
                                 email: security.hash(result.profile.data.email),
+                                iv: security.iv
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            await new_token.update({
+                                userId: user[0].id,
+                                providerId: provider[0].id,
+                                platformId: platform[0].id
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            return res.status(200).json({
+                                auth_key: user[0].auth_key
+                            });
+                        default:
+                            throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+                    break;
+                case req.params.provider == "twitter":
+                    switch (platform[0].name) {
+                        case "twitter":
+                            if (!req.body.oauth_token) {
+                                throw new ErrorHandler(400, "oauth_token cannot be empty");
+                            };
+                            if (!req.body.oauth_verifier) {
+                                throw new ErrorHandler(400, "oauth_verifier cannot be empty");
+                            };
+
+                            let oauth_token = req.body.oauth_token;
+                            let oauth_verifier = req.body.oauth_verifier;
+
+                            let originalURL = req.header("Origin");
+                            let result = await twitter.validate(originalURL, oauth_token, oauth_verifier).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });;
+
+                            let new_token = await Token.create({
+                                profile: security.encrypt(JSON.stringify(result.profile)).e_info,
+                                token: security.encrypt(JSON.stringify(result.token)).e_info,
                                 iv: security.iv
                             }).catch(error => {
                                 throw new ErrorHandler(500, error);
@@ -940,6 +1007,27 @@ let production = (app, configs, db) => {
                         case "gmail":
                             let originalURL = req.header("Origin");
                             let result = await gmail.revoke(originalURL, fetch_tokens).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });;
+
+                            if (result) {
+                                await token[0].destroy().catch(error => {
+                                    throw new ErrorHandler(500, error);
+                                });;
+
+                                return res.status(200).json({
+                                    message: "REVOKE SUCCESSFUL"
+                                });
+                            };
+                        default:
+                            throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+                    break;
+                case provider[0].name == "twitter":
+                    switch (platform[0].name) {
+                        case "twitter":
+                            let originalURL = req.header("Origin");
+                            let result = await twitter.revoke(originalURL, fetch_tokens).catch(error => {
                                 throw new ErrorHandler(500, error);
                             });;
 
