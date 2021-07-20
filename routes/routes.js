@@ -868,7 +868,7 @@ let production = (app, configs, db) => {
                             type: platform.type,
                             letter: platform.letter
                         }],
-                        email: profile.data.email
+                        email: profile.data.email ? profile.data.email : "n/a"
                     })
                 }
             }

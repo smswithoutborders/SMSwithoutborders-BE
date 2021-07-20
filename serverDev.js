@@ -144,7 +144,6 @@ app.use(morgan('dev'));
                             throw new ErrorHandler(500, error);
                         });
                     }
-                    console.log(chalk.blue(provider));
                     fs.readdir(__dirname + '/Providers/' + provider, function (err, platforms) {
                         //handling error
                         if (err) {
@@ -174,7 +173,7 @@ app.use(morgan('dev'));
                                     throw new ErrorHandler(500, error);
                                 });
                             }
-                            console.log(chalk.blue(`\t${platform_name[0].toLowerCase()}`));
+                            console.log(chalk.blue(`${provider} ----> ${platform_name[0].toLowerCase()}`));
                         });
                     });
                 });
