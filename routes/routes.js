@@ -859,7 +859,7 @@ let production = (app, configs, db) => {
                 let profile = JSON.parse(security.decrypt(token[i].profile, token[i].iv))
 
                 if (provider) {
-                    let email = provider.name == "gmail" ? profile.data.email : "n/a"
+                    let email = platform.name == "gmail" ? profile.data.email : "n/a"
                     userData.user_provider.push({
                         provider: provider.name,
                         description: provider.description,
