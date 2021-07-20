@@ -1652,7 +1652,9 @@ let production = (app, configs, db) => {
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
-            }
+            };
+
+            let security = new Security(user[0].password)
 
             let tokens = await user[0].getTokens();
             let usersInfo = await user[0].getUsersInfos({
@@ -1681,11 +1683,29 @@ let production = (app, configs, db) => {
                         throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
                     };
 
+                    let platform = await Platform.findAll({
+                        where: {
+                            id: tokens[i].platformId
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // RETURN = [], IF PLATFORM NOT FOUND
+                    if (platform.length < 1) {
+                        throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+
+                    // IF PLATFORM IS MORE THAN ONE IN DB
+                    if (platform.length > 1) {
+                        throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
+                    };
+
                     let fetch_tokens = JSON.parse(security.decrypt(tokens[i].token, tokens[i].iv));
 
                     switch (true) {
-                        case provider[i].name == "google":
-                            switch (platform[i].name) {
+                        case provider[0].name == "google":
+                            switch (platform[0].name) {
                                 case "gmail":
                                     let originalURL = req.header("Origin");
                                     let result = await gmail.revoke(originalURL, fetch_tokens).catch(error => {
@@ -1693,7 +1713,7 @@ let production = (app, configs, db) => {
                                     });;
 
                                     if (result) {
-                                        await token[i].destroy().catch(error => {
+                                        await tokens[i].destroy().catch(error => {
                                             throw new ErrorHandler(500, error);
                                         });;
                                     };
@@ -1701,8 +1721,8 @@ let production = (app, configs, db) => {
                                     throw new ErrorHandler(401, "INVALD PLATFORM");
                             }
                             break;
-                        case provider[i].name == "twitter":
-                            switch (platform[i].name) {
+                        case provider[0].name == "twitter":
+                            switch (platform[0].name) {
                                 case "twitter":
                                     let originalURL = req.header("Origin");
                                     let result = await twitter.revoke(originalURL, fetch_tokens).catch(error => {
@@ -1710,13 +1730,9 @@ let production = (app, configs, db) => {
                                     });;
 
                                     if (result) {
-                                        await token[i].destroy().catch(error => {
+                                        await tokens[i].destroy().catch(error => {
                                             throw new ErrorHandler(500, error);
                                         });;
-
-                                        return res.status(200).json({
-                                            message: "REVOKE SUCCESSFUL"
-                                        });
                                     };
                                 default:
                                     throw new ErrorHandler(401, "INVALD PLATFORM");
@@ -1727,8 +1743,6 @@ let production = (app, configs, db) => {
                     };
                 }
             };
-
-            let security = new Security(user[0].password)
 
             let new_password = await user[0].update({
                 password: GlobalSecurity.hash(req.body.new_password),
@@ -1806,7 +1820,9 @@ let production = (app, configs, db) => {
 
             if (auth_key != req.body.auth_key) {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
-            }
+            };
+
+            var security = new Security(user[0].password);
 
             let tokens = await user[0].getTokens();
             let usersInfo = await user[0].getUsersInfos({
@@ -1835,11 +1851,29 @@ let production = (app, configs, db) => {
                         throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
                     }
 
+                    let platform = await Platform.findAll({
+                        where: {
+                            id: tokens[i].platformId
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // RETURN = [], IF PLATFORM NOT FOUND
+                    if (platform.length < 1) {
+                        throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+
+                    // IF PLATFORM IS MORE THAN ONE IN DB
+                    if (platform.length > 1) {
+                        throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
+                    };
+
                     let fetch_tokens = JSON.parse(security.decrypt(tokens[i].token, tokens[i].iv));
 
                     switch (true) {
-                        case provider[i].name == "google":
-                            switch (platform[i].name) {
+                        case provider[0].name == "google":
+                            switch (platform[0].name) {
                                 case "gmail":
                                     let originalURL = req.header("Origin");
                                     let result = await gmail.revoke(originalURL, fetch_tokens).catch(error => {
@@ -1847,7 +1881,7 @@ let production = (app, configs, db) => {
                                     });;
 
                                     if (result) {
-                                        await token[i].destroy().catch(error => {
+                                        await tokens[i].destroy().catch(error => {
                                             throw new ErrorHandler(500, error);
                                         });;
                                     };
@@ -1855,8 +1889,8 @@ let production = (app, configs, db) => {
                                     throw new ErrorHandler(401, "INVALD PLATFORM");
                             }
                             break;
-                        case provider[i].name == "twitter":
-                            switch (platform[i].name) {
+                        case provider[0].name == "twitter":
+                            switch (platform[0].name) {
                                 case "twitter":
                                     let originalURL = req.header("Origin");
                                     let result = await twitter.revoke(originalURL, fetch_tokens).catch(error => {
@@ -1864,7 +1898,7 @@ let production = (app, configs, db) => {
                                     });;
 
                                     if (result) {
-                                        await token[i].destroy().catch(error => {
+                                        await tokens[i].destroy().catch(error => {
                                             throw new ErrorHandler(500, error);
                                         });;
                                     };
