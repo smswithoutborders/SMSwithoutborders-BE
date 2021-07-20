@@ -118,7 +118,6 @@ app.use(morgan('dev'));
                     console.log(warning("WARNING: No providers found, use SWOB-CLI to create a provider"));
                     console.log(warning("Follow the link below to setup SWOB-CLI:"));
                     console.log(chalk.blue("https://github.com/smswithoutborders/SMSwithoutborders_Dev_Tools/tree/master/SWOB_API_Tools/SWOB-CLI"));
-                    process.exit();
                 }
 
                 console.log(chalk.blue("Available Providers:"));
@@ -185,7 +184,6 @@ app.use(morgan('dev'));
             console.log(warning("WARNING: No providers found, use SWOB-CLI to create a provider"));
             console.log(warning("Follow the link below to setup SWOB-CLI:"));
             console.log(chalk.blue("https://github.com/smswithoutborders/SMSwithoutborders_Dev_Tools/tree/master/SWOB_API_Tools/SWOB-CLI"));
-            process.exit();
         }
     } catch (error) {
         console.error(error)
