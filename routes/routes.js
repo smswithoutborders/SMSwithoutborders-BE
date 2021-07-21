@@ -1021,6 +1021,7 @@ let production = (app, configs, db) => {
                                     message: "REVOKE SUCCESSFUL"
                                 });
                             };
+                            break;
                         default:
                             throw new ErrorHandler(401, "INVALD PLATFORM");
                     }
@@ -1042,6 +1043,7 @@ let production = (app, configs, db) => {
                                     message: "REVOKE SUCCESSFUL"
                                 });
                             };
+                            break;
                         default:
                             throw new ErrorHandler(401, "INVALD PLATFORM");
                     }
@@ -1717,6 +1719,7 @@ let production = (app, configs, db) => {
                                             throw new ErrorHandler(500, error);
                                         });;
                                     };
+                                    break;
                                 default:
                                     throw new ErrorHandler(401, "INVALD PLATFORM");
                             }
@@ -1734,6 +1737,7 @@ let production = (app, configs, db) => {
                                             throw new ErrorHandler(500, error);
                                         });;
                                     };
+                                    break;
                                 default:
                                     throw new ErrorHandler(401, "INVALD PLATFORM");
                             }
@@ -1885,6 +1889,7 @@ let production = (app, configs, db) => {
                                             throw new ErrorHandler(500, error);
                                         });;
                                     };
+                                    break;
                                 default:
                                     throw new ErrorHandler(401, "INVALD PLATFORM");
                             }
@@ -1902,6 +1907,7 @@ let production = (app, configs, db) => {
                                             throw new ErrorHandler(500, error);
                                         });;
                                     };
+                                    break;
                                 default:
                                     throw new ErrorHandler(401, "INVALD PLATFORM");
                             }
