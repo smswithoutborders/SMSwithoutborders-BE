@@ -164,9 +164,10 @@ app.use(morgan('dev'));
                                 throw new ErrorHandler(409, "duplicate Platforms");
                             }
                             if (db_platforms.length < 1) {
+                                let email = platform_name[0].toLowerCase() == "gmail" ? "email" : "text"
                                 await Platform.create({
                                     name: platform_name[0].toLowerCase(),
-                                    type: "email",
+                                    type: email,
                                     letter: platform_name[0].toLowerCase()[0],
                                     providerId: db_providers < 1 ? new_db_providers.id : db_providers[0].id
                                 }).catch(error => {

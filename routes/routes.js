@@ -860,6 +860,7 @@ let production = (app, configs, db) => {
 
                 if (provider) {
                     let email = platform.name == "gmail" ? profile.data.email : "n/a"
+                    let text = platform.name == "twitter" ? profile.screen_name : "n/a"
                     userData.user_provider.push({
                         provider: provider.name,
                         description: provider.description,
@@ -869,7 +870,8 @@ let production = (app, configs, db) => {
                             type: platform.type,
                             letter: platform.letter
                         }],
-                        email: email
+                        email: email,
+                        screen_name: text
                     })
                 }
             }
