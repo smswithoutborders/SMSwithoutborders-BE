@@ -2,23 +2,19 @@ const configs = require("./config.json");
 const express = require("express");
 const session = require("express-session");
 var SequelizeStore = require("connect-session-sequelize")(session.Store);
-const swaggerUi = require('swagger-ui-express');
 const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
-var ipaddr = require('ipaddr.js');
+const chalk = require("chalk");
 const {
     handleError,
     ErrorHandler
 } = require("./controllers/error.js")
 
-const swaggerDocument = require("./openapi_dev.json");
 const db = require("./models");
 var Provider = db.providers;
 var Platform = db.platforms;
-
-const https = require("https")
 
 var app = express();
 
@@ -100,9 +96,6 @@ app.use([morgan('combined', {
 
 app.use(morgan('dev'));
 
-// Auths
-require("./controllers/googleAuth.js")(app);
-
 // DATABASE
 (async () => {
     try {
@@ -113,38 +106,85 @@ require("./controllers/googleAuth.js")(app);
             }
         });
 
-        // create default providers and platforms
-        let providers = await Provider.findAll();
-        let platforms = await Platform.findAll();
-
-        if (providers.length < 1) {
-            // Create default providers
-            await Provider.bulkCreate([{
-                name: "google",
-                description: "Made by Google Inc",
-                letter: "g"
-            }])
-        };
-
-        if (platforms.length < 1) {
-            let defaultGoogle = await Provider.findAll({
-                where: {
-                    name: "google"
+        if (fs.existsSync(__dirname + '/Providers')) {
+            fs.readdir(__dirname + '/Providers', function (err, providers) {
+                //handling error
+                if (err) {
+                    return console.log('Unable to scan directory: ' + err);
                 }
-            })
 
-            if (defaultGoogle.length > 1) {
-                throw new ErrorHandler(409, "duplicate Providers");
-            }
+                if (providers.length < 1) {
+                    let warning = chalk.keyword('orange')
+                    console.log(warning("WARNING: No providers found, use SWOB-CLI to create a provider"));
+                    console.log(warning("Follow the link below to setup SWOB-CLI:"));
+                    console.log(chalk.blue("https://github.com/smswithoutborders/SMSwithoutborders_Dev_Tools/tree/master/SWOB_API_Tools/SWOB-CLI"));
+                }
 
-            // Create default providers
-            await Platform.bulkCreate([{
-                name: "gmail",
-                type: "email",
-                letter: "g",
-                providerId: defaultGoogle[0].id
-            }])
-        };
+                console.log(chalk.blue("Available Providers:"));
+                //listing all files using forEach
+                providers.forEach(async function (provider) {
+                    let new_db_providers = {};
+                    let db_providers = await Provider.findAll({
+                        where: {
+                            name: provider.toLowerCase()
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });;
+
+                    if (db_providers.length > 1) {
+                        throw new ErrorHandler(409, "duplicate Providers");
+                    }
+                    if (db_providers.length < 1) {
+                        new_db_providers = await Provider.create({
+                            name: provider.toLowerCase(),
+                            description: `Made by ${provider} Inc`,
+                            letter: provider.toLowerCase()[0]
+                        }).catch(error => {
+                            throw new ErrorHandler(500, error);
+                        });
+                    }
+                    fs.readdir(__dirname + '/Providers/' + provider, function (err, platforms) {
+                        //handling error
+                        if (err) {
+                            return console.log('Unable to scan directory: ' + err);
+                        }
+                        //listing all files using forEach
+                        platforms.forEach(async function (platform) {
+                            let platform_name = platform.split(".js");
+                            let db_platforms = await Platform.findAll({
+                                where: {
+                                    name: platform_name[0].toLowerCase()
+                                }
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });;
+
+                            if (db_platforms.length > 1) {
+                                throw new ErrorHandler(409, "duplicate Platforms");
+                            }
+                            if (db_platforms.length < 1) {
+                                let email = platform_name[0].toLowerCase() == "gmail" ? "email" : "text"
+                                await Platform.create({
+                                    name: platform_name[0].toLowerCase(),
+                                    type: email,
+                                    letter: platform_name[0].toLowerCase()[0],
+                                    providerId: db_providers < 1 ? new_db_providers.id : db_providers[0].id
+                                }).catch(error => {
+                                    throw new ErrorHandler(500, error);
+                                });
+                            }
+                            console.log(chalk.blue(`${provider} ----> ${platform_name[0].toLowerCase()}`));
+                        });
+                    });
+                });
+            });
+        } else {
+            let warning = chalk.keyword('orange')
+            console.log(warning("WARNING: No providers found, use SWOB-CLI to create a provider"));
+            console.log(warning("Follow the link below to setup SWOB-CLI:"));
+            console.log(chalk.blue("https://github.com/smswithoutborders/SMSwithoutborders_Dev_Tools/tree/master/SWOB_API_Tools/SWOB-CLI"));
+        }
     } catch (error) {
         console.error(error)
     }

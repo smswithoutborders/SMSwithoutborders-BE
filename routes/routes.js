@@ -20,11 +20,29 @@ var rootCas = require('ssl-root-cas').create()
 require('https').globalAgent.options.ca = rootCas
 
 axios = Axios
+
+// =========================================================================================================================
+
+// ==================== GMAIL ====================
+const GMAIL = fs.existsSync(__dirname + "/../Providers/Google/Gmail.js") ? require("../Providers/Google/Gmail.js") : false;
+const gmail_token_scopes = [
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email'
+];
+
+let gmail = !GMAIL ? false : new GMAIL(credentials, gmail_token_scopes);
+
+// ==================== TWITTER ====================
+const TWITTER = fs.existsSync(__dirname + "/../Providers/Twitter/Twitter.js") ? require("../Providers/Twitter/Twitter.js") : false;
+
+let twitter = !TWITTER ? false : new TWITTER(credentials);
 // =========================================================================================================================
 
 // ==================== PRODUCTION ====================
 let production = (app, configs, db) => {
     var User = db.users;
+    var Token = db.tokens;
     var UsersInfo = db.usersInfo;
     var Provider = db.providers;
     var Platform = db.platforms;
@@ -280,6 +298,145 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(409, "Duplicate Users");
             }
 
+            // CHECK AUTH_KEY
+            let auth_key = user[0].auth_key;
+
+            if (auth_key != req.body.auth_key) {
+                throw new ErrorHandler(401, "INVALID AUTH_KEY");
+            };
+
+            switch (true) {
+                case provider[0].name == "google":
+                    switch (platform[0].name) {
+                        case "gmail":
+                            let originalURL = req.header("Origin");
+                            let result = await gmail.init(originalURL).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            return res.status(200).json({
+                                auth_key: user[0].auth_key,
+                                provider: provider[0].name,
+                                platform: platform[0].name,
+                                url: result.url
+                            });
+                        default:
+                            throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+                    break;
+                case provider[0].name == "twitter":
+                    switch (platform[0].name) {
+                        case "twitter":
+                            let originalURL = req.header("Origin");
+                            let result = await twitter.init(originalURL).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            return res.status(200).json({
+                                auth_key: user[0].auth_key,
+                                provider: provider[0].name,
+                                platform: platform[0].name,
+                                url: result.url
+                            });
+                        default:
+                            throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+                    break;
+                default:
+                    throw new ErrorHandler(401, "INVALD PROVIDER");
+            }
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    app.post('/:provider/auth/success', async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ErrorHandler(400, "Id cannot be empty");
+            };
+
+            if (!req.body.auth_key) {
+                throw new ErrorHandler(400, "Auth_key cannot be empty");
+            };
+
+            if (!req.body.provider) {
+                throw new ErrorHandler(400, "Provider cannot be empty");
+            };
+
+            if (!req.body.platform) {
+                throw new ErrorHandler(400, "Platform cannot be empty");
+            };
+            // =============================================================
+
+            let provider = await Provider.findAll({
+                where: {
+                    name: req.body.provider.toLowerCase()
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            let platform = await Platform.findAll({
+                where: {
+                    name: req.body.platform.toLowerCase()
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            // RETURN = [], IF PROVIDER NOT FOUND
+            if (provider.length < 1) {
+                throw new ErrorHandler(401, "INVALD PROVIDER");
+            }
+
+            // RETURN = [], IF PLATFORM NOT FOUND
+            if (platform.length < 1) {
+                throw new ErrorHandler(401, "INVALD PLATFORM");
+            }
+
+            // IF PROVIDER IS MORE THAN ONE IN DB
+            if (provider.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
+            }
+
+            // IF PLATFORM IS MORE THAN ONE IN DB
+            if (platform.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
+            }
+
+            let token = await Token.findAll({
+                where: {
+                    userId: req.body.id,
+                    providerId: provider[0].id,
+                    platformId: platform[0].id
+                }
+            });
+
+            if (token.length > 0) {
+                throw new ErrorHandler(409, "DUPLICATE TOKENS");
+            }
+
+            // SEARCH FOR USER IN DB
+            let user = await User.findAll({
+                where: {
+                    id: req.body.id
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            })
+
+            // RTURN = [], IF USER IS NOT FOUND
+            if (user.length < 1) {
+                throw new ErrorHandler(401, "USER DOESN'T EXIST");
+            }
+
+            // IF MORE THAN ONE USER EXIST IN DATABASE
+            if (user.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE USERS");
+            }
+
             var security = new Security(user[0].password);
 
             // CHECK AUTH_KEY
@@ -289,24 +446,93 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
-            let port = app.runningPort
-            let originalURL = req.hostname
-            // console.log(">> OURL:", originalURL)
-            await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/`, {
-                    auth_key: req.body.auth_key,
-                    provider: req.body.provider,
-                    platform: req.body.platform,
-                    origin: req.header("Origin")
-                })
-                .then(function (response) {
-                    return res.status(200).json(response.data);
-                })
-                .catch(function (error) {
-                    throw new ErrorHandler(500, error);
-                });
+            switch (true) {
+                case req.params.provider == "google":
+                    switch (platform[0].name) {
+                        case "gmail":
+                            if (!req.body.code) {
+                                throw new ErrorHandler(400, "Code cannot be empty");
+                            };
+
+                            let code = req.body.code;
+
+                            let originalURL = req.header("Origin");
+                            let result = await gmail.validate(originalURL, code).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });;
+
+                            let new_token = await Token.create({
+                                profile: security.encrypt(JSON.stringify(result.profile)).e_info,
+                                token: security.encrypt(JSON.stringify(result.token)).e_info,
+                                email: security.hash(result.profile.data.email),
+                                iv: security.iv
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            await new_token.update({
+                                userId: user[0].id,
+                                providerId: provider[0].id,
+                                platformId: platform[0].id
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            return res.status(200).json({
+                                auth_key: user[0].auth_key
+                            });
+                        default:
+                            throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+                    break;
+                case req.params.provider == "twitter":
+                    switch (platform[0].name) {
+                        case "twitter":
+                            if (!req.body.oauth_token) {
+                                throw new ErrorHandler(400, "oauth_token cannot be empty");
+                            };
+                            if (!req.body.oauth_verifier) {
+                                throw new ErrorHandler(400, "oauth_verifier cannot be empty");
+                            };
+
+                            let oauth_token = req.body.oauth_token;
+                            let oauth_verifier = req.body.oauth_verifier;
+
+                            let originalURL = req.header("Origin");
+                            let result = await twitter.validate(originalURL, oauth_token, oauth_verifier).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });;
+
+                            let new_token = await Token.create({
+                                profile: security.encrypt(JSON.stringify(result.profile)).e_info,
+                                token: security.encrypt(JSON.stringify(result.token)).e_info,
+                                email: null,
+                                iv: security.iv
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            await new_token.update({
+                                userId: user[0].id,
+                                providerId: provider[0].id,
+                                platformId: platform[0].id
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            return res.status(200).json({
+                                auth_key: user[0].auth_key
+                            });
+                        default:
+                            throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+                    break;
+                default:
+                    throw new ErrorHandler(401, "INVALD PROVIDER");
+            };
         } catch (error) {
             next(error);
-        }
+        };
     });
 
     app.post("/users/profiles/register", async (req, res, next) => {
@@ -633,6 +859,8 @@ let production = (app, configs, db) => {
                 let profile = JSON.parse(security.decrypt(token[i].profile, token[i].iv))
 
                 if (provider) {
+                    let email = platform.name == "gmail" ? profile.data.email : "n/a"
+                    let text = platform.name == "twitter" ? profile.screen_name : "n/a"
                     userData.user_provider.push({
                         provider: provider.name,
                         description: provider.description,
@@ -642,7 +870,8 @@ let production = (app, configs, db) => {
                             type: platform.type,
                             letter: platform.letter
                         }],
-                        email: profile.data.email
+                        email: email,
+                        screen_name: text
                     })
                 }
             }
@@ -752,20 +981,78 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
             }
 
-            let port = app.runningPort
-            let originalURL = req.hostname
-            await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/revoke`, {
-                    id: user[0].id,
-                    providerId: provider[0].id,
-                    platformId: platform[0].id,
-                    origin: req.header("Origin")
-                })
-                .then(function (response) {
-                    return res.status(200).json(response.data);
-                })
-                .catch(function (error) {
-                    throw new ErrorHandler(500, error);
-                });
+            let token = await Token.findAll({
+                where: {
+                    [Op.and]: [{
+                        userId: user[0].id
+                    }, {
+                        platformId: platform[0].id
+                    }, {
+                        providerId: provider[0].id
+                    }]
+                }
+            }).catch(error => {
+                throw new ErrorHandler(500, error);
+            });
+
+            if (token.length < 1) {
+                throw new ErrorHandler(401, "TOKEN DOESN'T EXIST");
+            }
+
+            if (token.length > 1) {
+                throw new ErrorHandler(409, "DUPLICATE TOKENS");
+            };
+
+            let fetch_tokens = JSON.parse(security.decrypt(token[0].token, token[0].iv));
+
+            switch (true) {
+                case provider[0].name == "google":
+                    switch (platform[0].name) {
+                        case "gmail":
+                            let originalURL = req.header("Origin");
+                            let result = await gmail.revoke(originalURL, fetch_tokens).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });;
+
+                            if (result) {
+                                await token[0].destroy().catch(error => {
+                                    throw new ErrorHandler(500, error);
+                                });;
+
+                                return res.status(200).json({
+                                    message: "REVOKE SUCCESSFUL"
+                                });
+                            };
+                            break;
+                        default:
+                            throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+                    break;
+                case provider[0].name == "twitter":
+                    switch (platform[0].name) {
+                        case "twitter":
+                            let originalURL = req.header("Origin");
+                            let result = await twitter.revoke(originalURL, fetch_tokens).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });;
+
+                            if (result) {
+                                await token[0].destroy().catch(error => {
+                                    throw new ErrorHandler(500, error);
+                                });;
+
+                                return res.status(200).json({
+                                    message: "REVOKE SUCCESSFUL"
+                                });
+                            };
+                            break;
+                        default:
+                            throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+                    break;
+                default:
+                    throw new ErrorHandler(401, "INVALD PROVIDER");
+            };
         } catch (error) {
             next(error);
         }
@@ -1369,7 +1656,9 @@ let production = (app, configs, db) => {
             // IF MORE THAN ONE USER EXIST IN DATABASE
             if (user.length > 1) {
                 throw new ErrorHandler(409, "Duplicate Users");
-            }
+            };
+
+            let security = new Security(user[0].password)
 
             let tokens = await user[0].getTokens();
             let usersInfo = await user[0].getUsersInfos({
@@ -1379,8 +1668,6 @@ let production = (app, configs, db) => {
             });
 
             if (tokens.length > 0) {
-                let port = app.runningPort
-                let originalURL = req.hostname
                 for (let i = 0; i < tokens.length; i++) {
                     let provider = await Provider.findAll({
                         where: {
@@ -1398,24 +1685,70 @@ let production = (app, configs, db) => {
                     // IF PROVIDER IS MORE THAN ONE IN DB
                     if (provider.length > 1) {
                         throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
+                    };
+
+                    let platform = await Platform.findAll({
+                        where: {
+                            id: tokens[i].platformId
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // RETURN = [], IF PLATFORM NOT FOUND
+                    if (platform.length < 1) {
+                        throw new ErrorHandler(401, "INVALD PLATFORM");
                     }
 
-                    await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/revoke`, {
-                            id: user[0].id,
-                            providerId: tokens[i].providerId,
-                            platformId: tokens[i].platformId,
-                            origin: req.header("Origin")
-                        })
-                        .then(function (response) {
-                            console.log(response.data);
-                        })
-                        .catch(function (error) {
-                            throw new ErrorHandler(500, error);
-                        });
+                    // IF PLATFORM IS MORE THAN ONE IN DB
+                    if (platform.length > 1) {
+                        throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
+                    };
+
+                    let fetch_tokens = JSON.parse(security.decrypt(tokens[i].token, tokens[i].iv));
+
+                    switch (true) {
+                        case provider[0].name == "google":
+                            switch (platform[0].name) {
+                                case "gmail":
+                                    let originalURL = req.header("Origin");
+                                    let result = await gmail.revoke(originalURL, fetch_tokens).catch(error => {
+                                        throw new ErrorHandler(500, error);
+                                    });;
+
+                                    if (result) {
+                                        await tokens[i].destroy().catch(error => {
+                                            throw new ErrorHandler(500, error);
+                                        });;
+                                    };
+                                    break;
+                                default:
+                                    throw new ErrorHandler(401, "INVALD PLATFORM");
+                            }
+                            break;
+                        case provider[0].name == "twitter":
+                            switch (platform[0].name) {
+                                case "twitter":
+                                    let originalURL = req.header("Origin");
+                                    let result = await twitter.revoke(originalURL, fetch_tokens).catch(error => {
+                                        throw new ErrorHandler(500, error);
+                                    });;
+
+                                    if (result) {
+                                        await tokens[i].destroy().catch(error => {
+                                            throw new ErrorHandler(500, error);
+                                        });;
+                                    };
+                                    break;
+                                default:
+                                    throw new ErrorHandler(401, "INVALD PLATFORM");
+                            }
+                            break;
+                        default:
+                            throw new ErrorHandler(401, "INVALD PROVIDER");
+                    };
                 }
             };
-
-            let security = new Security(user[0].password)
 
             let new_password = await user[0].update({
                 password: GlobalSecurity.hash(req.body.new_password),
@@ -1493,7 +1826,9 @@ let production = (app, configs, db) => {
 
             if (auth_key != req.body.auth_key) {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
-            }
+            };
+
+            var security = new Security(user[0].password);
 
             let tokens = await user[0].getTokens();
             let usersInfo = await user[0].getUsersInfos({
@@ -1503,8 +1838,6 @@ let production = (app, configs, db) => {
             });
 
             if (tokens.length > 0) {
-                let port = app.runningPort
-                let originalURL = req.hostname
                 for (let i = 0; i < tokens.length; i++) {
                     let provider = await Provider.findAll({
                         where: {
@@ -1524,18 +1857,66 @@ let production = (app, configs, db) => {
                         throw new ErrorHandler(409, "DUPLICATE PROVIDERS");
                     }
 
-                    await axios.post(`${app.is_ssl ? "https://" : "http://"}${originalURL}:${port}/oauth2/${provider[0].name}/Tokens/revoke`, {
-                            id: user[0].id,
-                            providerId: tokens[i].providerId,
-                            platformId: tokens[i].platformId,
-                            origin: req.header("Origin")
-                        })
-                        .then(function (response) {
-                            console.log(response.data);
-                        })
-                        .catch(function (error) {
-                            throw new ErrorHandler(500, error);
-                        });
+                    let platform = await Platform.findAll({
+                        where: {
+                            id: tokens[i].platformId
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    // RETURN = [], IF PLATFORM NOT FOUND
+                    if (platform.length < 1) {
+                        throw new ErrorHandler(401, "INVALD PLATFORM");
+                    }
+
+                    // IF PLATFORM IS MORE THAN ONE IN DB
+                    if (platform.length > 1) {
+                        throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
+                    };
+
+                    let fetch_tokens = JSON.parse(security.decrypt(tokens[i].token, tokens[i].iv));
+
+                    switch (true) {
+                        case provider[0].name == "google":
+                            switch (platform[0].name) {
+                                case "gmail":
+                                    let originalURL = req.header("Origin");
+                                    let result = await gmail.revoke(originalURL, fetch_tokens).catch(error => {
+                                        throw new ErrorHandler(500, error);
+                                    });;
+
+                                    if (result) {
+                                        await tokens[i].destroy().catch(error => {
+                                            throw new ErrorHandler(500, error);
+                                        });;
+                                    };
+                                    break;
+                                default:
+                                    throw new ErrorHandler(401, "INVALD PLATFORM");
+                            }
+                            break;
+                        case provider[0].name == "twitter":
+                            switch (platform[0].name) {
+                                case "twitter":
+                                    let originalURL = req.header("Origin");
+                                    let result = await twitter.revoke(originalURL, fetch_tokens).catch(error => {
+                                        throw new ErrorHandler(500, error);
+                                    });;
+
+                                    if (result) {
+                                        await tokens[i].destroy().catch(error => {
+                                            throw new ErrorHandler(500, error);
+                                        });;
+                                    };
+                                    break;
+                                default:
+                                    throw new ErrorHandler(401, "INVALD PLATFORM");
+                            }
+                            break;
+                        default:
+                            throw new ErrorHandler(401, "INVALD PROVIDER");
+                    };
                 }
             }
 

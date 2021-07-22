@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "axios": "^0.21.1",
+    "chalk": "^4.1.1",
     "concurrently": "^6.1.0",
     "connect-session-sequelize": "^7.1.1",
     "cors": "^2.8.5",
@@ -16,6 +17,7 @@
     "js-sha512": "^0.8.0",
     "morgan": "^1.10.0",
     "mysql2": "^2.2.5",
+    "oauth": "^0.9.15",
     "passport": "^0.4.1",
     "passport-google-oauth2": "^0.2.0",
     "passport-local": "^1.0.0",
