@@ -462,7 +462,11 @@ let production = (app, configs, db) => {
                             });;
 
                             let new_token = await Token.create({
-                                profile: security.encrypt(JSON.stringify(result.profile)).e_info,
+                                profile: security.encrypt(JSON.stringify({
+                                    data: {
+                                        email: result.profile.data.email
+                                    }
+                                })).e_info,
                                 token: security.encrypt(JSON.stringify(result.token)).e_info,
                                 email: security.hash(result.profile.data.email),
                                 iv: security.iv
@@ -504,7 +508,9 @@ let production = (app, configs, db) => {
                             });;
 
                             let new_token = await Token.create({
-                                profile: security.encrypt(JSON.stringify(result.profile)).e_info,
+                                profile: security.encrypt(JSON.stringify({
+                                    screen_name: result.profile.screen_name
+                                })).e_info,
                                 token: security.encrypt(JSON.stringify(result.token)).e_info,
                                 email: null,
                                 iv: security.iv
