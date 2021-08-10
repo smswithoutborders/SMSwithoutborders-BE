@@ -22,7 +22,7 @@ npm install
     * Create a database then edit config.json and fill in the name of the newly created database
 
 * Create Providers using SWOB-CLI
-    * Get SWOB-CLI: https://github.com/smswithoutborders/SWOB-CLI
+    * Get SWOB-CLI: https://github.com/smswithoutborders/SMSwithoutborders_API_cli
 
 ### Start Production Server
 * With NPM
