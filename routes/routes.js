@@ -461,15 +461,48 @@ let production = (app, configs, db) => {
                                 throw new ErrorHandler(500, error);
                             });;
 
+                            let email_check = await Token.findAll({
+                                where: {
+                                    email: security.hash(result.profile.data.email)
+                                }
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            if (email_check.length > 1) {
+                                throw new ErrorHandler(409, "DUPLICATE EMAILS");
+                            };
+
+                            if (email_check.length < 1) {
+                                let new_token = await Token.create({
+                                    profile: security.encrypt(JSON.stringify({
+                                        data: {
+                                            email: result.profile.data.email
+                                        }
+                                    })).e_info,
+                                    token: security.encrypt(JSON.stringify(result.token)).e_info,
+                                    email: security.hash(result.profile.data.email),
+                                    iv: security.iv
+                                }).catch(error => {
+                                    throw new ErrorHandler(500, error);
+                                });
+
+                                await new_token.update({
+                                    userId: user[0].id,
+                                    providerId: provider[0].id,
+                                    platformId: platform[0].id
+                                }).catch(error => {
+                                    throw new ErrorHandler(500, error);
+                                });
+
+                                return res.status(200).json({
+                                    auth_key: user[0].auth_key
+                                });
+                            }
+
                             let new_token = await Token.create({
-                                profile: security.encrypt(JSON.stringify({
-                                    data: {
-                                        email: result.profile.data.email
-                                    }
-                                })).e_info,
-                                token: security.encrypt(JSON.stringify(result.token)).e_info,
-                                email: security.hash(result.profile.data.email),
-                                iv: security.iv
+                                profile: "linked",
+                                token: email_check[0].id,
                             }).catch(error => {
                                 throw new ErrorHandler(500, error);
                             });
@@ -862,7 +895,39 @@ let production = (app, configs, db) => {
             for (let i = 0; i < token.length; i++) {
                 let provider = await token[i].getProvider();
                 let platform = await token[i].getPlatform();
-                let profile = JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+                let profile = "";
+
+                if (token[i].profile == "linked") {
+                    let linked_token = await Token.findAll({
+                        where: {
+                            id: token[i].token
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    if (linked_token.length < 1) {
+                        throw new ErrorHandler(401, "INVALD LINKED TOKEN");
+                    }
+
+                    let linked_user = await User.findAll({
+                        where: {
+                            id: linked_token[0].userId
+                        }
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+
+                    if (linked_user.length < 1) {
+                        throw new ErrorHandler(401, "INVALD LINKED USER");
+                    }
+
+                    var linked_security = new Security(linked_user[0].password);
+
+                    profile = JSON.parse(linked_security.decrypt(linked_token[0].profile, linked_token[0].iv))
+                } else {
+                    profile = JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+                }
 
                 if (provider) {
                     let email = platform.name == "gmail" ? profile.data.email : "n/a"
@@ -985,7 +1050,10 @@ let production = (app, configs, db) => {
 
             if (auth_key != req.body.auth_key) {
                 throw new ErrorHandler(401, "INVALID AUTH_KEY");
-            }
+            };
+
+            let fetch_tokens = "";
+            let linked_token = "";
 
             let token = await Token.findAll({
                 where: {
@@ -1009,7 +1077,29 @@ let production = (app, configs, db) => {
                 throw new ErrorHandler(409, "DUPLICATE TOKENS");
             };
 
-            let fetch_tokens = JSON.parse(security.decrypt(token[0].token, token[0].iv));
+            if (token[0].profile == "linked") {
+                linked_token = await Token.findAll({
+                    where: {
+                        id: token[0].token
+                    }
+                }).catch(error => {
+                    throw new ErrorHandler(500, error);
+                });
+
+                let linked_user = await User.findAll({
+                    where: {
+                        id: linked_token[0].userId
+                    }
+                }).catch(error => {
+                    throw new ErrorHandler(500, error);
+                });
+
+                var linked_security = new Security(linked_user[0].password);
+
+                fetch_tokens = JSON.parse(linked_security.decrypt(linked_token[0].token, linked_token[0].iv))
+            } else {
+                fetch_tokens = JSON.parse(security.decrypt(token[0].token, token[0].iv));
+            }
 
             switch (true) {
                 case provider[0].name == "google":
@@ -1021,6 +1111,44 @@ let production = (app, configs, db) => {
                             });;
 
                             if (result) {
+                                if (linked_token != "") {
+                                    await linked_token[0].destroy().catch(error => {
+                                        throw new ErrorHandler(500, error);
+                                    });
+
+                                    let other_tokens = await Token.findAll({
+                                        where: {
+                                            token: linked_token[0].id
+                                        }
+                                    }).catch(error => {
+                                        throw new ErrorHandler(500, error);
+                                    });
+
+                                    if (other_tokens.length > 0) {
+                                        other_tokens.forEach(async (_token) => {
+                                            await _token.destroy().catch(error => {
+                                                throw new ErrorHandler(500, error);
+                                            });;
+                                        })
+                                    };
+                                }
+
+                                let other_tokens = await Token.findAll({
+                                    where: {
+                                        token: token[0].id
+                                    }
+                                }).catch(error => {
+                                    throw new ErrorHandler(500, error);
+                                });
+
+                                if (other_tokens.length > 0) {
+                                    other_tokens.forEach(async (_token) => {
+                                        await _token.destroy().catch(error => {
+                                            throw new ErrorHandler(500, error);
+                                        });;
+                                    })
+                                }
+
                                 await token[0].destroy().catch(error => {
                                     throw new ErrorHandler(500, error);
                                 });;
