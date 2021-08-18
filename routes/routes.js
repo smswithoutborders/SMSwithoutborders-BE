@@ -1944,7 +1944,32 @@ let production = (app, configs, db) => {
                         throw new ErrorHandler(409, "DUPLICATE PLATFORMS");
                     };
 
-                    let fetch_tokens = JSON.parse(security.decrypt(tokens[i].token, tokens[i].iv));
+                    let linked_token = "";
+                    let fetch_tokens = "";
+
+                    if (tokens[i].profile == "linked") {
+                        linked_token = await Token.findAll({
+                            where: {
+                                id: tokens[i].token
+                            }
+                        }).catch(error => {
+                            throw new ErrorHandler(500, error);
+                        });
+
+                        let linked_user = await User.findAll({
+                            where: {
+                                id: linked_token[0].userId
+                            }
+                        }).catch(error => {
+                            throw new ErrorHandler(500, error);
+                        });
+
+                        var linked_security = new Security(linked_user[0].password);
+
+                        fetch_tokens = JSON.parse(linked_security.decrypt(linked_token[0].token, linked_token[0].iv))
+                    } else {
+                        fetch_tokens = JSON.parse(security.decrypt(tokens[i].token, tokens[i].iv));
+                    }
 
                     switch (true) {
                         case provider[0].name == "google":
@@ -1956,6 +1981,44 @@ let production = (app, configs, db) => {
                                     });;
 
                                     if (result) {
+                                        if (linked_token != "") {
+                                            await linked_token[0].destroy().catch(error => {
+                                                throw new ErrorHandler(500, error);
+                                            });
+
+                                            let other_tokens = await Token.findAll({
+                                                where: {
+                                                    token: linked_token[0].id
+                                                }
+                                            }).catch(error => {
+                                                throw new ErrorHandler(500, error);
+                                            });
+
+                                            if (other_tokens.length > 0) {
+                                                other_tokens.forEach(async (_token) => {
+                                                    await _token.destroy().catch(error => {
+                                                        throw new ErrorHandler(500, error);
+                                                    });;
+                                                })
+                                            };
+                                        }
+
+                                        let other_tokens = await Token.findAll({
+                                            where: {
+                                                token: tokens[i].id
+                                            }
+                                        }).catch(error => {
+                                            throw new ErrorHandler(500, error);
+                                        });
+
+                                        if (other_tokens.length > 0) {
+                                            other_tokens.forEach(async (_token) => {
+                                                await _token.destroy().catch(error => {
+                                                    throw new ErrorHandler(500, error);
+                                                });;
+                                            })
+                                        }
+
                                         await tokens[i].destroy().catch(error => {
                                             throw new ErrorHandler(500, error);
                                         });;
