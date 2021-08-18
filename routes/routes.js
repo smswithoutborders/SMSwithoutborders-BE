@@ -1463,16 +1463,20 @@ let production = (app, configs, db) => {
             };
 
             for (let j = 0; j < tokens.length; j++) {
-                let p = JSON.parse(security.decrypt(tokens[j].profile, tokens[j].iv))
-                let t = JSON.parse(security.decrypt(tokens[j].token, tokens[j].iv))
+                if (tokens[j].profile == "linked") {
+                    continue;
+                } else {
+                    let p = JSON.parse(security.decrypt(tokens[j].profile, tokens[j].iv))
+                    let t = JSON.parse(security.decrypt(tokens[j].token, tokens[j].iv))
 
-                await tokens[j].update({
-                    profile: security_new.encrypt(JSON.stringify(p)).e_info,
-                    token: security_new.encrypt(JSON.stringify(t)).e_info,
-                    iv: security_new.iv
-                }).catch(error => {
-                    throw new ErrorHandler(500, error);
-                });
+                    await tokens[j].update({
+                        profile: security_new.encrypt(JSON.stringify(p)).e_info,
+                        token: security_new.encrypt(JSON.stringify(t)).e_info,
+                        iv: security_new.iv
+                    }).catch(error => {
+                        throw new ErrorHandler(500, error);
+                    });
+                }
             }
 
             return res.status(200).json({
