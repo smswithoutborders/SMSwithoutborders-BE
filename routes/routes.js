@@ -135,12 +135,47 @@ let production = (app, configs, db) => {
 
                     // IF PROVIDER FOUND
                     if (provider && platform) {
-                        userData.user_token.push({
-                            provider: provider.name,
-                            platform: platform.name,
-                            token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
-                            profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
-                        })
+                        if (token[i].profile == "linked") {
+                            let linked_token = await Token.findAll({
+                                where: {
+                                    id: token[i].token
+                                }
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            if (linked_token.length < 1) {
+                                throw new ErrorHandler(401, "INVALD LINKED TOKEN");
+                            }
+
+                            let linked_user = await User.findAll({
+                                where: {
+                                    id: linked_token[0].userId
+                                }
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            if (linked_user.length < 1) {
+                                throw new ErrorHandler(401, "INVALD LINKED USER");
+                            }
+
+                            var linked_security = new Security(linked_user[0].password);
+
+                            userData.user_token.push({
+                                provider: provider.name,
+                                platform: platform.name,
+                                token: JSON.parse(linked_security.decrypt(linked_token[0].token, linked_token[0].iv)),
+                                profile: JSON.parse(linked_security.decrypt(linked_token[0].profile, linked_token[0].iv))
+                            })
+                        } else {
+                            userData.user_token.push({
+                                provider: provider.name,
+                                platform: platform.name,
+                                token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
+                                profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+                            })
+                        }
                     }
                 }
                 // RETURN STORED TOKEN AND PROVIDER
@@ -170,12 +205,47 @@ let production = (app, configs, db) => {
 
                     // IF PROVIDER FOUND
                     if (provider && platform) {
-                        userData.user_token.push({
-                            provider: provider.name,
-                            platform: platform.name,
-                            token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
-                            profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
-                        })
+                        if (token[i].profile == "linked") {
+                            let linked_token = await Token.findAll({
+                                where: {
+                                    id: token[i].token
+                                }
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            if (linked_token.length < 1) {
+                                throw new ErrorHandler(401, "INVALD LINKED TOKEN");
+                            }
+
+                            let linked_user = await User.findAll({
+                                where: {
+                                    id: linked_token[0].userId
+                                }
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            if (linked_user.length < 1) {
+                                throw new ErrorHandler(401, "INVALD LINKED USER");
+                            }
+
+                            var linked_security = new Security(linked_user[0].password);
+
+                            userData.user_token.push({
+                                provider: provider.name,
+                                platform: platform.name,
+                                token: JSON.parse(linked_security.decrypt(linked_token[0].token, linked_token[0].iv)),
+                                profile: JSON.parse(linked_security.decrypt(linked_token[0].profile, linked_token[0].iv))
+                            })
+                        } else {
+                            userData.user_token.push({
+                                provider: provider.name,
+                                platform: platform.name,
+                                token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
+                                profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+                            })
+                        }
                     }
                 }
                 // RETURN STORED TOKEN AND PROVIDER
@@ -205,12 +275,47 @@ let production = (app, configs, db) => {
 
                     // IF PROVIDER FOUND
                     if (provider && platform) {
-                        userData.user_token.push({
-                            provider: provider.name,
-                            platform: platform.name,
-                            token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
-                            profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
-                        })
+                        if (token[i].profile == "linked") {
+                            let linked_token = await Token.findAll({
+                                where: {
+                                    id: token[i].token
+                                }
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            if (linked_token.length < 1) {
+                                throw new ErrorHandler(401, "INVALD LINKED TOKEN");
+                            }
+
+                            let linked_user = await User.findAll({
+                                where: {
+                                    id: linked_token[0].userId
+                                }
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
+
+                            if (linked_user.length < 1) {
+                                throw new ErrorHandler(401, "INVALD LINKED USER");
+                            }
+
+                            var linked_security = new Security(linked_user[0].password);
+
+                            userData.user_token.push({
+                                provider: provider.name,
+                                platform: platform.name,
+                                token: JSON.parse(linked_security.decrypt(linked_token[0].token, linked_token[0].iv)),
+                                profile: JSON.parse(linked_security.decrypt(linked_token[0].profile, linked_token[0].iv))
+                            })
+                        } else {
+                            userData.user_token.push({
+                                provider: provider.name,
+                                platform: platform.name,
+                                token: JSON.parse(security.decrypt(token[i].token, token[i].iv)),
+                                profile: JSON.parse(security.decrypt(token[i].profile, token[i].iv))
+                            })
+                        }
                     }
                 }
                 // RETURN STORED TOKEN AND PROVIDER
