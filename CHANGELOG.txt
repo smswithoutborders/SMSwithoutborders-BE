@@ -10,4 +10,4 @@
                       - Removing previous Providers directory
                         <sudo rm -r Providers>
                       - Installing new Providers
-                        <https://github.com/smswithoutborders/SMSWithoutborders-Customized_Third-party_OAuths>  
+                        <https://github.com/smswithoutborders/SMSwithoutborders_API_cli>  
