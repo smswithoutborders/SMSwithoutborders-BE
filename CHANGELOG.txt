@@ -1,0 +1,13 @@
+2020-08-06  Fru_Promise  <promisefru1@gmail.com>
+
+    * /routes/routes.js: Reusable token's feature added
+
+2020-08-25  Fru_Promise  <promisefru1@gmail.com>
+
+    * serverDev.js: Database sync updated. Scans for info.json for each provider in the Providers directory. 
+                    Providers must be reinstalled for these changes to work else errors will be encountered.
+                    Reinstall Providers by:
+                      - Removing previous Providers directory
+                        <sudo rm -r Providers>
+                      - Installing new Providers
+                        <https://github.com/smswithoutborders/SMSWithoutborders-Customized_Third-party_OAuths>  
