@@ -10,7 +10,8 @@ const chalk = require("chalk");
 const {
     handleError,
     ErrorHandler
-} = require("./controllers/error.js")
+} = require("./controllers/error.js");
+const camelCase = require('camelcase');
 
 const db = require("./models");
 var Provider = db.providers;
@@ -123,10 +124,13 @@ app.use(morgan('dev'));
                 console.log(chalk.blue("Available Providers:"));
                 //listing all files using forEach
                 providers.forEach(async function (provider) {
+                    let data = fs.readFileSync(`${process.cwd()}/Providers/${camelCase(provider, {pascalCase: true})}/info.json`, 'utf8');
+                    let info = JSON.parse(data);
+
                     let new_db_providers = {};
                     let db_providers = await Provider.findAll({
                         where: {
-                            name: provider.toLowerCase()
+                            name: info.name.toLowerCase()
                         }
                     }).catch(error => {
                         throw new ErrorHandler(500, error);
@@ -137,46 +141,37 @@ app.use(morgan('dev'));
                     }
                     if (db_providers.length < 1) {
                         new_db_providers = await Provider.create({
-                            name: provider.toLowerCase(),
-                            description: `Made by ${provider} Inc`,
-                            letter: provider.toLowerCase()[0]
+                            name: info.name.toLowerCase(),
+                            description: info.description,
+                            letter: info.name.toLowerCase()[0]
                         }).catch(error => {
                             throw new ErrorHandler(500, error);
                         });
                     }
-                    fs.readdir(__dirname + '/Providers/' + provider, function (err, platforms) {
-                        //handling error
-                        if (err) {
-                            return console.log('Unable to scan directory: ' + err);
+                    for (let i = 0; i < info.platforms.length; i++) {
+                        let db_platforms = await Platform.findAll({
+                            where: {
+                                name: info.platforms[i].name.toLowerCase()
+                            }
+                        }).catch(error => {
+                            throw new ErrorHandler(500, error);
+                        });;
+
+                        if (db_platforms.length > 1) {
+                            throw new ErrorHandler(409, "duplicate Platforms");
                         }
-                        //listing all files using forEach
-                        platforms.forEach(async function (platform) {
-                            let platform_name = platform.split(".js");
-                            let db_platforms = await Platform.findAll({
-                                where: {
-                                    name: platform_name[0].toLowerCase()
-                                }
+                        if (db_platforms.length < 1) {
+                            await Platform.create({
+                                name: info.platforms[i].name.toLowerCase(),
+                                type: info.platforms[i].type.toLowerCase(),
+                                letter: info.platforms[i].name.toLowerCase()[0],
+                                providerId: db_providers < 1 ? new_db_providers.id : db_providers[0].id
                             }).catch(error => {
                                 throw new ErrorHandler(500, error);
-                            });;
-
-                            if (db_platforms.length > 1) {
-                                throw new ErrorHandler(409, "duplicate Platforms");
-                            }
-                            if (db_platforms.length < 1) {
-                                let email = platform_name[0].toLowerCase() == "gmail" ? "email" : "text"
-                                await Platform.create({
-                                    name: platform_name[0].toLowerCase(),
-                                    type: email,
-                                    letter: platform_name[0].toLowerCase()[0],
-                                    providerId: db_providers < 1 ? new_db_providers.id : db_providers[0].id
-                                }).catch(error => {
-                                    throw new ErrorHandler(500, error);
-                                });
-                            }
-                            console.log(chalk.blue(`${provider} ----> ${platform_name[0].toLowerCase()}`));
-                        });
-                    });
+                            });
+                        }
+                        console.log(chalk.blue(`${info.name} ----> ${info.platforms[i].name.toLowerCase()}`));
+                    };
                 });
             });
         } else {
