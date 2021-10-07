@@ -7,7 +7,13 @@
     * serverDev.js: Database sync updated. Scans for info.json for each provider in the Providers directory. 
                     Providers must be reinstalled for these changes to work else errors will be encountered.
                     Reinstall Providers by:
+                      - Update SMSwithoutborders_API_cli
+                        > move into SMSwithoutborders_API_cli directory and run
+                        <git pull origin master>
                       - Removing previous Providers directory
+                        > move into SMSwithoutborders_API_services directory and run
                         <sudo rm -r Providers>
                       - Installing new Providers
+                        > Inside SMSwithoutborders_API_services run
+                        <swob create>
                         <https://github.com/smswithoutborders/SMSwithoutborders_API_cli>  
