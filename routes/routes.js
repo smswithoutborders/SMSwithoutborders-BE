@@ -582,7 +582,8 @@ let production = (app, configs, db) => {
                                 let new_token = await Token.create({
                                     profile: security.encrypt(JSON.stringify({
                                         data: {
-                                            email: result.profile.data.email
+                                            email: result.profile.data.email,
+                                            name: result.profile.data.name
                                         }
                                     })).e_info,
                                     token: security.encrypt(JSON.stringify(result.token)).e_info,
