@@ -1212,36 +1212,18 @@ let production = (app, configs, db) => {
                     switch (platform[0].name) {
                         case "gmail":
                             let originalURL = req.header("Origin");
-                            let result = await gmail.revoke(originalURL, fetch_tokens).catch(error => {
-                                throw new ErrorHandler(500, error);
+                            await gmail.revoke(originalURL, fetch_tokens).catch(error => {
+                                console.error(error.message);
                             });;
 
-                            if (result) {
-                                if (linked_token != "") {
-                                    await linked_token[0].destroy().catch(error => {
-                                        throw new ErrorHandler(500, error);
-                                    });
-
-                                    let other_tokens = await Token.findAll({
-                                        where: {
-                                            token: linked_token[0].id
-                                        }
-                                    }).catch(error => {
-                                        throw new ErrorHandler(500, error);
-                                    });
-
-                                    if (other_tokens.length > 0) {
-                                        other_tokens.forEach(async (_token) => {
-                                            await _token.destroy().catch(error => {
-                                                throw new ErrorHandler(500, error);
-                                            });;
-                                        })
-                                    };
-                                }
+                            if (linked_token != "") {
+                                await linked_token[0].destroy().catch(error => {
+                                    throw new ErrorHandler(500, error);
+                                });
 
                                 let other_tokens = await Token.findAll({
                                     where: {
-                                        token: token[0].id
+                                        token: linked_token[0].id
                                     }
                                 }).catch(error => {
                                     throw new ErrorHandler(500, error);
@@ -1253,16 +1235,32 @@ let production = (app, configs, db) => {
                                             throw new ErrorHandler(500, error);
                                         });;
                                     })
+                                };
+                            }
+
+                            let other_tokens = await Token.findAll({
+                                where: {
+                                    token: token[0].id
                                 }
+                            }).catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });
 
-                                await token[0].destroy().catch(error => {
-                                    throw new ErrorHandler(500, error);
-                                });;
+                            if (other_tokens.length > 0) {
+                                other_tokens.forEach(async (_token) => {
+                                    await _token.destroy().catch(error => {
+                                        throw new ErrorHandler(500, error);
+                                    });;
+                                })
+                            }
 
-                                return res.status(200).json({
-                                    message: "REVOKE SUCCESSFUL"
-                                });
-                            };
+                            await token[0].destroy().catch(error => {
+                                throw new ErrorHandler(500, error);
+                            });;
+
+                            return res.status(200).json({
+                                message: "REVOKE SUCCESSFUL"
+                            });
                             break;
                         default:
                             throw new ErrorHandler(401, "INVALD PLATFORM");
