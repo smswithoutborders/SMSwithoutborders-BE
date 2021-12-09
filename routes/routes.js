@@ -1271,7 +1271,7 @@ let production = (app, configs, db) => {
                         case "twitter":
                             let originalURL = req.header("Origin");
                             let result = await twitter.revoke(originalURL, fetch_tokens).catch(error => {
-                                throw new ErrorHandler(500, error);
+                                console.error(error.message);
                             });;
 
                             if (result) {
@@ -1980,7 +1980,7 @@ let production = (app, configs, db) => {
                                 case "gmail":
                                     let originalURL = req.header("Origin");
                                     let result = await gmail.revoke(originalURL, fetch_tokens).catch(error => {
-                                        throw new ErrorHandler(500, error);
+                                        console.error(error.message);
                                     });;
 
                                     if (result) {
@@ -2036,7 +2036,7 @@ let production = (app, configs, db) => {
                                 case "twitter":
                                     let originalURL = req.header("Origin");
                                     let result = await twitter.revoke(originalURL, fetch_tokens).catch(error => {
-                                        throw new ErrorHandler(500, error);
+                                        console.error(error.message);
                                     });;
 
                                     if (result) {
@@ -2213,7 +2213,7 @@ let production = (app, configs, db) => {
                                 case "gmail":
                                     let originalURL = req.header("Origin");
                                     let result = await gmail.revoke(originalURL, fetch_tokens).catch(error => {
-                                        throw new ErrorHandler(500, error);
+                                        console.error(error.message);
                                     });;
 
                                     if (result) {
@@ -2269,7 +2269,7 @@ let production = (app, configs, db) => {
                                 case "twitter":
                                     let originalURL = req.header("Origin");
                                     let result = await twitter.revoke(originalURL, fetch_tokens).catch(error => {
-                                        throw new ErrorHandler(500, error);
+                                        console.error(error.message);
                                     });;
 
                                     if (result) {
