@@ -186,7 +186,7 @@ app.use(morgan('dev'));
 })();
 
 // ROUTES
-require("./routes/routes.js").development(app, configs, db);
+require("./routes/dev")(app, configs, db);
 
 // error handler
 let errorHandler = (err, req, res, next) => {

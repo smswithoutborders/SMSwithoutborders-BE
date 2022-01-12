@@ -103,7 +103,7 @@ app.use([morgan('combined', {
 app.use(morgan('dev'));
 
 // ROUTES
-require("./routes/routes.js").production(app, configs, db);
+require("./routes/prod")(app, configs, db);
 
 // error handler
 let errorHandler = (err, req, res, next) => {
