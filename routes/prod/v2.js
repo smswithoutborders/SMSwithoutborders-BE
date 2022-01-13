@@ -13,21 +13,24 @@ module.exports = (app, configs, db) => {
     var Provider = db.providers;
     var Platform = db.platforms;
     var SmsVerification = db.smsVerification;
+    let PLATFORMS = require("../../libs/platforms/PLATFORMS");
 
     if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
         rootCas.addFile('/var/www/ssl/server.pem')
     }
 
-    app.post("/:platform/:protocol", async (req, res, next) => {
+    app.post("/:platform/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
 
             // =============================================================
+            let originalURL = req.header("Origin");
+            const platform = req.platform;
+            let URL = await platform.init(originalURL)
 
-            return res.status(200).json({
-                platform: req.params.platform,
-                protocol: req.params.protocol
-            })
+            return res.status(200).json(
+                URL
+            )
 
         } catch (error) {
             next(error)
