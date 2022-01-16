@@ -25,11 +25,11 @@ module.exports = async (req, res, next) => {
 
         throw new ERRORS.BadRequest();
     } catch (err) {
-        if (err instanceof Errors.BadRequest) {
-            return res.status(400).send();
+        if (err instanceof ERRORS.BadRequest) {
+            return res.status(400).send(err.message);
         } // 400
 
-        console.log(error);
-        return res.status(500).send();
+        console.log(err);
+        return res.status(500).send("internal server error");
     };
 }

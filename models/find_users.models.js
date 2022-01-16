@@ -1,7 +1,7 @@
 const ERRORS = require("../error.js");
+const db = require(".");
 
 var User = db.users;
-
 
 module.exports = async (id, auth_key) => {
     // SEARCH FOR USER IN DB

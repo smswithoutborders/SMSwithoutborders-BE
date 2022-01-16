@@ -37,7 +37,7 @@ module.exports = (app, configs, db) => {
 
             let originalURL = req.header("Origin");
             const platform = req.platform;
-            let URL = await platform.init(originalURL)
+            let URL = await platform.init(originalURL);
 
             return res.status(200).json({
                 url: URL,
@@ -47,17 +47,17 @@ module.exports = (app, configs, db) => {
 
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
-                return res.status(400).send();
+                return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send();
+                return res.status(401).send(err.message);
             } // 401
             if (err instanceof ERRORS.Conflict) {
-                return res.status(409).send();
+                return res.status(409).send(err.message);
             } // 409
 
-            console.error(error);
-            return res.status(500).send();
+            console.error(err);
+            return res.status(500).send("internal server error");
         }
     });
 

@@ -26,9 +26,7 @@ class OAuth2 {
                     scope: this.token_scopes
                 });
 
-                resolve({
-                    url: token_url
-                });
+                resolve(token_url);
             } catch (error) {
                 reject(
                     error
