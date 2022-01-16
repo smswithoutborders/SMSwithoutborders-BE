@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "SMSwithoutBorders API",
-    "version": "0.1.0"
+    "version": "1.0.0"
   },
   "servers": [{
     "url": "http://localhost:9000"

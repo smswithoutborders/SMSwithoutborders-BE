@@ -2,7 +2,7 @@ const {
     google
 } = require('googleapis');
 
-class OAuth_2_0 {
+class OAuth2 {
     constructor(credentials, token_scopes) {
         this.credentials = credentials;
         this.oauth2ClientToken = {};
@@ -105,5 +105,5 @@ class OAuth_2_0 {
 };
 
 module.exports = {
-    OAuth_2_0
+    OAuth2
 }

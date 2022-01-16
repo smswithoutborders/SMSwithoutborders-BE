@@ -1,13 +1,12 @@
 const fs = require('fs')
-const Axios = require('axios');
+const ERRORS = require("../../error.js");
+const FIND_USERS = require("../../models/find_users.models");
 var rootCas = require('ssl-root-cas').create()
 
 require('https').globalAgent.options.ca = rootCas
-axios = Axios;
 
 // ==================== PRODUCTION ====================
 module.exports = (app, configs, db) => {
-    var User = db.users;
     var Token = db.tokens;
     var UsersInfo = db.usersInfo;
     var Provider = db.providers;
@@ -22,27 +21,48 @@ module.exports = (app, configs, db) => {
     app.post("/:platform/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.id) {
+                throw new ERRORS.BadRequest();
+            };
 
+            if (!req.body.auth_key) {
+                throw new ERRORS.BadRequest();
+            };
             // =============================================================
+
+            const ID = req.body.id;
+            const AUTH_KEY = req.body.auth_key;
+
+            let user = await FIND_USERS(ID, AUTH_KEY);
+
             let originalURL = req.header("Origin");
             const platform = req.platform;
             let URL = await platform.init(originalURL)
 
-            return res.status(200).json(
-                URL
-            )
+            return res.status(200).json({
+                url: URL,
+                auth_key: user.auth_key,
+                platform: req.params.platform
+            })
 
-        } catch (error) {
-            next(error)
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send();
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(401).send();
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send();
+            } // 409
+
+            console.error(error);
+            return res.status(500).send();
         }
     });
 
     app.post("/:platform/:protocol:auth_code", async (req, res, next) => {
         try {
-            // ==================== REQUEST BODY CHECKS ====================
-
-            // =============================================================
-
             return res.status(200).json({
                 platform: req.params.platform,
                 protocol: req.params.protocol

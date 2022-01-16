@@ -1,4 +1,5 @@
 const credentials = require("../../credentials.json");
+const ERRORS = require("../../error.js");
 const gmail_token_scopes = [
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -9,18 +10,26 @@ const GMAIL = require("../platforms/GMAIL");
 
 module.exports = async (req, res, next) => {
     try {
-        if (req.params.platform.toLowerCase() == "gmail") {
+        const platform = req.params.platform.toLowerCase();
+        const protocol = req.params.protocol.toLowerCase();
 
-            if (req.params.protocol.toLowerCase() == "oauth2") {
-                req.platform = new GMAIL.OAuth_2_0(credentials, gmail_token_scopes);
+        if (platform == "gmail") {
+
+            if (protocol == "oauth2") {
+                req.platform = new GMAIL.OAuth2(credentials, gmail_token_scopes);
                 return next();
             };
 
-            throw new Error("INVALID PROTOCOL")
+            throw new ERRORS.BadRequest();
         };
 
-        throw new Error("INVALID PLATFORM")
+        throw new ERRORS.BadRequest();
     } catch (err) {
-        next(err)
+        if (err instanceof Errors.BadRequest) {
+            return res.status(400).send();
+        } // 400
+
+        console.log(error);
+        return res.status(500).send();
     };
 }

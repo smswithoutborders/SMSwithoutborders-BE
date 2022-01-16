@@ -13,7 +13,9 @@ const {
     ErrorHandler
 } = require("./controllers/error.js")
 
-const swaggerDocument = require("./openapi.json");
+const API_DOCS_V1 = require("./routes/prod/api-docs-v1.json");
+const API_DOCS_V2 = require("./routes/prod/api-docs-v2.json");
+
 const db = require("./models");
 
 const https = require("https")
@@ -75,7 +77,9 @@ app.use(express.urlencoded({
 // app.use(express.static('public'));
 
 // Create swagger docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+var options = {}
+app.use('/v1/api-docs', swaggerUi.serveFiles(API_DOCS_V1, options), swaggerUi.setup(API_DOCS_V1));
+app.use('/v2/api-docs', swaggerUi.serveFiles(API_DOCS_V2, options), swaggerUi.setup(API_DOCS_V2));
 
 // logger
 var successLogStream = fs.createWriteStream(path.join(__dirname, "logs/success.log"), {
