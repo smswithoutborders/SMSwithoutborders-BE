@@ -9,7 +9,7 @@ var rootCas = require('ssl-root-cas').create()
 require('https').globalAgent.options.ca = rootCas
 
 // ==================== PRODUCTION ====================
-module.exports = (app, configs, db) => {
+module.exports = (app, configs) => {
     let PLATFORMS = require("../../libs/platforms/PLATFORMS");
 
     if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
@@ -17,6 +17,7 @@ module.exports = (app, configs, db) => {
     }
 
     app.post("/:platform/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.id) {
