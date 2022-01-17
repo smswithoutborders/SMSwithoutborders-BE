@@ -79,7 +79,9 @@ module.exports = (app, configs) => {
 
             const ID = req.body.id;
             const AUTH_KEY = req.body.auth_key;
-            const AUTH_CODE = req.body.auth_code;
+            // INFO - Google API returns a UTF-8 encoded verification code on second request of OAuth2 token
+            // INFO - Google API Client requires a non UTF-8 verification code, so we decode every verification code entry at API level  
+            const AUTH_CODE = decodeURIComponent(req.body.auth_code);
             const PLATFORM = req.params.platform;
 
             let user = await FIND_USERS(ID, AUTH_KEY);
