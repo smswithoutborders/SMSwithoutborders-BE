@@ -21,9 +21,6 @@ npm install
     * To set up platform credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
     * Create a database then edit config.json and fill in the name of the newly created database
 
-* Create Providers using SWOB-CLI
-    * Get SWOB-CLI: https://github.com/smswithoutborders/SMSwithoutborders_API_cli
-
 ### Start Production Server
 * With NPM
 ```bash
@@ -49,7 +46,9 @@ npm start
 ```
 ### API SandBox
 ```
-http://localhost:{PORT}/api-docs
+http://localhost:{PORT}/v1/api-docs
+
+http://localhost:{PORT}/v2/api-docs
 ```
 
 ### Database tables
@@ -65,23 +64,17 @@ __UsersInfos table__
 |:-----------:|:------------:|:--------:|:--------:|:--------------:|:-----------------:|:----:|:------:|:------:|
 | PRIMARY KEY |    STRING    |  STRING  |  STRING  |     STRING     |       STRING      | ENUM |  ENUM  | STRING |
 
-__Providers table__
-
-|      id     |                     name                   |       description      |  letter  |                  
-|:-----------:|:------------------------------------------:|:----------------------:|:--------:|
-| PRIMARY KEY | Provider's name (google, twitter) [STRING] | Provider's description |  STRING  |
-
 __Platforms table__
 
-|      id     |       name      |       type      |       description      |   logo   |          providerId         |  letter  |
-|:-----------:|:---------------:|:---------------:|:----------------------:|:--------:|:---------------------------:|:--------:|
-| PRIMARY KEY | Platform's name | Platform's type | Platform's description | LOGO IMG | Providers[id] [FOREIGN KEY] |  STRING  |
+|      id     |       name      |       type      |       description      |   logo   |  letter  |
+|:-----------:|:---------------:|:---------------:|:----------------------:|:--------:|:--------:|
+| PRIMARY KEY | Platform's name | Platform's type | Platform's description | LOGO IMG |  STRING  |
 
 __Tokens table__
 
-|      id     |         profile        |           token          |            userId           |          providerId          |          platformId          |  email |       iv      |
-|:-----------:|:----------------------:|:------------------------:|:---------------------------:|:----------------------------:|:----------------------------:|:------:|:-------------:|
-| PRIMARY KEY | Users info  [ OBJECT ] | Users tokens  [ OBJECT ] | Users [ id ]  [FOREIGN KEY] | Provider's[id] [FOREIGN KEY] | Platform's[id] [FOREIGN KEY] | STRING | Encryption IV |
+|      id     |        username        |           token          |            userId           |           uniqueId           |         uniqueIdHash         |          platformId          |       iv      |
+|:-----------:|:----------------------:|:------------------------:|:---------------------------:|:----------------------------:|:----------------------------:|:----------------------------:|:-------------:|
+| PRIMARY KEY |         STRING         | Users tokens  [ OBJECT ] | Users [ id ]  [FOREIGN KEY] |            STRING            |            STRING            | Platform's[id] [FOREIGN KEY] | Encryption IV |
 
 __SmsVerification table__
 
