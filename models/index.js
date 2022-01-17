@@ -34,20 +34,8 @@ db.users.hasMany(db.usersInfo, {
 });
 db.usersInfo.belongsTo(db.users);
 
-// relationship providers table -> tokens table 
-db.providers.hasOne(db.tokens, {
-    foreignKey: "providerId"
-});
-db.tokens.belongsTo(db.providers);
-
-// relationship providers table -> platforms table 
-db.providers.hasMany(db.platforms, {
-    foreignKey: "providerId"
-});
-db.platforms.belongsTo(db.providers);
-
 // relationship platforms table -> tokens table 
-db.platforms.hasOne(db.tokens, {
+db.platforms.hasMany(db.tokens, {
     foreignKey: "platformId"
 });
 db.tokens.belongsTo(db.platforms);
