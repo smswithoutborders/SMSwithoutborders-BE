@@ -7,23 +7,14 @@ var Token = db.tokens;
 module.exports = async (user, platform, result) => {
     var security = new Security(user.password);
 
-    let new_token = await Token.create({
-        profile: security.encrypt(JSON.stringify({
-            data: {
-                email: result.profile.data.email,
-                name: result.profile.data.name
-            }
-        })).e_info,
-        token: security.encrypt(JSON.stringify(result.token)).e_info,
-        email: security.hash(result.profile.data.email),
-        iv: security.iv
-    }).catch(error => {
-        throw new ERRORS.InternalServerError(error);
-    });
-
-    await new_token.update({
+    await Token.create({
         userId: user.id,
-        platformId: platform.id
+        platformId: platform.id,
+        username: security.encrypt(JSON.stringify(result.profile.data.name)).e_info,
+        token: security.encrypt(JSON.stringify(result.token)).e_info,
+        uniqueId: security.encrypt(JSON.stringify(result.profile.data.email)).e_info,
+        uniqueIdHash: security.hash(result.profile.data.email),
+        iv: security.iv
     }).catch(error => {
         throw new ERRORS.InternalServerError(error);
     });
