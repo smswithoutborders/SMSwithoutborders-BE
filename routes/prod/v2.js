@@ -61,7 +61,7 @@ module.exports = (app, configs) => {
         }
     });
 
-    app.post("/:platform/:protocol/:auth_code", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
+    app.put("/:platform/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.id) {
@@ -72,14 +72,14 @@ module.exports = (app, configs) => {
                 throw new ERRORS.BadRequest();
             };
 
-            if (!req.params.auth_code) {
+            if (!req.body.auth_code) {
                 throw new ERRORS.BadRequest();
             };
             // =============================================================
 
             const ID = req.body.id;
             const AUTH_KEY = req.body.auth_key;
-            const AUTH_CODE = req.params.auth_code;
+            const AUTH_CODE = req.body.auth_code;
             const PLATFORM = req.params.platform;
 
             let user = await FIND_USERS(ID, AUTH_KEY);

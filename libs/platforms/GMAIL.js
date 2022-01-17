@@ -35,9 +35,11 @@ class OAuth2 {
         });
     };
 
-    validate(originalURL, code) {
+    validate(originalURL, ...args) {
         return new Promise(async (resolve, reject) => {
             try {
+                const code = args[0];
+
                 this.oauth2ClientToken = new google.auth.OAuth2(
                     this.credentials.google.GOOGLE_CLIENT_ID,
                     this.credentials.google.GOOGLE_CLIENT_SECRET,

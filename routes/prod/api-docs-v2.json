@@ -118,10 +118,8 @@
             }
           }
         }
-      }
-    },
-    "/{platform}/{protocol}/{auth_code}": {
-      "post": {
+      },
+      "put": {
         "tags": [
           "Get new tokens"
         ],
@@ -143,15 +141,6 @@
             },
             "required": true,
             "description": "Protocol's name (e.g oauth)"
-          },
-          {
-            "in": "path",
-            "name": "auth_code",
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "description": "Verification code. This should be UTF-8 encoded"
           }
         ],
         "requestBody": {
@@ -165,6 +154,9 @@
                     "type": "string"
                   },
                   "auth_key": {
+                    "type": "string"
+                  },
+                  "auth_code": {
                     "type": "string"
                   }
                 }
