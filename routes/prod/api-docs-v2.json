@@ -158,6 +158,12 @@
                   },
                   "auth_code": {
                     "type": "string"
+                  },
+                  "auth_token": {
+                    "type": "string"
+                  },
+                  "auth_verifier": {
+                    "type": "string"
                   }
                 }
               }

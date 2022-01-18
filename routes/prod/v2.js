@@ -32,17 +32,15 @@ module.exports = (app, configs) => {
             const ID = req.body.id;
             const AUTH_KEY = req.body.auth_key;
             const PLATFORM = req.params.platform;
+            const URL = req.platformRes.url;
 
             let user = await FIND_USERS(ID, AUTH_KEY);
-
-            let originalURL = req.header("Origin");
-            const platformObj = req.platform;
-            let URL = await platformObj.init(originalURL);
+            let platform = await FIND_PLATFORMS(PLATFORM);
 
             return res.status(200).json({
                 url: URL,
                 auth_key: user.auth_key,
-                platform: PLATFORM
+                platform: platform.name.toLowerCase()
             })
 
         } catch (err) {
@@ -79,18 +77,11 @@ module.exports = (app, configs) => {
 
             const ID = req.body.id;
             const AUTH_KEY = req.body.auth_key;
-            // INFO - Google API returns a UTF-8 encoded verification code on second request of OAuth2 token
-            // INFO - Google API Client requires a non UTF-8 verification code, so we decode every verification code entry at API level  
-            // TODO Try checking double attempt to store tokens from the diff in auth_code
-            const AUTH_CODE = decodeURIComponent(req.body.auth_code);
             const PLATFORM = req.params.platform;
+            const RESULT = req.platformRes.result;
 
             let user = await FIND_USERS(ID, AUTH_KEY);
             let platform = await FIND_PLATFORMS(PLATFORM);
-
-            let originalURL = req.header("Origin");
-            const platformObj = req.platform;
-            let RESULT = await platformObj.validate(originalURL, AUTH_CODE);
 
             let auth_key = await STORE_TOKENS(user, platform, RESULT);
 
