@@ -10,7 +10,7 @@ require('https').globalAgent.options.ca = rootCas
 
 // ==================== PRODUCTION ====================
 module.exports = (app, configs) => {
-    let PLATFORMS = require("../../libs/platforms/PLATFORMS");
+    let PLATFORMS = require("../../libs/platforms");
 
     if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
         rootCas.addFile('/var/www/ssl/server.pem')

@@ -6,8 +6,8 @@ const gmail_token_scopes = [
     'https://www.googleapis.com/auth/userinfo.email'
 ];
 
-const GMAIL = require("../platforms/GMAIL");
-const TWITTER = require("../platforms/TWITTER");
+const GMAIL = require("./GMAIL");
+const TWITTER = require("./TWITTER");
 
 module.exports = async (req, res, next) => {
     try {
