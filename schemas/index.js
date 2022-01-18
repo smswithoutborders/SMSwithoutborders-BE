@@ -15,12 +15,12 @@ var db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-db.users = require("./users.models.js")(sequelize, Sequelize);
-db.tokens = require("./tokens.models.js")(sequelize, Sequelize);
-db.providers = require("./providers.models.js")(sequelize, Sequelize);
-db.platforms = require("./platforms.models.js")(sequelize, Sequelize);
-db.usersInfo = require("./usersInfo.models.js")(sequelize, Sequelize);
-db.smsVerification = require("./smsVerification.models.js")(sequelize, Sequelize);
+db.users = require("./users.schema.js")(sequelize, Sequelize);
+db.tokens = require("./tokens.schema.js")(sequelize, Sequelize);
+db.providers = require("./providers.schema.js")(sequelize, Sequelize);
+db.platforms = require("./platforms.schema.js")(sequelize, Sequelize);
+db.usersInfo = require("./usersInfo.schema.js")(sequelize, Sequelize);
+db.smsVerification = require("./smsVerification.schema.js")(sequelize, Sequelize);
 
 // relationship users table -> tokens table 
 db.users.hasMany(db.tokens, {

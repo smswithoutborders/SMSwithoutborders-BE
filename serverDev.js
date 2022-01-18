@@ -13,7 +13,7 @@ const {
 } = require("./controllers/error.js");
 const camelCase = require('camelcase');
 
-const db = require("./models");
+const db = require("./schemas");
 var Provider = db.providers;
 var Platform = db.platforms;
 

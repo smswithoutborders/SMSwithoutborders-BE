@@ -1,5 +1,5 @@
 const ERRORS = require("../error.js");
-const db = require(".");
+const db = require("../schemas");
 const Security = require("./security.models.js");
 
 var Token = db.tokens;

@@ -1,5 +1,5 @@
 const ERRORS = require("../error.js");
-const db = require(".");
+const db = require("../schemas");
 
 var User = db.users;
 
