@@ -45,7 +45,7 @@ module.exports = async (req, res, next) => {
                 throw new ERRORS.BadRequest();
             };
 
-            throw new ERRORS.BadRequest();
+            throw new ERRORS.NotFound();
         };
 
         if (platform == "twitter") {
@@ -68,14 +68,18 @@ module.exports = async (req, res, next) => {
                 throw new ERRORS.BadRequest();
             };
 
-            throw new ERRORS.BadRequest();
+            throw new ERRORS.NotFound();
         };
 
-        throw new ERRORS.BadRequest();
+        throw new ERRORS.NotFound();
     } catch (err) {
         if (err instanceof ERRORS.BadRequest) {
             return res.status(400).send(err.message);
         } // 400
+
+        if (err instanceof ERRORS.NotFound) {
+            return res.status(404).send(err.message);
+        } // 404
 
         console.log(err);
         return res.status(500).send("internal server error");
