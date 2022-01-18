@@ -16,7 +16,7 @@ class OAuth {
                     this.credentials.twitter.TWITTER_CLIENT_ID,
                     this.credentials.twitter.TWITTER_CLIENT_SECRET,
                     '1.0A',
-                    `${originalURL}/dashboard/oauth2/twitter/Tokens/redirect/`,
+                    `${originalURL}/platforms/twitter/protocols/oauth/redirect_codes/`,
                     'HMAC-SHA1'
                 );
 
@@ -51,7 +51,7 @@ class OAuth {
                     this.credentials.twitter.TWITTER_CLIENT_ID,
                     this.credentials.twitter.TWITTER_CLIENT_SECRET,
                     '1.0A',
-                    `${originalURL}/dashboard/oauth2/twitter/Tokens/redirect/`,
+                    `${originalURL}/platforms/twitter/protocols/oauth/redirect_codes/`,
                     'HMAC-SHA1'
                 );
 
@@ -88,7 +88,7 @@ class OAuth {
                     this.credentials.twitter.TWITTER_CLIENT_ID,
                     this.credentials.twitter.TWITTER_CLIENT_SECRET,
                     '1.0A',
-                    `${originalURL}/dashboard/oauth2/twitter/Tokens/redirect/`,
+                    `${originalURL}/platforms/twitter/protocols/oauth/redirect_codes/`,
                     'HMAC-SHA1'
                 );
 
