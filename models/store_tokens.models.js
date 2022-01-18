@@ -16,6 +16,12 @@ module.exports = async (user, platform, result) => {
         uniqueIdHash: security.hash(result.profile.data.email),
         iv: security.iv
     }).catch(error => {
+        if (error.name == "SequelizeUniqueConstraintError") {
+            if (error.original.code == "ER_DUP_ENTRY") {
+                throw new ERRORS.Conflict();
+            };
+        };
+
         throw new ERRORS.InternalServerError(error);
     });
 

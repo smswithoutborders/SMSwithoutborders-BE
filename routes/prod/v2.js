@@ -81,6 +81,7 @@ module.exports = (app, configs) => {
             const AUTH_KEY = req.body.auth_key;
             // INFO - Google API returns a UTF-8 encoded verification code on second request of OAuth2 token
             // INFO - Google API Client requires a non UTF-8 verification code, so we decode every verification code entry at API level  
+            // TODO Try checking double attempt to store tokens from the diff in auth_code
             const AUTH_CODE = decodeURIComponent(req.body.auth_code);
             const PLATFORM = req.params.platform;
 
