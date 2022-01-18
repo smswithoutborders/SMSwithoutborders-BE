@@ -12,7 +12,7 @@
     "description": "Store new token(s) for a user by platform"
   }],
   "paths": {
-    "/{platform}/{protocol}": {
+    "/platforms/{platform}/protocols/{protocol}": {
       "post": {
         "tags": [
           "Get new tokens"

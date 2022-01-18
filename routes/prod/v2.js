@@ -16,7 +16,7 @@ module.exports = (app, configs) => {
         rootCas.addFile('/var/www/ssl/server.pem')
     }
 
-    app.post("/:platform/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
+    app.post("/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
         try {
             // ==================== REQUEST BODY CHECKS ====================
@@ -59,7 +59,7 @@ module.exports = (app, configs) => {
         }
     });
 
-    app.put("/:platform/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
+    app.put("/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.id) {
