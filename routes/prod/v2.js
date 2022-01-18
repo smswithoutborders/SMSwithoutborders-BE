@@ -69,10 +69,6 @@ module.exports = (app, configs) => {
             if (!req.body.auth_key) {
                 throw new ERRORS.BadRequest();
             };
-
-            if (!req.body.auth_code) {
-                throw new ERRORS.BadRequest();
-            };
             // =============================================================
 
             const ID = req.body.id;

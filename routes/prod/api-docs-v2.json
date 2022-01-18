@@ -156,13 +156,13 @@
                   "auth_key": {
                     "type": "string"
                   },
-                  "auth_code": {
+                  "code": {
                     "type": "string"
                   },
-                  "auth_token": {
+                  "oauth_token": {
                     "type": "string"
                   },
-                  "auth_verifier": {
+                  "oauth_verifier": {
                     "type": "string"
                   }
                 }

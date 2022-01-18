@@ -14,12 +14,6 @@ module.exports = async (req, res, next) => {
         const originalURL = req.header("Origin");
         const platform = req.params.platform.toLowerCase();
         const protocol = req.params.protocol.toLowerCase();
-        // INFO - Google API returns a UTF-8 encoded verification code on second request of OAuth2 token
-        // INFO - Google API Client requires a non UTF-8 verification code, so we decode every verification code entry at API level  
-        // TODO Try checking double attempt to store tokens from the diff in auth_code
-        const AUTH_CODE = decodeURIComponent(req.body.auth_code);
-        const AUTH_TOKEN = req.body.auth_token;
-        const AUTH_VERIFIER = req.body.auth_verifier;
 
         if (platform == "gmail") {
 
@@ -35,6 +29,16 @@ module.exports = async (req, res, next) => {
                 }
 
                 if (req.method.toLowerCase() == "put") {
+                    // ==================== REQUEST BODY CHECKS ====================
+                    if (!req.body.code) {
+                        throw new ERRORS.BadRequest();
+                    };
+                    // =============================================================
+                    // INFO - Google API returns a UTF-8 encoded verification code on second request of OAuth2 token
+                    // INFO - Google API Client requires a non UTF-8 verification code, so we decode every verification code entry at API level  
+                    // TODO Try checking double attempt to store tokens from the diff in auth_code
+                    const AUTH_CODE = decodeURIComponent(req.body.code);
+
                     let result = await platformObj.validate(originalURL, AUTH_CODE);
                     req.platformRes = {
                         result: result
@@ -55,13 +59,30 @@ module.exports = async (req, res, next) => {
 
                 if (req.method.toLowerCase() == "post") {
                     let url = await platformObj.init(originalURL);
-                    req.platformRes.url = url
+                    req.platformRes = {
+                        url: url
+                    }
                     return next();
                 }
 
                 if (req.method.toLowerCase() == "put") {
+                    // ==================== REQUEST BODY CHECKS ====================
+                    if (!req.body.oauth_token) {
+                        throw new ERRORS.BadRequest();
+                    };
+
+                    if (!req.body.oauth_verifier) {
+                        throw new ERRORS.BadRequest();
+                    };
+                    // =============================================================
+
+                    const AUTH_TOKEN = req.body.oauth_token;
+                    const AUTH_VERIFIER = req.body.oauth_verifier;
+
                     let result = await platformObj.validate(originalURL, AUTH_TOKEN, AUTH_VERIFIER);
-                    req.platformRes.result = result;
+                    req.platformRes = {
+                        result: result
+                    };
                     return next();
                 };
 
