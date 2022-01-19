@@ -1,3 +1,5 @@
+
+// start tool with: node test_tokens.js
 const credentials = require("../credentials.json");
 
 let inquirer = require('inquirer');
