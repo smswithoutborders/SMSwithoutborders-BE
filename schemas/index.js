@@ -22,6 +22,8 @@ db.platforms = require("./platforms.schema.js")(sequelize, Sequelize);
 db.usersInfo = require("./usersInfo.schema.js")(sequelize, Sequelize);
 db.smsVerification = require("./smsVerification.schema.js")(sequelize, Sequelize);
 
+// https://sequelize.org/master/manual/assocs.html
+
 // relationship users table -> tokens table 
 db.users.hasMany(db.tokens, {
     foreignKey: "userId"
