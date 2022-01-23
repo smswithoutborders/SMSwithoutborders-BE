@@ -18,6 +18,7 @@ module.exports = async (req, res, next) => {
         const originalURL = req.header("Origin");
         const platform = req.params.platform.toLowerCase();
         const protocol = req.params.protocol.toLowerCase();
+        const action = req.params.action ? req.params.action.toLowerCase() : "";
 
         if (platform == "gmail") {
 
@@ -121,9 +122,42 @@ module.exports = async (req, res, next) => {
                         code: code
                     }
                     return next();
-                }
+                };
 
                 if (req.method.toLowerCase() == "put") {
+                    if (action == "register") {
+                        // ==================== REQUEST BODY CHECKS ====================
+                        if (!req.body.phone_number) {
+                            throw new ERRORS.BadRequest();
+                        };
+
+                        if (!req.body.first_name) {
+                            throw new ERRORS.BadRequest();
+                        };
+
+                        if (!req.body.last_name) {
+                            throw new ERRORS.BadRequest();
+                        };
+                        // =============================================================
+
+                        let phoneNumber = req.body.phone_number;
+                        let firstName = req.body.first_name;
+                        let lastName = req.body.last_name;
+
+                        let result = await platformObj.register(phoneNumber, firstName, lastName);
+                        let status = result.status;
+
+                        if (status == 200) {
+                            const MD5_HASH = result.md5_hash;
+
+                            req.platformRes = {
+                                result: MD5_HASH
+                            };
+
+                            return next();
+                        };
+                    };
+
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.phone_number) {
                         throw new ERRORS.BadRequest();
