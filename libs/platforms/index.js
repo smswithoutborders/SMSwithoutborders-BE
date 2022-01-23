@@ -8,6 +8,10 @@ const gmail_token_scopes = [
 
 const GMAIL = require("./GMAIL");
 const TWITTER = require("./TWITTER");
+const TELEGRAM = require("./TELEGRAM");
+
+// HTTP response status codes
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses
 
 module.exports = async (req, res, next) => {
     try {
@@ -92,6 +96,81 @@ module.exports = async (req, res, next) => {
             throw new ERRORS.NotFound();
         };
 
+        if (platform == "telegram") {
+
+            if (protocol == "twofactor") {
+                let platformObj = new TELEGRAM.twoFactor(credentials);
+
+                if (req.method.toLowerCase() == "post") {
+                    // ==================== REQUEST BODY CHECKS ====================
+                    if (!req.body.phone_number) {
+                        throw new ERRORS.BadRequest();
+                    };
+                    // =============================================================
+
+                    let phoneNumber = req.body.phone_number;
+
+                    let result = await platformObj.init(phoneNumber);
+                    let code = result.status;
+
+                    if (code == 200) {
+                        throw new ERRORS.Conflict();
+                    };
+
+                    req.platformRes = {
+                        code: code
+                    }
+                    return next();
+                }
+
+                if (req.method.toLowerCase() == "put") {
+                    // ==================== REQUEST BODY CHECKS ====================
+                    if (!req.body.phone_number) {
+                        throw new ERRORS.BadRequest();
+                    };
+
+                    if (!req.body.code) {
+                        throw new ERRORS.BadRequest();
+                    };
+                    // =============================================================
+
+                    const PHONE_NUMBER = req.body.phone_number;
+                    const AUTH_CODE = req.body.code;
+
+                    let result = await platformObj.validate(PHONE_NUMBER, AUTH_CODE);
+                    let status = result.status;
+
+                    if (status == 200) {
+                        const MD5_HASH = result.md5_hash;
+
+                        req.platformRes = {
+                            result: MD5_HASH
+                        };
+
+                        return next();
+                    };
+
+                    if (status == 403) {
+                        throw new ERRORS.Forbidden();
+                    };
+
+                    if (status == 202) {
+                        let code = status;
+
+                        req.platformRes = {
+                            code: code
+                        };
+
+                        return next();
+                    };
+                };
+
+                throw new ERRORS.BadRequest();
+            };
+
+            throw new ERRORS.NotFound();
+        };
+
         throw new ERRORS.NotFound();
     } catch (err) {
         if (err instanceof ERRORS.BadRequest) {
@@ -101,6 +180,14 @@ module.exports = async (req, res, next) => {
         if (err instanceof ERRORS.NotFound) {
             return res.status(404).send(err.message);
         } // 404
+
+        if (err instanceof ERRORS.Forbidden) {
+            return res.status(403).send(err.message);
+        } // 403
+
+        if (err instanceof ERRORS.Conflict) {
+            return res.status(409).send(err.message);
+        } // 409
 
         console.log(err);
         return res.status(500).send("internal server error");

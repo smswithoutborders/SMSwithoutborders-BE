@@ -1,0 +1,9 @@
+{
+    "name": "Telegram",
+    "description": "Made by Telegram",
+    "platforms": [{
+        "name": "telegram",
+        "description": "Telegram messages",
+        "type": "text"
+    }]
+}

@@ -52,5 +52,26 @@ module.exports = async (user, platform, result) => {
         return user.auth_key;
     };
 
+    if (platform_name == "telegram") {
+        await Token.create({
+            userId: user.id,
+            platformId: platform.id,
+            token: security.encrypt(JSON.stringify(result)).e_info,
+            uniqueId: security.encrypt(JSON.stringify(result)).e_info,
+            uniqueIdHash: security.hash(result),
+            iv: security.iv
+        }).catch(error => {
+            if (error.name == "SequelizeUniqueConstraintError") {
+                if (error.original.code == "ER_DUP_ENTRY") {
+                    throw new ERRORS.Conflict();
+                };
+            };
+
+            throw new ERRORS.InternalServerError(error);
+        });
+
+        return user.auth_key;
+    };
+
     throw new ERRORS.NotFound();
 }

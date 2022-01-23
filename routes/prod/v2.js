@@ -32,13 +32,15 @@ module.exports = (app, configs) => {
             const ID = req.body.id;
             const AUTH_KEY = req.body.auth_key;
             const PLATFORM = req.params.platform;
-            const URL = req.platformRes.url;
+            const URL = req.platformRes.url ? req.platformRes.url : "";
+            const CODE = req.platformRes.code ? req.platformRes.code : "";
 
             let user = await FIND_USERS(ID, AUTH_KEY);
             let platform = await FIND_PLATFORMS(PLATFORM);
 
             return res.status(200).json({
                 url: URL,
+                code: CODE,
                 auth_key: user.auth_key,
                 platform: platform.name.toLowerCase()
             })
@@ -74,16 +76,21 @@ module.exports = (app, configs) => {
             const ID = req.body.id;
             const AUTH_KEY = req.body.auth_key;
             const PLATFORM = req.params.platform;
-            const RESULT = req.platformRes.result;
+            const RESULT = req.platformRes.result ? req.platformRes.result : "";
+            const CODE = req.platformRes.code ? req.platformRes.code : "";
 
             let user = await FIND_USERS(ID, AUTH_KEY);
             let platform = await FIND_PLATFORMS(PLATFORM);
+            let auth_key = ""
 
-            let auth_key = await STORE_TOKENS(user, platform, RESULT);
+            if (RESULT) {
+                auth_key = await STORE_TOKENS(user, platform, RESULT);
+            }
 
             return res.status(200).json({
-                auth_key: auth_key
-            })
+                code: CODE,
+                auth_key: auth_key ? auth_key : AUTH_KEY
+            });
 
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
