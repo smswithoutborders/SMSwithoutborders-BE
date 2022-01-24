@@ -1,0 +1,16 @@
+[{
+        "name": "gmail",
+        "description": "Google workspace",
+        "type": "email"
+    },
+    {
+        "name": "twitter",
+        "description": "Twitter status",
+        "type": "text"
+    },
+    {
+        "name": "telegram",
+        "description": "Telegram messages",
+        "type": "text"
+    }
+]

@@ -1,7 +1,5 @@
 const configs = require("./config.json");
 const express = require("express");
-const session = require("express-session");
-// var SequelizeStore = require("connect-session-sequelize")(session.Store);
 const swaggerUi = require('swagger-ui-express');
 const morgan = require("morgan");
 const fs = require("fs");
@@ -22,57 +20,12 @@ const https = require("https")
 
 var app = express();
 
-// var whitelist = configs.origin
-
-// var corsOptionsDelegate = (req, callback) => {
-//     var validIp = ipaddr.isValid(req.ip);
-//     var address = ipaddr.process(req.ip);
-
-//     for (let i = 0; i < whitelist.length; i++) {
-//         var rs = new RegExp(`${whitelist[i]}`, "g")
-
-//         if (req.ip.match(rs)) {
-//             corsOptions = {
-//                 origin: true
-//             }
-
-//             console.log("Valid IP: ", validIp);
-//             console.log(address.kind());
-//             console.log(req.ip);
-
-//             return callback(null, corsOptions)
-//         }
-//     }
-//     corsOptions = {
-//         origin: false
-//     }
-//     console.log("Valid IP: ", validIp);
-//     console.log(address.kind());
-//     console.log(req.ip + " blocked");
-//     const error = new ErrorHandler(403, "Forbidden");
-//     return callback(error.message, corsOptions);
-// }
-
-// app.use(cors(corsOptionsDelegate));
-
 app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({
     extended: true
 }));
-
-// app.use(session({
-//     secret: configs.api.SESSION_SECRET,
-//     resave: false,
-//     saveUninitialized: true,
-//     store: new SequelizeStore({
-//         db: db.sequelize,
-//     }),
-//     cookie: {
-//         secure: false
-//     }
-// }));
 
 // app.use(express.static('public'));
 

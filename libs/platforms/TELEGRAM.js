@@ -1,5 +1,4 @@
 const axios = require('axios');
-const credentials = require('../../credentials.json');
 class twoFactor {
     constructor(credentials) {
         this.credentials = credentials;
@@ -108,12 +107,3 @@ class twoFactor {
 module.exports = {
     twoFactor
 }
-
-// (async () => {
-//     let init = await new twoFactor(credentials).init("=237676015911");
-//     console.log(init)
-
-
-//     let validate = await new twoFactor(credentials).validate("=237676015911", 67810);
-//     console.log(validate)
-// })();
