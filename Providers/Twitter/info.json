@@ -1,9 +1,0 @@
-{
-    "name": "Twitter",
-    "description": "Made by Twitter",
-    "platforms": [{
-        "name": "twitter",
-        "description": "Twitter status",
-        "type": "text"
-    }]
-}

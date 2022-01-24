@@ -1,9 +1,0 @@
-{
-    "name": "Google",
-    "description": "Made by Google",
-    "platforms": [{
-        "name": "gmail",
-        "description": "Google workspace",
-        "type": "email"
-    }]
-}

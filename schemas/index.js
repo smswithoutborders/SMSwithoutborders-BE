@@ -22,7 +22,6 @@ async function initialize() {
 
     db.users = require("./users.schema.js")(sequelize, Sequelize);
     db.tokens = require("./tokens.schema.js")(sequelize, Sequelize);
-    db.providers = require("./providers.schema.js")(sequelize, Sequelize);
     db.platforms = require("./platforms.schema.js")(sequelize, Sequelize);
     db.usersInfo = require("./usersInfo.schema.js")(sequelize, Sequelize);
     db.smsVerification = require("./smsVerification.schema.js")(sequelize, Sequelize);
