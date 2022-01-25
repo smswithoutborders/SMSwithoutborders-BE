@@ -35,7 +35,7 @@ async function initialize() {
     db.tokens.belongsTo(db.users);
 
     // relationship users table -> usersInfo table 
-    db.users.hasMany(db.usersInfo, {
+    db.users.hasOne(db.usersInfo, {
         foreignKey: "userId"
     });
     db.usersInfo.belongsTo(db.users);
