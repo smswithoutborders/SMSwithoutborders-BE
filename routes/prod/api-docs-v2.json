@@ -302,7 +302,7 @@
         "tags": [
           "Get new tokens"
         ],
-        "summary": "Token Init. Request body for Gmail = {id, auth_key}, Twitter = {id, auth_key}, Telegram = {id, auth_key, phone_number}",
+        "summary": "Token Init. Request body for Gmail = {}, Twitter = {}, Telegram = {phone_number}",
         "parameters": [{
             "in": "path",
             "name": "platform",
@@ -329,12 +329,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "auth_key": {
-                    "type": "string"
-                  },
                   "phone_number": {
                     "type": "string"
                   }
@@ -345,7 +339,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful. Response body for Gmail = {url, auth_key, platform}, Twitter = {url, auth_key, platform}, Telegram = {code<201 = expecting telegram code>, auth_key, platform}",
+            "description": "Successful. Response body for Gmail = {url, platform}, Twitter = {url, platform}, Telegram = {code<201 = expecting telegram code>, platform}",
             "content": {
               "application/json": {
                 "schema": {
@@ -355,9 +349,6 @@
                       "type": "string"
                     },
                     "code": {
-                      "type": "string"
-                    },
-                    "auth_key": {
                       "type": "string"
                     },
                     "platform": {
@@ -434,7 +425,7 @@
         "tags": [
           "Get new tokens"
         ],
-        "summary": "Token Verification. Request body for Gmail = {id, auth_key, code}, Twitter = {id, auth_key, oauth_token, oauth_verifier}, Telegram = {id, auth_key, phone_number, code}",
+        "summary": "Token Verification. Request body for Gmail = {code}, Twitter = {oauth_token, oauth_verifier}, Telegram = {phone_number, code}",
         "parameters": [{
             "in": "path",
             "name": "platform",
@@ -461,12 +452,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "auth_key": {
-                    "type": "string"
-                  },
                   "code": {
                     "type": "string"
                   },
@@ -486,15 +471,12 @@
         },
         "responses": {
           "200": {
-            "description": "Successful. Response body for Gmail = {auth_key}, Twitter = {auth_key}, Telegram = {if no account [code<202 = create a telegram account>], auth_key}",
+            "description": "Successful. Response body for Gmail = {}, Twitter = {}, Telegram = {if no account [code<202 = create a telegram account>]}",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "auth_key": {
-                      "type": "string"
-                    },
                     "code": {
                       "type": "string"
                     }
@@ -571,7 +553,7 @@
         "tags": [
           "Register on platforms"
         ],
-        "summary": "Token Verification. Request body for Telegram = {id, auth_key, phone_number, first_name, last_name}",
+        "summary": "Token Verification. Request body for Telegram = {phone_number, first_name, last_name}",
         "parameters": [{
             "in": "path",
             "name": "platform",
@@ -606,12 +588,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "auth_key": {
-                    "type": "string"
-                  },
                   "first_name": {
                     "type": "string"
                   },
@@ -628,16 +604,11 @@
         },
         "responses": {
           "200": {
-            "description": "Successful. Response body for Telegram = {auth_key}",
+            "description": "Successful. Response body for Telegram = {}",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "auth_key": {
-                      "type": "string"
-                    }
-                  }
+                  "type": "object"
                 }
               }
             }
