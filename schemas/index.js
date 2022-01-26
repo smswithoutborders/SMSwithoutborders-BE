@@ -25,6 +25,7 @@ async function initialize() {
     db.platforms = require("./platforms.schema.js")(sequelize, Sequelize);
     db.usersInfo = require("./usersInfo.schema.js")(sequelize, Sequelize);
     db.smsVerification = require("./smsVerification.schema.js")(sequelize, Sequelize);
+    db.sessions = require("./sessions.schema.js")(sequelize, Sequelize);
 
     // https://sequelize.org/master/manual/assocs.html
 
@@ -51,6 +52,12 @@ async function initialize() {
         foreignKey: "userId"
     });
     db.smsVerification.belongsTo(db.users);
+
+    // relationship users table -> sessions table 
+    db.users.hasMany(db.sessions, {
+        foreignKey: "userId"
+    });
+    db.sessions.belongsTo(db.users);
 
     //db options
     const options = {

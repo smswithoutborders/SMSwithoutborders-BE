@@ -15,11 +15,6 @@ module.exports = (sequelize, Sequelize) => {
         full_phone_number: {
             type: Sequelize.STRING,
         },
-        role: {
-            type: Sequelize.ENUM(['primary', 'secondary']),
-            defaultValue: "primary",
-            allowNull: false
-        },
         status: {
             type: Sequelize.ENUM(['verified', 'unverified']),
             defaultValue: "unverified",

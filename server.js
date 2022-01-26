@@ -11,14 +11,14 @@ const {
     ErrorHandler
 } = require("./controllers/error.js")
 
-const API_DOCS_V1 = require("./routes/prod/api-docs-v1.json");
-const API_DOCS_V2 = require("./routes/prod/api-docs-v2.json");
+var app = express();
 
 const db = require("./schemas");
 
-const https = require("https")
+const API_DOCS_V1 = require("./routes/prod/api-docs-v1.json");
+const API_DOCS_V2 = require("./routes/prod/api-docs-v2.json");
 
-var app = express();
+const https = require("https")
 
 app.use(cors());
 

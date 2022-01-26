@@ -3,6 +3,8 @@ const ERRORS = require("../../error.js");
 const FIND_USERS = require("../../models/find_users.models");
 const FIND_PLATFORMS = require("../../models/find_platforms.models");
 const STORE_TOKENS = require("../../models/store_tokens.models");
+const VERIFY_USERS = require("../../models/verify_user.models");
+const STORE_SESSION = require("../../models/store_sessions.models");
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -16,34 +18,34 @@ module.exports = (app, configs) => {
         rootCas.addFile('/var/www/ssl/server.pem')
     }
 
-    app.post("/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
-        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+    app.post("/login", async (req, res, next) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
-            if (!req.body.id) {
+            if (!req.body.phone_number) {
                 throw new ERRORS.BadRequest();
             };
 
-            if (!req.body.auth_key) {
+            if (!req.body.password) {
+                throw new ERRORS.BadRequest();
+            };
+
+            // TODO ADD MIDDLEWARE CHECKS
+            if (req.body.password.length < 8) {
                 throw new ERRORS.BadRequest();
             };
             // =============================================================
+            const PHONE_NUMBER = req.body.phone_number;
+            const PASSWORD = req.body.password;
+            const USER_AGENT = req.get("user-agent");
 
-            const ID = req.body.id;
-            const AUTH_KEY = req.body.auth_key;
-            const PLATFORM = req.params.platform;
-            const URL = req.platformRes.url ? req.platformRes.url : "";
-            const CODE = req.platformRes.code ? req.platformRes.code : "";
+            let userId = await VERIFY_USERS(PHONE_NUMBER, PASSWORD);
+            let session = await STORE_SESSION(userId, USER_AGENT);
 
-            let user = await FIND_USERS(ID, AUTH_KEY);
-            let platform = await FIND_PLATFORMS(PLATFORM);
+            res.cookie("SWOB", {
+                sid: session.sid
+            }, session.data)
 
-            return res.status(200).json({
-                url: URL,
-                code: CODE,
-                auth_key: user.auth_key,
-                platform: platform.name.toLowerCase()
-            })
+            return res.status(200).json();
 
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
