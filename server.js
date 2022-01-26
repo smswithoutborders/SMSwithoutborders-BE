@@ -5,7 +5,7 @@ const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
-var ipaddr = require('ipaddr.js');
+let cookieParser = require('cookie-parser');
 const {
     handleError,
     ErrorHandler
@@ -21,6 +21,7 @@ const API_DOCS_V2 = require("./routes/prod/api-docs-v2.json");
 const https = require("https")
 
 app.use(cors());
+app.use(cookieParser());
 
 app.use(express.json());
 app.use(express.urlencoded({
