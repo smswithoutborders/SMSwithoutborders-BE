@@ -19,7 +19,7 @@ module.exports = async (phone_number, password) => {
 
     // RTURN = [], IF USERINFO IS NOT FOUND
     if (userInfo.length < 1) {
-        throw new ERRORS.Forbidden();
+        throw new ERRORS.NotFound();
     }
 
     // IF MORE THAN ONE USERINFO EXIST IN DATABASE
@@ -27,7 +27,7 @@ module.exports = async (phone_number, password) => {
         throw new ERRORS.Conflict();
     }
 
-    let user = await userInfo.getUser({
+    let user = await userInfo[0].getUser({
         where: {
             password: security.hash(password)
         }
@@ -36,7 +36,7 @@ module.exports = async (phone_number, password) => {
     });
 
     if (!user) {
-        throw new ERRORS.Forbidden();
+        throw new ERRORS.NotFound();
     };
 
     return user.id;

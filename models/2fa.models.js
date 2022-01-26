@@ -1,48 +1,50 @@
 const Axios = require('axios');
-const {
-    ErrorHandler
-} = require('../controllers/error.js')
+const ERRORS = require("../error.js");
+const configs = require("../config.json");
+const credentials = require("../credentials.json");
+const AUTH_TOKEN = credentials.twilio.AUTH_TOKEN;
 
-module.exports =
-    class SMS_VERIFICATION {
-        constructor() {
-            this.axios = Axios
-        };
+let send = async (number) => {
+    try {
+        const url = `${configs.router.url}:${configs.router.port}/sms/twilio`;
 
-        async send(url, number, auth_token, next) {
-            try {
-                let result = await this.axios.post(url, {
-                    number: number,
-                    auth_token: auth_token,
-                }).catch(function (error) {
-                    throw new ErrorHandler(500, error);
-                });
+        let result = await Axios.post(url, {
+            number: number,
+            auth_token: AUTH_TOKEN,
+        }).catch(function (error) {
+            throw new ERRORS.InternalServerError(error);
+        });
 
-                return result.data;
-            } catch (error) {
-                next(error);
-            }
-        };
-
-        async verify(url, number, session_id, code, auth_token, next) {
-            try {
-                let result = await this.axios.post(url, {
-                    session_id: session_id,
-                    code: code,
-                    auth_token: auth_token,
-                    number: number
-                }).catch(function (error) {
-                    // console.log(error.response.data)
-                    if (error.response.data.message == "failed") {
-                        throw new ErrorHandler(401, "INVALID 2FA, TRY AGAIN");
-                    }
-
-                    throw new ErrorHandler(500, error);
-                });
-
-                return result.data;
-            } catch (error) {
-                next(error);
-            }
-        }
+        return result.data;
+    } catch (error) {
+        throw new ERRORS.InternalServerError(error);
     }
+};
+
+let verify = async (number, session_id, code) => {
+    try {
+        const url = `${configs.router.url}:${configs.router.port}/sms/twilio/verification_token`;
+
+        let result = await Axios.post(url, {
+            session_id: session_id,
+            code: code,
+            auth_token: AUTH_TOKEN,
+            number: number
+        }).catch(function (error) {
+            if (error.response.data.message == "failed") {
+                throw new ERRORS.Unauthorized();
+            }
+
+            throw new ERRORS.InternalServerError(error);
+        });
+
+        return result.data;
+    } catch (error) {
+        throw new ERRORS.InternalServerError(error);
+    }
+};
+
+module.exports = {
+    send,
+    verify
+}

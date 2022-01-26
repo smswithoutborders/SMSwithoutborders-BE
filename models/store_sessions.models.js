@@ -1,13 +1,13 @@
 const ERRORS = require("../error.js");
 const db = require("../schemas");
 
-var Session = db.Session;
+var Session = db.sessions;
 
 module.exports = async (userId, user_agent) => {
     const hour = 2 * 60 * 60 * 1000;
     const data = {
         maxAge: hour,
-        secure: true,
+        secure: false,
         httpOnly: true,
         sameSite: 'lax'
     }
@@ -15,7 +15,7 @@ module.exports = async (userId, user_agent) => {
         userId: userId,
         user_agent: user_agent,
         expires: new Date(Date.now() + hour),
-        data: data
+        data: JSON.stringify(data)
     }).catch(error => {
         throw new ERRORS.InternalServerError(error);
     });
