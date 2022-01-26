@@ -27,7 +27,7 @@ module.exports = async (user, platform, result) => {
             throw new ERRORS.InternalServerError(error);
         });
 
-        return user.auth_key;
+        return true;
     };
 
     if (platform_name == "twitter") {
@@ -49,7 +49,7 @@ module.exports = async (user, platform, result) => {
             throw new ERRORS.InternalServerError(error);
         });
 
-        return user.auth_key;
+        return true;
     };
 
     if (platform_name == "telegram") {
@@ -70,7 +70,7 @@ module.exports = async (user, platform, result) => {
             throw new ERRORS.InternalServerError(error);
         });
 
-        return user.auth_key;
+        return true;
     };
 
     throw new ERRORS.NotFound();

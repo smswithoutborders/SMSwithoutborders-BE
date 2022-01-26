@@ -3,12 +3,11 @@ const db = require("../schemas");
 
 var User = db.users;
 
-module.exports = async (id, auth_key) => {
+module.exports = async (id) => {
     // SEARCH FOR USER IN DB
     let user = await User.findAll({
         where: {
-            id: id,
-            auth_key: auth_key
+            id: id
         }
     }).catch(error => {
         throw new ERRORS.InternalServerError(error);

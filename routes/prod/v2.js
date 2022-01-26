@@ -11,6 +11,8 @@ const STORE_USERS = require("../../models/store_users.models");
 const INIT_2FA = require("../../models/init_2fa.models");
 const VERIFY_2FA = require("../../models/verify_2fa.models");
 const VERIFY_SV = require("../../models/verify_sv.models");
+const FIND_SESSION = require("../../models/find_sessions.models");
+const UPDATE_SESSION = require("../../models/update_sessions.models");
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -176,7 +178,8 @@ module.exports = (app, configs) => {
             let session = await STORE_SESSION(userId, USER_AGENT);
 
             res.cookie("SWOB", {
-                sid: session.sid
+                sid: session.sid,
+                cookie: session.data
             }, session.data)
 
             return res.status(200).json();
@@ -203,31 +206,32 @@ module.exports = (app, configs) => {
     app.post("/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
         try {
-            // ==================== REQUEST BODY CHECKS ====================
-            if (!req.body.id) {
+            if (!req.cookies.SWOB) {
                 throw new ERRORS.BadRequest();
             };
+            const SID = req.cookies.SWOB.sid
+            const COOKIE = req.cookies.SWOB.cookie
+            const USER_AGENT = req.get("user-agent");
 
-            if (!req.body.auth_key) {
-                throw new ERRORS.BadRequest();
-            };
-            // =============================================================
-
-            const ID = req.body.id;
-            const AUTH_KEY = req.body.auth_key;
+            await FIND_SESSION(SID, USER_AGENT, COOKIE);
             const PLATFORM = req.params.platform;
             const URL = req.platformRes.url ? req.platformRes.url : "";
             const CODE = req.platformRes.code ? req.platformRes.code : "";
 
-            let user = await FIND_USERS(ID, AUTH_KEY);
             let platform = await FIND_PLATFORMS(PLATFORM);
+
+            let session = await UPDATE_SESSION(SID);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
 
             return res.status(200).json({
                 url: URL,
                 code: CODE,
-                auth_key: user.auth_key,
                 platform: platform.name.toLowerCase()
-            })
+            });
 
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
@@ -247,33 +251,34 @@ module.exports = (app, configs) => {
 
     app.put("/platforms/:platform/protocols/:protocol/:action?", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         try {
-            // ==================== REQUEST BODY CHECKS ====================
-            if (!req.body.id) {
+            if (!req.cookies.SWOB) {
                 throw new ERRORS.BadRequest();
             };
+            const SID = req.cookies.SWOB.sid
+            const COOKIE = req.cookies.SWOB.cookie
+            const USER_AGENT = req.get("user-agent");
 
-            if (!req.body.auth_key) {
-                throw new ERRORS.BadRequest();
-            };
-            // =============================================================
-
-            const ID = req.body.id;
-            const AUTH_KEY = req.body.auth_key;
+            const ID = await FIND_SESSION(SID, USER_AGENT, COOKIE);
             const PLATFORM = req.params.platform;
             const RESULT = req.platformRes.result ? req.platformRes.result : "";
             const CODE = req.platformRes.code ? req.platformRes.code : "";
 
-            let user = await FIND_USERS(ID, AUTH_KEY);
+            let user = await FIND_USERS(ID);
             let platform = await FIND_PLATFORMS(PLATFORM);
-            let auth_key = ""
 
             if (RESULT) {
-                auth_key = await STORE_TOKENS(user, platform, RESULT);
+                await STORE_TOKENS(user, platform, RESULT);
             }
 
+            let session = await UPDATE_SESSION(SID);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
+
             return res.status(200).json({
-                code: CODE,
-                auth_key: auth_key ? auth_key : AUTH_KEY
+                code: CODE
             });
 
         } catch (err) {
