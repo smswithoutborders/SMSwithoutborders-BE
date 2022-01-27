@@ -19,7 +19,6 @@ npm install
 
     * To set up database and API, copy the template file "example.config.json" and rename to "config.json"
     * To set up platform credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
-    * Create a database then edit config.json and fill in the name of the newly created database
 
 ### Start Production Server
 * With NPM
