@@ -72,6 +72,7 @@ module.exports = (app, configs) => {
                     svid: init_2fa.svid
                 })
             } else {
+                console.error("USER ALREADY HAS A RECORD IN USERINFO TABLE");
                 throw new ERRORS.Conflict();
             };
         } catch (err) {

@@ -2,14 +2,15 @@ const Axios = require('axios');
 const ERRORS = require("../error.js");
 const configs = require("../config.json");
 const credentials = require("../credentials.json");
+const chalk = require("chalk");
 const AUTH_TOKEN = credentials.twilio.AUTH_TOKEN;
 
 if (!configs.router.url) {
-    throw new ERRORS.InternalServerError("NO ROUTER URL PRESENT IN CONFIGS");
+    console.warn(chalk.red("NO ROUTER URL PRESENT IN CONFIGS"));
 };
 
 if (!configs.router.port) {
-    throw new ERRORS.InternalServerError("NO ROUTER PORT PRESENT IN CONFIGS");
+    console.warn(chalk.red("NO ROUTER PORT PRESENT IN CONFIGS"));
 };
 
 let send = async (number) => {
