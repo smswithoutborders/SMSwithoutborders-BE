@@ -6,10 +6,6 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 let cookieParser = require('cookie-parser');
-const {
-    handleError,
-    ErrorHandler
-} = require("./controllers/error.js")
 
 var app = express();
 
@@ -62,17 +58,6 @@ app.use(morgan('dev'));
 
 // ROUTES
 require("./routes/prod")(app, configs, db);
-
-// error handler
-let errorHandler = (err, req, res, next) => {
-    if (err.statusCode) {
-        return handleError(err, res);
-    };
-
-    console.error(err)
-}
-
-app.use(errorHandler);
 
 var httpsServer = ""
 if ((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) && fs.existsSync(configs.ssl_api.PEM)) {

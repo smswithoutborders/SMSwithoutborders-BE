@@ -4,10 +4,6 @@ const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
-const {
-    handleError,
-    ErrorHandler
-} = require("./controllers/error.js");
 
 const db = require("./schemas");
 
@@ -50,17 +46,6 @@ app.use(morgan('dev'));
 
 // ROUTES
 require("./routes/dev")(app, configs, db);
-
-// error handler
-let errorHandler = (err, req, res, next) => {
-    if (err.statusCode) {
-        return handleError(err, res);
-    };
-
-    console.error(err)
-}
-
-app.use(errorHandler);
 
 app.listen(configs.api.DEV_API_PORT, "127.0.0.1", 511, () => {
     console.log(`Development server is running on port ${configs.api.DEV_API_PORT}`)
