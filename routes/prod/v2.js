@@ -205,6 +205,9 @@ module.exports = (app, configs) => {
             if (err instanceof ERRORS.Forbidden) {
                 return res.status(401).send(err.message);
             } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -299,6 +302,9 @@ module.exports = (app, configs) => {
             if (err instanceof ERRORS.Forbidden) {
                 return res.status(401).send(err.message);
             } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -357,9 +363,15 @@ module.exports = (app, configs) => {
             if (err instanceof ERRORS.Forbidden) {
                 return res.status(401).send(err.message);
             } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
 
             console.error(err);
             return res.status(500).send("internal server error");
@@ -394,6 +406,9 @@ module.exports = (app, configs) => {
             if (err instanceof ERRORS.Forbidden) {
                 return res.status(401).send(err.message);
             } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
