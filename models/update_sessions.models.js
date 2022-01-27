@@ -3,7 +3,7 @@ const db = require("../schemas");
 
 var Session = db.sessions;
 
-module.exports = async (sid) => {
+module.exports = async (sid, uid) => {
     const hour = 2 * 60 * 60 * 1000;
     const data = {
         maxAge: hour,
@@ -14,7 +14,8 @@ module.exports = async (sid) => {
 
     let session = await Session.findAll({
         where: {
-            sid: sid
+            sid: sid,
+            userId: uid
         }
     }).catch(error => {
         console.error("ERROR FINDING SESSION IN SEESION TABLE");
@@ -40,6 +41,7 @@ module.exports = async (sid) => {
     console.log("SUCCESSFULLY UPDATED SESSION RETURNING DATA");
     return {
         sid: session[0].sid,
+        uid: session[0].userId,
         data: data
     };
 }

@@ -5,6 +5,7 @@ module.exports = async (phone_number, code, session_id) => {
     let _2fa = await _2FA.verify(phone_number, session_id, code);
 
     if (_2fa.verification_status == "approved") {
+        console.log("2FA SUCCESSFUL");
         return true;
     } else if (_2fa.verification_status == "pending") {
         console.error("TWILIO API RESPONDED WITH PENDING")

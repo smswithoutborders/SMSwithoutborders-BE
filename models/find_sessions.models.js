@@ -3,11 +3,12 @@ const db = require("../schemas");
 
 var Session = db.sessions;
 
-module.exports = async (sid, user_agent, cookie) => {
+module.exports = async (sid, uid, user_agent, cookie) => {
     let session = await Session.findAll({
         where: {
             sid: sid,
             user_agent: user_agent,
+            userId: uid
         }
     }).catch(error => {
         console.error("ERROR FINDING SESSION IN SESSIONS TABLE");
@@ -16,7 +17,7 @@ module.exports = async (sid, user_agent, cookie) => {
 
     if (session.length < 1) {
         console.error("NO SESSION FOUND");
-        throw new ERRORS.Forbidden();
+        throw new ERRORS.NotFound();
     };
 
     // IF MORE THAN ONE SESSION EXIST IN DATABASE

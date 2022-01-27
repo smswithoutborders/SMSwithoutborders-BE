@@ -23,7 +23,7 @@ module.exports = async (userId, user_agent) => {
 
     return {
         sid: session.sid,
-        expires: session.expires,
+        uid: session.userId,
         data: data
     };
 }

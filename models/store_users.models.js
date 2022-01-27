@@ -11,10 +11,10 @@ module.exports = async (country_code, phone_number, password, name) => {
     let newUser = await User.create({
         password: security.hash(password),
     }).catch(error => {
-        console.log("ERROR CREATING USER PASSWORD IN USER'S TABLE");
+        console.error("ERROR CREATING USER PASSWORD IN USER'S TABLE");
         if (error.name == "SequelizeUniqueConstraintError") {
             if (error.original.code == "ER_DUP_ENTRY") {
-                console.log("USER ALREADY HAS RECORD IN USER'S TABLE");
+                console.error("USER ALREADY HAS RECORD IN USER'S TABLE");
                 throw new ERRORS.Conflict();
             };
         };
@@ -29,9 +29,9 @@ module.exports = async (country_code, phone_number, password, name) => {
         full_phone_number: country_code + phone_number,
         userId: newUser.id
     }).catch(error => {
-        console.log("ERROR CREATING USER IN USERSINFO TABLE");
+        console.error("ERROR CREATING USER IN USERSINFO TABLE");
         if (error.name == "SequelizeUniqueConstraintError") {
-            console.log("USER ALREADY HAS RECORD IN USERINFO TABLE");
+            console.error("USER ALREADY HAS RECORD IN USERINFO TABLE");
             if (error.original.code == "ER_DUP_ENTRY") {
                 throw new ERRORS.Conflict();
             };
@@ -40,5 +40,6 @@ module.exports = async (country_code, phone_number, password, name) => {
         throw new ERRORS.InternalServerError(error);
     });
 
+    console.log("SUCCESSFULLY STORED USER RETURNING USERID");
     return newUser.id;
 }

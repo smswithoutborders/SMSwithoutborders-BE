@@ -15,7 +15,7 @@ module.exports = async (country_code, phone_number) => {
             status: "verified"
         }
     }).catch(error => {
-        console.log("ERROR FINDING USERINFO");
+        console.error("ERROR FINDING USERINFO");
         throw new ERRORS.InternalServerError(error);
     });
 
@@ -23,5 +23,6 @@ module.exports = async (country_code, phone_number) => {
         return null
     }
 
+    console.log("USERINFO FOUND RETURNING USER")
     return userInfo[0];
 }

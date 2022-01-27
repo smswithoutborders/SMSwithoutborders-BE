@@ -192,6 +192,7 @@ module.exports = (app, configs) => {
 
             res.cookie("SWOB", {
                 sid: session.sid,
+                uid: session.uid,
                 cookie: session.data
             }, session.data)
 
@@ -218,6 +219,10 @@ module.exports = (app, configs) => {
 
     app.get("/platforms", async (req, res, next) => {
         try {
+            if (!req.params.user_id) {
+                console.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            }
             if (!req.cookies.SWOB) {
                 throw new ERRORS.BadRequest();
             };
@@ -250,28 +255,34 @@ module.exports = (app, configs) => {
         }
     });
 
-    app.post("/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
+    app.post("/users/:user_id/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
         try {
+            if (!req.params.user_id) {
+                console.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            }
             if (!req.cookies.SWOB) {
                 console.error("NO COOKIE");
                 throw new ERRORS.BadRequest();
             };
-            const SID = req.cookies.SWOB.sid
-            const COOKIE = req.cookies.SWOB.cookie
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
 
-            await FIND_SESSION(SID, USER_AGENT, COOKIE);
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
             const PLATFORM = req.params.platform;
             const URL = req.platformRes.url ? req.platformRes.url : "";
             const CODE = req.platformRes.code ? req.platformRes.code : "";
 
             let platform = await FIND_PLATFORMS(PLATFORM);
 
-            let session = await UPDATE_SESSION(SID);
+            let session = await UPDATE_SESSION(SID, ID);
 
             res.cookie("SWOB", {
                 sid: session.sid,
+                uid: session.uid,
                 cookie: session.data
             }, session.data)
 
@@ -291,23 +302,31 @@ module.exports = (app, configs) => {
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
 
             console.error(err);
             return res.status(500).send("internal server error");
         }
     });
 
-    app.put("/platforms/:platform/protocols/:protocol/:action?", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
+    app.put("/users/:user_id/platforms/:platform/protocols/:protocol/:action?", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         try {
+            if (!req.params.user_id) {
+                console.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            }
             if (!req.cookies.SWOB) {
                 console.error("NO COOKIE");
                 throw new ERRORS.BadRequest();
             };
-            const SID = req.cookies.SWOB.sid
-            const COOKIE = req.cookies.SWOB.cookie
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
 
-            const ID = await FIND_SESSION(SID, USER_AGENT, COOKIE);
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
             const PLATFORM = req.params.platform;
             const RESULT = req.platformRes.result ? req.platformRes.result : "";
             const CODE = req.platformRes.code ? req.platformRes.code : "";
@@ -319,10 +338,11 @@ module.exports = (app, configs) => {
                 await STORE_TOKENS(user, platform, RESULT);
             }
 
-            let session = await UPDATE_SESSION(SID);
+            let session = await UPDATE_SESSION(SID, ID);
 
             res.cookie("SWOB", {
                 sid: session.sid,
+                uid: session.uid,
                 cookie: session.data
             }, session.data)
 
@@ -346,16 +366,21 @@ module.exports = (app, configs) => {
         }
     });
 
-    app.post("/logout", async (req, res, next) => {
+    app.post("/users/:user_id/logout", async (req, res, next) => {
         try {
+            if (!req.params.user_id) {
+                console.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            }
             if (!req.cookies.SWOB) {
                 throw new ERRORS.BadRequest();
             };
-            const SID = req.cookies.SWOB.sid
-            const COOKIE = req.cookies.SWOB.cookie
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
 
-            await FIND_SESSION(SID, USER_AGENT, COOKIE);
+            await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
 
             console.log("CLEARING BROWSER COOKIE");
             res.clearCookie("SWOB");
