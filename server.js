@@ -28,7 +28,7 @@ app.use(express.urlencoded({
     extended: true
 }));
 
-// app.use(express.static('public'));
+app.use('/public', express.static(path.join(__dirname, 'logos')));
 
 // Create swagger docs
 var options = {}

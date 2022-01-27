@@ -9,6 +9,7 @@ mysql.createConnection({
     user: configs.database.MYSQL_USER,
     password: configs.database.MYSQL_PASSWORD,
 }).then(connection => {
+    console.log(`Creating Database ${configs.database.MYSQL_DATABASE} ...`)
     connection.query(`CREATE DATABASE IF NOT EXISTS \`${configs.database.MYSQL_DATABASE}\`;`)
         .then(() => {
             let db = require("../schemas");
@@ -35,6 +36,8 @@ mysql.createConnection({
                     if (db_platforms.length < 1) {
                         await Platform.create({
                             name: platforms[i].name.toLowerCase(),
+                            description: platforms[i].description.toLowerCase(),
+                            logo: platforms[i].logo,
                             type: platforms[i].type.toLowerCase(),
                             letter: platforms[i].name.toLowerCase()[0]
                         }).catch(error => {

@@ -1,16 +1,19 @@
 [{
         "name": "gmail",
         "description": "Google workspace",
-        "type": "email"
+        "type": "email",
+        "logo": "/public/"
     },
     {
         "name": "twitter",
         "description": "Twitter status",
-        "type": "text"
+        "type": "text",
+        "logo": "/public/"
     },
     {
         "name": "telegram",
         "description": "Telegram messages",
-        "type": "text"
+        "type": "text",
+        "logo": "/public/"
     }
 ]
