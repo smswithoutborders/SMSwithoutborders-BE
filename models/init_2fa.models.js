@@ -12,6 +12,7 @@ module.exports = async (userId, phone_number) => {
             userId: userId,
             session_id: _2fa.service_sid,
         }).catch(error => {
+            console.log("ERROR CREATING 2FA SESSION IN SMS VERIFICATION TABLE");
             throw new ERRORS.InternalServerError(error);
         });
 

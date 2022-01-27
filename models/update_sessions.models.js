@@ -17,22 +17,27 @@ module.exports = async (sid) => {
             sid: sid
         }
     }).catch(error => {
+        console.error("ERROR FINDING SESSION IN SEESION TABLE");
         throw new ERRORS.InternalServerError(error);
     });
 
     if (session.length < 1) {
+        console.error("NO SESSION FOUND");
         throw new ERRORS.Forbidden();
     };
 
     if (session.length > 1) {
+        console.error("DUPLICATE SESSION FOUND");
         throw new ERRORS.Conflict();
     };
+
 
     await session[0].update({
         expires: new Date(Date.now() + hour),
         data: JSON.stringify(data)
     })
 
+    console.log("SUCCESSFULLY UPDATED SESSION RETURNING DATA");
     return {
         sid: session[0].sid,
         data: data

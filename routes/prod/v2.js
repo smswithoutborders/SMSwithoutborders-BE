@@ -30,23 +30,28 @@ module.exports = (app, configs) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.phone_number) {
+                console.error("NO PHONE NUMBER");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.name) {
+                console.error("NO NAME");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.country_code) {
+                console.error("NO COUNTRY CODE");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.password) {
+                console.error("NO PASSWORD");
                 throw new ERRORS.BadRequest();
             };
 
             // TODO ADD MIDDLEWARE CHECKS
             if (req.body.password.length < 8) {
+                console.error("PASSWORD < 8 CHARS");
                 throw new ERRORS.BadRequest();
             };
             // =============================================================
@@ -95,14 +100,17 @@ module.exports = (app, configs) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.code) {
+                console.error("NO CODE");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.session_id) {
+                console.error("NO SESSION ID");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.svid) {
+                console.error("NO SVID");
                 throw new ERRORS.BadRequest();
             };
             // =============================================================
@@ -127,6 +135,7 @@ module.exports = (app, configs) => {
                     status: "verified",
                     iv: security.iv
                 }).catch(error => {
+                    console.error("ERROR UPDATING USER'S INFO AFTER SMS VERIFICATION");
                     throw new ERRORS.InternalServerError(error);
                 });
 
@@ -158,15 +167,18 @@ module.exports = (app, configs) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.phone_number) {
+                console.error("NO PHONE NUMBER");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.password) {
+                console.error("NO PASSWORD");
                 throw new ERRORS.BadRequest();
             };
 
             // TODO ADD MIDDLEWARE CHECKS
             if (req.body.password.length < 8) {
+                console.error("PASSWORD < 8 CHARS");
                 throw new ERRORS.BadRequest();
             };
             // =============================================================
@@ -203,10 +215,45 @@ module.exports = (app, configs) => {
         }
     });
 
+    app.get("/platforms", async (req, res, next) => {
+        try {
+            if (!req.cookies.SWOB) {
+                throw new ERRORS.BadRequest();
+            };
+            const SID = req.cookies.SWOB.sid
+            const COOKIE = req.cookies.SWOB.cookie
+            const USER_AGENT = req.get("user-agent");
+
+            await FIND_SESSION(SID, USER_AGENT, COOKIE);
+
+
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            console.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
     app.post("/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
         try {
             if (!req.cookies.SWOB) {
+                console.error("NO COOKIE");
                 throw new ERRORS.BadRequest();
             };
             const SID = req.cookies.SWOB.sid
@@ -252,6 +299,7 @@ module.exports = (app, configs) => {
     app.put("/platforms/:platform/protocols/:protocol/:action?", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         try {
             if (!req.cookies.SWOB) {
+                console.error("NO COOKIE");
                 throw new ERRORS.BadRequest();
             };
             const SID = req.cookies.SWOB.sid
@@ -308,6 +356,7 @@ module.exports = (app, configs) => {
 
             await FIND_SESSION(SID, USER_AGENT, COOKIE);
 
+            console.log("CLEARING BROWSER COOKIE");
             res.clearCookie("SWOB");
 
             return res.status(200).json();

@@ -10,15 +10,18 @@ module.exports = async (sid, user_agent, cookie) => {
             user_agent: user_agent,
         }
     }).catch(error => {
+        console.error("ERROR FINDING SESSION IN SESSIONS TABLE");
         throw new ERRORS.InternalServerError(error);
     });
 
     if (session.length < 1) {
+        console.error("NO SESSION FOUND");
         throw new ERRORS.Forbidden();
     };
 
     // IF MORE THAN ONE SESSION EXIST IN DATABASE
     if (session.length > 1) {
+        console.error("DUPLICATE SESSION FOUND");
         throw new ERRORS.Conflict();
     };
 
@@ -27,14 +30,15 @@ module.exports = async (sid, user_agent, cookie) => {
     let age = expires - Date.now();
 
     if (age <= 0) {
-        console.log(age)
+        console.error("EXPIRED SESSION");
         throw new ERRORS.Forbidden();
     }
 
     if (session[0].data !== JSON.stringify(cookie)) {
+        console.error("INVALID COOKIE FROM BROWSER");
         throw new ERRORS.Forbidden();
     }
 
-    console.log(age)
+    console.log("SESSION VERIFICATION SUCCESSFUL RETURNING USERID");
     return session[0].userId;
 }

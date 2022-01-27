@@ -18,8 +18,10 @@ module.exports = async (user, platform, result) => {
             uniqueIdHash: security.hash(result.profile.data.email),
             iv: security.iv
         }).catch(error => {
+            console.error("ERROR CREATING GMAIL TOKEN");
             if (error.name == "SequelizeUniqueConstraintError") {
                 if (error.original.code == "ER_DUP_ENTRY") {
+                    console.error("GMAIL TOKEN RECORD EXIST ALREADY");
                     throw new ERRORS.Conflict();
                 };
             };
@@ -27,6 +29,7 @@ module.exports = async (user, platform, result) => {
             throw new ERRORS.InternalServerError(error);
         });
 
+        console.log("SUCCESSFULLY STORED GMAIL TOKEN");
         return true;
     };
 
@@ -40,8 +43,10 @@ module.exports = async (user, platform, result) => {
             uniqueIdHash: security.hash(result.profile.screen_name),
             iv: security.iv
         }).catch(error => {
+            console.error("ERROR CREATING TWITTER TOKEN");
             if (error.name == "SequelizeUniqueConstraintError") {
                 if (error.original.code == "ER_DUP_ENTRY") {
+                    console.error("TWITTER TOKEN RECORD EXIST ALREADY");
                     throw new ERRORS.Conflict();
                 };
             };
@@ -49,6 +54,7 @@ module.exports = async (user, platform, result) => {
             throw new ERRORS.InternalServerError(error);
         });
 
+        console.log("SUCCESSFULLY STORED TWITTER TOKEN");
         return true;
     };
 
@@ -61,8 +67,10 @@ module.exports = async (user, platform, result) => {
             uniqueIdHash: security.hash(result),
             iv: security.iv
         }).catch(error => {
+            console.error("ERROR CREATING TELEGRAM TOKEN");
             if (error.name == "SequelizeUniqueConstraintError") {
                 if (error.original.code == "ER_DUP_ENTRY") {
+                    console.error("TELEGRAM TOKEN RECORD EXIST ALREADY");
                     throw new ERRORS.Conflict();
                 };
             };
@@ -70,8 +78,10 @@ module.exports = async (user, platform, result) => {
             throw new ERRORS.InternalServerError(error);
         });
 
+        console.log("SUCCESSFULLY STORED TELEGRAM TOKEN");
         return true;
     };
 
+    console.error("PLATFORM NOT FOUND");
     throw new ERRORS.NotFound();
 }

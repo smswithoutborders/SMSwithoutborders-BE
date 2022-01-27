@@ -7,6 +7,7 @@ module.exports = async (phone_number, code, session_id) => {
     if (_2fa.verification_status == "approved") {
         return true;
     } else if (_2fa.verification_status == "pending") {
+        console.error("TWILIO API RESPONDED WITH PENDING")
         throw new ERRORS.Forbidden();
     }
 };

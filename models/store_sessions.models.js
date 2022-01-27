@@ -17,6 +17,7 @@ module.exports = async (userId, user_agent) => {
         expires: new Date(Date.now() + hour),
         data: JSON.stringify(data)
     }).catch(error => {
+        console.error("ERROR CREATING SESSION IN SESSIONS TABLE")
         throw new ERRORS.InternalServerError(error);
     });
 

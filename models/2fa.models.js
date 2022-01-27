@@ -4,6 +4,14 @@ const configs = require("../config.json");
 const credentials = require("../credentials.json");
 const AUTH_TOKEN = credentials.twilio.AUTH_TOKEN;
 
+if (!configs.router.url) {
+    throw new ERRORS.InternalServerError("NO ROUTER URL PRESENT IN CONFIGS");
+};
+
+if (!configs.router.port) {
+    throw new ERRORS.InternalServerError("NO ROUTER PORT PRESENT IN CONFIGS");
+};
+
 let send = async (number) => {
     const url = `${configs.router.url}:${configs.router.port}/sms/twilio`;
 
@@ -11,6 +19,7 @@ let send = async (number) => {
         number: number,
         auth_token: AUTH_TOKEN,
     }).catch(function (error) {
+        console.error("ERROR REQUESTING VERIFICATION CODE FROM TWILIO CHECK INPUTS OR INTERNET CONNECTION")
         throw new ERRORS.InternalServerError(error);
     });
 
@@ -26,7 +35,9 @@ let verify = async (number, session_id, code) => {
         auth_token: AUTH_TOKEN,
         number: number
     }).catch(function (error) {
+        console.error("ERROR VERIFYING CODE FROM TWILIO CHECK INPUTS OR INTERNET CONNECTION")
         if (error.response.data.message == "failed") {
+            console.error("TWILIO API RESPONDED WITH FAILED")
             throw new ERRORS.Unauthorized();
         }
 
