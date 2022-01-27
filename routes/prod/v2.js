@@ -13,6 +13,7 @@ const VERIFY_2FA = require("../../models/verify_2fa.models");
 const VERIFY_SV = require("../../models/verify_sv.models");
 const FIND_SESSION = require("../../models/find_sessions.models");
 const UPDATE_SESSION = require("../../models/update_sessions.models");
+const FIND_USERS_PLATFORMS = require("../../models/find_users_platform.models");
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -192,11 +193,12 @@ module.exports = (app, configs) => {
 
             res.cookie("SWOB", {
                 sid: session.sid,
-                uid: session.uid,
                 cookie: session.data
             }, session.data)
 
-            return res.status(200).json();
+            return res.status(200).json({
+                uid: session.uid
+            });
 
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
@@ -220,21 +222,33 @@ module.exports = (app, configs) => {
         }
     });
 
-    app.get("/platforms", async (req, res, next) => {
+    app.get("/users/:user_id/platforms", async (req, res, next) => {
         try {
             if (!req.params.user_id) {
                 console.error("NO USERID");
                 throw new ERRORS.BadRequest();
             }
             if (!req.cookies.SWOB) {
+                console.error("NO COOKIE");
                 throw new ERRORS.BadRequest();
             };
-            const SID = req.cookies.SWOB.sid
-            const COOKIE = req.cookies.SWOB.cookie
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
 
-            await FIND_SESSION(SID, USER_AGENT, COOKIE);
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+            let user = await FIND_USERS(ID);
+            const usersPlatforms = await FIND_USERS_PLATFORMS(user);
 
+            let session = await UPDATE_SESSION(SID, ID);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
+
+            return res.status(200).json(usersPlatforms);
 
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
@@ -285,7 +299,6 @@ module.exports = (app, configs) => {
 
             res.cookie("SWOB", {
                 sid: session.sid,
-                uid: session.uid,
                 cookie: session.data
             }, session.data)
 
@@ -348,7 +361,6 @@ module.exports = (app, configs) => {
 
             res.cookie("SWOB", {
                 sid: session.sid,
-                uid: session.uid,
                 cookie: session.data
             }, session.data)
 
