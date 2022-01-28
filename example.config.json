@@ -8,14 +8,13 @@
     "api": {
         "API_PORT": "9000",
         "DEV_API_PORT": "10000",
-        "SESSION_SECRET": "",
-        "ORIGIN": []
+        "SESSION_SECRET": ""
     },
     "router": {
         "url": "",
         "port": ""
     },
-    "origin": ["::ffff:127.0.0.1", "::1"],
+    "origin": [],
     "ssl_api": {
         "API_PORT": "",
         "SESSION_SECRET": "",

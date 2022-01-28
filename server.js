@@ -18,7 +18,7 @@ const https = require("https")
 
 // https://portswigger.net/web-security/cors/access-control-allow-origin
 
-const whitelist = configs.api.ORIGIN;
+const whitelist = configs.origin;
 app.use(cors({
     origin: whitelist,
     credentials: true,
