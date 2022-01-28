@@ -495,13 +495,16 @@
         },
         "responses": {
           "200": {
-            "description": "Successful. Response body for Gmail = {}, Twitter = {}, Telegram = {if no account [code<202 = create a telegram account>]}",
+            "description": "Successful. Response body for Gmail = {}, Twitter = {}, Telegram = {if no account [code=202 (create a telegram account), initialization_url='string'] else [code='', initialization_url='']}",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "code": {
+                      "type": "string"
+                    },
+                    "initialization_url": {
                       "type": "string"
                     }
                   }
@@ -636,11 +639,19 @@
         },
         "responses": {
           "200": {
-            "description": "Successful. Response body for Telegram = {}",
+            "description": "Successful. Response body for Telegram = {code='', initialization_url=''}",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "initialization_url": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
