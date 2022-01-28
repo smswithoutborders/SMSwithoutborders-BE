@@ -24,11 +24,14 @@ module.exports = async (user) => {
 
     if (unsaved_platforms.length > 0) {
         for (let i = 0; i < unsaved_platforms.length; i++) {
+            let name = unsaved_platforms[i].name.toLowerCase();
+            let protocol = JSON.parse(unsaved_platforms[i].protocols);
+
             PLATFORMS.unsaved_platforms.push({
                 name: unsaved_platforms[i].name.toLowerCase(),
                 description: unsaved_platforms[i].description.toLowerCase(),
                 logo: unsaved_platforms[i].logo,
-                protocols: JSON.parse(unsaved_platforms[i].protocols),
+                initialization_url: `/platforms/${name}/protocols/${protocol[0]}`,
                 type: unsaved_platforms[i].type.toLowerCase(),
                 letter: unsaved_platforms[i].name.toLowerCase()[0]
             });
@@ -41,11 +44,14 @@ module.exports = async (user) => {
         for (let i = 0; i < tokens.length; i++) {
             let saved_platforms = await tokens[i].getPlatform();
             if (saved_platforms) {
+                let name = saved_platforms.name.toLowerCase();
+                let protocol = JSON.parse(saved_platforms.protocols);
+
                 PLATFORMS.saved_platforms.push({
                     name: saved_platforms.name.toLowerCase(),
                     description: saved_platforms.description.toLowerCase(),
                     logo: saved_platforms.logo,
-                    protocols: JSON.parse(saved_platforms.protocols),
+                    initialization_url: `/platforms/${name}/protocols/${protocol[0]}`,
                     type: saved_platforms.type.toLowerCase(),
                     letter: saved_platforms.name.toLowerCase()[0]
                 });
