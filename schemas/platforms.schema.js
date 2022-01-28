@@ -7,6 +7,7 @@ module.exports = (sequelize, Sequelize) => {
         },
         description: Sequelize.STRING,
         logo: Sequelize.TEXT,
+        protocols: Sequelize.TEXT,
         type: Sequelize.STRING,
         letter: Sequelize.STRING
     });

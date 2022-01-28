@@ -24,7 +24,14 @@ module.exports = async (user) => {
 
     if (unsaved_platforms.length > 0) {
         for (let i = 0; i < unsaved_platforms.length; i++) {
-            PLATFORMS.unsaved_platforms.push(unsaved_platforms[i]);
+            PLATFORMS.unsaved_platforms.push({
+                name: unsaved_platforms[i].name.toLowerCase(),
+                description: unsaved_platforms[i].description.toLowerCase(),
+                logo: unsaved_platforms[i].logo,
+                protocols: JSON.parse(unsaved_platforms[i].protocols),
+                type: unsaved_platforms[i].type.toLowerCase(),
+                letter: unsaved_platforms[i].name.toLowerCase()[0]
+            });
         };
     };
 
@@ -34,7 +41,14 @@ module.exports = async (user) => {
         for (let i = 0; i < tokens.length; i++) {
             let saved_platforms = await tokens[i].getPlatform();
             if (saved_platforms) {
-                PLATFORMS.saved_platforms.push(saved_platforms);
+                PLATFORMS.saved_platforms.push({
+                    name: saved_platforms.name.toLowerCase(),
+                    description: saved_platforms.description.toLowerCase(),
+                    logo: saved_platforms.logo,
+                    protocols: JSON.parse(saved_platforms.protocols),
+                    type: saved_platforms.type.toLowerCase(),
+                    letter: saved_platforms.name.toLowerCase()[0]
+                });
             };
         };
     };

@@ -38,6 +38,7 @@ mysql.createConnection({
                             name: platforms[i].name.toLowerCase(),
                             description: platforms[i].description.toLowerCase(),
                             logo: platforms[i].logo,
+                            protocols: JSON.stringify(platforms[i].protocols),
                             type: platforms[i].type.toLowerCase(),
                             letter: platforms[i].name.toLowerCase()[0]
                         }).catch(error => {
