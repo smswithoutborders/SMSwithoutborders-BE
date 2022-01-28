@@ -22,7 +22,7 @@ class OAuth {
 
                 this.oauthClientToken.getOAuthRequestToken((error, reqToken, reqTokenSecret) => {
                     if (error) {
-                        return console.log(error)
+                        reject(error)
                     };
 
                     this.requestTokenSecret = reqTokenSecret;
