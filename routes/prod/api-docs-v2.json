@@ -758,11 +758,8 @@
                           "logo": {
                             "type": "string"
                           },
-                          "protocols": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
+                          "initialization_url": {
+                            "type": "string"
                           },
                           "type": {
                             "type": "string"
@@ -790,11 +787,8 @@
                           "logo": {
                             "type": "string"
                           },
-                          "protocols": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
+                          "initialization_url": {
+                            "type": "string"
                           },
                           "type": {
                             "type": "string"
