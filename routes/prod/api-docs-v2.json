@@ -242,7 +242,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "uid": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
