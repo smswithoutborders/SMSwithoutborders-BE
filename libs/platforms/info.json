@@ -2,18 +2,18 @@
         "name": "gmail",
         "description": "Google workspace",
         "type": "email",
-        "logo": "/public/"
+        "logo": "/public/gmail-icon.svg"
     },
     {
         "name": "twitter",
         "description": "Twitter status",
         "type": "text",
-        "logo": "/public/"
+        "logo": "/public/twitter-icon.svg"
     },
     {
         "name": "telegram",
         "description": "Telegram messages",
         "type": "text",
-        "logo": "/public/"
+        "logo": "/public/telegram-icon.svg"
     }
 ]
