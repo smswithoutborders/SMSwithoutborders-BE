@@ -17,7 +17,10 @@ const API_DOCS_V2 = require("./routes/prod/api-docs-v2.json");
 const https = require("https")
 
 // https://portswigger.net/web-security/cors/access-control-allow-origin
+
+const whitelist = configs.api.ORIGIN;
 app.use(cors({
+    origin: whitelist,
     credentials: true,
 }));
 
