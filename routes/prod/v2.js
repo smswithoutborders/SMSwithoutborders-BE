@@ -230,7 +230,7 @@ module.exports = (app, configs) => {
             }
             if (!req.cookies.SWOB) {
                 console.error("NO COOKIE");
-                throw new ERRORS.BadRequest();
+                throw new ERRORS.Forbidden();
             };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
@@ -281,7 +281,7 @@ module.exports = (app, configs) => {
             }
             if (!req.cookies.SWOB) {
                 console.error("NO COOKIE");
-                throw new ERRORS.BadRequest();
+                throw new ERRORS.Forbidden();
             };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
@@ -338,7 +338,7 @@ module.exports = (app, configs) => {
             }
             if (!req.cookies.SWOB) {
                 console.error("NO COOKIE");
-                throw new ERRORS.BadRequest();
+                throw new ERRORS.Forbidden();
             };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
@@ -399,7 +399,8 @@ module.exports = (app, configs) => {
                 throw new ERRORS.BadRequest();
             }
             if (!req.cookies.SWOB) {
-                throw new ERRORS.BadRequest();
+                console.error("NO COOKIE");
+                throw new ERRORS.Forbidden();
             };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
