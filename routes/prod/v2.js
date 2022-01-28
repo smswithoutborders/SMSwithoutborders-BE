@@ -349,6 +349,7 @@ module.exports = (app, configs) => {
             const PLATFORM = req.params.platform;
             const RESULT = req.platformRes.result ? req.platformRes.result : "";
             const CODE = req.platformRes.code ? req.platformRes.code : "";
+            const INIT_URL = req.platformRes.initialization_url ? req.platformRes.initialization_url : "";
 
             let user = await FIND_USERS(ID);
             let platform = await FIND_PLATFORMS(PLATFORM);
@@ -365,7 +366,8 @@ module.exports = (app, configs) => {
             }, session.data)
 
             return res.status(200).json({
-                code: CODE
+                code: CODE,
+                initialization_url: INIT_URL
             });
 
         } catch (err) {

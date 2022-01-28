@@ -192,7 +192,8 @@ module.exports = async (req, res, next) => {
                         let code = status;
 
                         req.platformRes = {
-                            code: code
+                            code: code,
+                            initialization_url: `/platforms/${platform}/protocols/${protocol}/register`,
                         };
 
                         return next();
