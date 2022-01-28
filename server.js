@@ -16,7 +16,11 @@ const API_DOCS_V2 = require("./routes/prod/api-docs-v2.json");
 
 const https = require("https")
 
-app.use(cors());
+// https://portswigger.net/web-security/cors/access-control-allow-origin
+app.use(cors({
+    credentials: true,
+}));
+
 app.use(cookieParser());
 
 app.use(express.json());
