@@ -15,33 +15,67 @@ npm install
 ### Setup
 * Create configuration file
 
-    __root (./)__
+    __./config/__
 
-    * To set up database and API, copy the template file "example.config.json" and rename to "config.json"
-    * To set up platform credentials, copy the template file "example.credentials.json" and rename to "credentials.json"
+    __Development Configurations__
 
-### Start Production Server
+    * To set up Database, API, and platform credentials, copy the template files "example.default.json" and rename to "default.json"
+
+     __Production Configurations__
+
+    * To set up Database, API, and platform credentials, copy the template files "example.production.json" and rename to "production.json"
+
+### Start Cloud_API Server
+__Development Environment__
 * With NPM
 ```bash
-npm run startProd
+npm run start_main
 ```
 * With Node
 ```bash
 node server.js
 ```
-### Start Development Server
+
+__Production Environment__
 * With NPM
 ```bash
-npm run startDev
+NODE_ENV=production npm run start_main
 ```
 * With Node
 ```bash
-node serverDev.js
+NODE_ENV=production node server.js
 ```
-### Start both Production and Development Server
+### Start Publisher Server
+__Development Environment__
 * With NPM
 ```bash
-npm start
+npm run start_pub
+```
+* With Node
+```bash
+node server_pub.js
+```
+
+__Production Environment__
+* With NPM
+```bash
+NODE_ENV=production npm run start_pub
+```
+* With Node
+```bash
+NODE_ENV=production node server_pub.js
+```
+### Start both Cloud_API and Publisher Servers
+__Development Environment__
+* With NPM
+```bash
+npm run start
+```
+
+__Production Environment__
+* With NPM
+```bash
+NODE_ENV=production npm start
 ```
 ### API SandBox
 ```
