@@ -11,6 +11,9 @@ lerna-debug.log*
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 config.json
 credentials.json
+default.json
+production.json
+test.json
 
 # Runtime data
 pids

@@ -1,3 +1,6 @@
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+
 const fs = require('fs')
 const Security = require("../../models/security.models");
 const ERRORS = require("../../error.js");
@@ -20,10 +23,10 @@ var rootCas = require('ssl-root-cas').create()
 require('https').globalAgent.options.ca = rootCas
 
 // ==================== PRODUCTION ====================
-module.exports = (app, configs) => {
+module.exports = (app) => {
     let PLATFORMS = require("../../libs/platforms");
 
-    if ((configs.hasOwnProperty("ssl_api") && configs.hasOwnProperty("PEM")) && fs.existsSync(configs.ssl_api.PEM)) {
+    if ((SERVER_CFG.hasOwnProperty("ssl_api") && SERVER_CFG.hasOwnProperty("PEM")) && fs.existsSync(SERVER_CFG.ssl_api.PEM)) {
         rootCas.addFile('/var/www/ssl/server.pem')
     }
 

@@ -1,0 +1,43 @@
+{
+    "SERVER": {
+        "database": {
+            "MYSQL_HOST": "localhost",
+            "MYSQL_USER": "root",
+            "MYSQL_PASSWORD": "",
+            "MYSQL_DATABASE": ""
+        },
+        "api": {
+            "API_PORT": "9000",
+            "DEV_API_PORT": "10000",
+            "SESSION_SECRET": ""
+        },
+        "router": {
+            "url": "",
+            "port": ""
+        },
+        "origin": ["localhost:18000"],
+        "ssl_api": {
+            "API_PORT": "",
+            "SESSION_SECRET": "",
+            "CERTIFICATE": "",
+            "KEY": "",
+            "PEM": ""
+        }
+    },
+    "CREDENTIALS": {
+        "google": {
+            "GOOGLE_CLIENT_ID": "",
+            "GOOGLE_CLIENT_SECRET": ""
+        },
+        "twitter": {
+            "TWITTER_CLIENT_ID": "",
+            "TWITTER_CLIENT_SECRET": ""
+        },
+        "telegram": {
+            "TWITTER_REQUEST_HOST": ""
+        },
+        "twilio": {
+            "AUTH_TOKEN": ""
+        }
+    }
+}

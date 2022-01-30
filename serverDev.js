@@ -1,11 +1,12 @@
-const configs = require("./config.json");
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+const ORIGIN = SERVER_CFG.origin;
+
 const express = require("express");
 const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
-
-const db = require("./schemas");
 
 var app = express();
 
@@ -45,9 +46,9 @@ app.use([morgan('combined', {
 app.use(morgan('dev'));
 
 // ROUTES
-require("./routes/dev")(app, configs, db);
+require("./routes/dev")(app);
 
-app.listen(configs.api.DEV_API_PORT, "127.0.0.1", 511, () => {
-    console.log(`Development server is running on port ${configs.api.DEV_API_PORT}`)
+app.listen(SERVER_CFG.api.DEV_API_PORT, "127.0.0.1", 511, () => {
+    console.log(`Development server is running on port ${SERVER_CFG.api.DEV_API_PORT}`)
 });
-app.runningPort = configs.api.DEV_API_PORT
+app.runningPort = SERVER_CFG.api.DEV_API_PORT

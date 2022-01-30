@@ -44,5 +44,6 @@ module.exports = async (phone_number, password) => {
         throw new ERRORS.NotFound();
     };
 
+    console.log("USER SUCCESSFULLY VERIFIED RETURNUNG USERID");
     return user.id;
 }

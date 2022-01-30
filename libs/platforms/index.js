@@ -1,4 +1,6 @@
-const credentials = require("../../credentials.json");
+const config = require('config');
+const credentials = config.get("CREDENTIALS");
+
 const ERRORS = require("../../error.js");
 const gmail_token_scopes = [
     'https://www.googleapis.com/auth/gmail.send',

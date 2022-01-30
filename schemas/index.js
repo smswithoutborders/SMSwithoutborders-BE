@@ -1,4 +1,6 @@
-const configs = require("../config.json");
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+
 const Sequelize = require("sequelize");
 
 module.exports = db = {};
@@ -7,8 +9,8 @@ initialize();
 
 async function initialize() {
     // connect to db
-    const sequelize = new Sequelize(configs.database.MYSQL_DATABASE, configs.database.MYSQL_USER, configs.database.MYSQL_PASSWORD, {
-        host: configs.database.MYSQL_HOST,
+    const sequelize = new Sequelize(SERVER_CFG.database.MYSQL_DATABASE, SERVER_CFG.database.MYSQL_USER, SERVER_CFG.database.MYSQL_PASSWORD, {
+        host: SERVER_CFG.database.MYSQL_HOST,
         dialect: "mysql",
         logging: false,
         // define: {

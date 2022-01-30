@@ -1,4 +1,7 @@
-const configs = require("./config.json");
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+const ORIGIN = SERVER_CFG.origin;
+
 const express = require("express");
 const swaggerUi = require('swagger-ui-express');
 const morgan = require("morgan");
@@ -9,8 +12,6 @@ let cookieParser = require('cookie-parser');
 
 var app = express();
 
-const db = require("./schemas");
-
 const API_DOCS_V1 = require("./routes/prod/api-docs-v1.json");
 const API_DOCS_V2 = require("./routes/prod/api-docs-v2.json");
 
@@ -18,7 +19,7 @@ const https = require("https")
 
 // https://portswigger.net/web-security/cors/access-control-allow-origin
 
-const whitelist = configs.origin;
+const whitelist = ORIGIN;
 app.use(cors({
     origin: whitelist,
     credentials: true,
@@ -47,32 +48,38 @@ var errorLogStream = fs.createWriteStream(path.join(__dirname, "logs/error.log")
 });
 
 // setup the logger middleware
-app.use([morgan('combined', {
-        skip: function (req, res) {
-            return (res.statusCode <= 599 && res.statusCode >= 400)
-        },
-        stream: successLogStream
-    }),
-    morgan('combined', {
-        skip: function (req, res) {
-            return (res.statusCode <= 399 && res.statusCode >= 100)
-        },
-        stream: errorLogStream
-    })
-]);
+if (config.util.getEnv('NODE_ENV') !== 'test') {
+    app.use([morgan('combined', {
+            skip: function (req, res) {
+                return (res.statusCode <= 599 && res.statusCode >= 400)
+            },
+            stream: successLogStream
+        }),
+        morgan('combined', {
+            skip: function (req, res) {
+                return (res.statusCode <= 399 && res.statusCode >= 100)
+            },
+            stream: errorLogStream
+        })
+    ]);
 
-app.use(morgan('dev'));
+    if (config.util.getEnv('NODE_ENV') !== 'production') {
+        app.use(morgan('dev'));
+    } else {
+        app.use(morgan('combined'));
+    }
+};
 
 // ROUTES
-require("./routes/prod")(app, configs, db);
+require("./routes/prod")(app);
 
 var httpsServer = ""
-if ((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFICATE) && fs.existsSync(configs.ssl_api.KEY) && fs.existsSync(configs.ssl_api.PEM)) {
-    let privateKey = fs.readFileSync(configs.ssl_api.KEY, 'utf8');
-    let certificate = fs.readFileSync(configs.ssl_api.CERTIFICATE, 'utf8');
-    // let certificate = fs.readFileSync(configs.ssl_api.PEM, 'utf8');
+if ((SERVER_CFG.hasOwnProperty("ssl_api")) && fs.existsSync(SERVER_CFG.ssl_api.CERTIFICATE) && fs.existsSync(SERVER_CFG.ssl_api.KEY) && fs.existsSync(SERVER_CFG.ssl_api.PEM)) {
+    let privateKey = fs.readFileSync(SERVER_CFG.ssl_api.KEY, 'utf8');
+    let certificate = fs.readFileSync(SERVER_CFG.ssl_api.CERTIFICATE, 'utf8');
+    // let certificate = fs.readFileSync(SERVER_CFG.ssl_api.PEM, 'utf8');
     let ca = [
-        fs.readFileSync(configs.ssl_api.PEM)
+        fs.readFileSync(SERVER_CFG.ssl_api.PEM)
     ]
     let credentials = {
         key: privateKey,
@@ -80,13 +87,13 @@ if ((configs.hasOwnProperty("ssl_api")) && fs.existsSync(configs.ssl_api.CERTIFI
         ca: ca
     };
     httpsServer = https.createServer(credentials, app);
-    httpsServer.listen(configs.ssl_api.API_PORT);
-    console.log("Production [+] Running secured on port:", configs.ssl_api.API_PORT)
-    app.runningPort = configs.ssl_api.API_PORT
+    httpsServer.listen(SERVER_CFG.ssl_api.API_PORT);
+    console.log("Production [+] Running secured on port:", SERVER_CFG.ssl_api.API_PORT)
+    app.runningPort = SERVER_CFG.ssl_api.API_PORT
     app.is_ssl = true
 } else {
-    console.log("Production [+] Running in-secured on port:", configs.api.API_PORT)
-    app.listen(configs.api.API_PORT, console.log(`Prodcution server is running on port ${configs.api.API_PORT}`));
-    app.runningPort = configs.api.API_PORT
+    console.log("Production [+] Running in-secured on port:", SERVER_CFG.api.API_PORT)
+    app.listen(SERVER_CFG.api.API_PORT, console.log(`Prodcution server is running on port ${SERVER_CFG.api.API_PORT}`));
+    app.runningPort = SERVER_CFG.api.API_PORT
     app.is_ssl = false
 }

@@ -1,16 +1,18 @@
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+
 const fs = require("fs");
 const chalk = require("chalk");
 const mysql = require('mysql2/promise');
-const configs = require("../config.json");
 
 //db connection
 mysql.createConnection({
-    host: configs.database.MYSQL_HOST,
-    user: configs.database.MYSQL_USER,
-    password: configs.database.MYSQL_PASSWORD,
+    host: SERVER_CFG.database.MYSQL_HOST,
+    user: SERVER_CFG.database.MYSQL_USER,
+    password: SERVER_CFG.database.MYSQL_PASSWORD,
 }).then(connection => {
-    console.log(`Creating Database ${configs.database.MYSQL_DATABASE} ...`)
-    connection.query(`CREATE DATABASE IF NOT EXISTS \`${configs.database.MYSQL_DATABASE}\`;`)
+    console.log(`Creating Database ${SERVER_CFG.database.MYSQL_DATABASE} ...`)
+    connection.query(`CREATE DATABASE IF NOT EXISTS \`${SERVER_CFG.database.MYSQL_DATABASE}\`;`)
         .then(() => {
             let db = require("../schemas");
             let Platform = db.platforms;

@@ -1,20 +1,22 @@
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+const credentials = config.get("CREDENTIALS");
+
 const Axios = require('axios');
 const ERRORS = require("../error.js");
-const configs = require("../config.json");
-const credentials = require("../credentials.json");
 const chalk = require("chalk");
 const AUTH_TOKEN = credentials.twilio.AUTH_TOKEN;
 
-if (!configs.router.url) {
+if (!SERVER_CFG.router.url) {
     console.warn(chalk.red("NO ROUTER URL PRESENT IN CONFIGS"));
 };
 
-if (!configs.router.port) {
+if (!SERVER_CFG.router.port) {
     console.warn(chalk.red("NO ROUTER PORT PRESENT IN CONFIGS"));
 };
 
 let send = async (number) => {
-    const url = `${configs.router.url}:${configs.router.port}/sms/twilio`;
+    const url = `${SERVER_CFG.router.url}:${SERVER_CFG.router.port}/sms/twilio`;
 
     let result = await Axios.post(url, {
         number: number,
@@ -28,7 +30,7 @@ let send = async (number) => {
 };
 
 let verify = async (number, session_id, code) => {
-    const url = `${configs.router.url}:${configs.router.port}/sms/twilio/verification_token`;
+    const url = `${SERVER_CFG.router.url}:${SERVER_CFG.router.port}/sms/twilio/verification_token`;
 
     let result = await Axios.post(url, {
         session_id: session_id,
