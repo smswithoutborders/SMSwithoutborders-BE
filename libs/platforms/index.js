@@ -30,7 +30,7 @@ module.exports = async (req, res, next) => {
                 if (req.method.toLowerCase() == "post") {
                     let url = await platformObj.init(originalURL);
                     req.platformRes = {
-                        url
+                        url: url
                     }
                     return next();
                 }
@@ -67,7 +67,7 @@ module.exports = async (req, res, next) => {
                 if (req.method.toLowerCase() == "post") {
                     let url = await platformObj.init(originalURL);
                     req.platformRes = {
-                        url: url
+                        url: url.url
                     }
                     return next();
                 }
