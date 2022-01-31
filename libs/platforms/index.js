@@ -28,6 +28,15 @@ module.exports = async (req, res, next) => {
                 let platformObj = new GMAIL.OAuth2(credentials, gmail_token_scopes);
 
                 if (req.method.toLowerCase() == "post") {
+                    if (!req.params.user_id) {
+                        console.error("NO USERID");
+                        throw new ERRORS.BadRequest();
+                    }
+                    if (!req.cookies.SWOB) {
+                        console.error("NO COOKIE");
+                        throw new ERRORS.Forbidden();
+                    };
+
                     let url = await platformObj.init(originalURL);
                     req.platformRes = {
                         url: url
@@ -36,6 +45,15 @@ module.exports = async (req, res, next) => {
                 }
 
                 if (req.method.toLowerCase() == "put") {
+                    if (!req.params.user_id) {
+                        console.error("NO USERID");
+                        throw new ERRORS.BadRequest();
+                    }
+                    if (!req.cookies.SWOB) {
+                        console.error("NO COOKIE");
+                        throw new ERRORS.Forbidden();
+                    };
+
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.code) {
                         throw new ERRORS.BadRequest();
@@ -65,6 +83,15 @@ module.exports = async (req, res, next) => {
                 let platformObj = new TWITTER.OAuth(credentials);
 
                 if (req.method.toLowerCase() == "post") {
+                    if (!req.params.user_id) {
+                        console.error("NO USERID");
+                        throw new ERRORS.BadRequest();
+                    }
+                    if (!req.cookies.SWOB) {
+                        console.error("NO COOKIE");
+                        throw new ERRORS.Forbidden();
+                    };
+
                     let url = await platformObj.init(originalURL);
                     req.platformRes = {
                         url: url.url
@@ -73,6 +100,15 @@ module.exports = async (req, res, next) => {
                 }
 
                 if (req.method.toLowerCase() == "put") {
+                    if (!req.params.user_id) {
+                        console.error("NO USERID");
+                        throw new ERRORS.BadRequest();
+                    }
+                    if (!req.cookies.SWOB) {
+                        console.error("NO COOKIE");
+                        throw new ERRORS.Forbidden();
+                    };
+
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.oauth_token) {
                         throw new ERRORS.BadRequest();
@@ -105,6 +141,15 @@ module.exports = async (req, res, next) => {
                 let platformObj = new TELEGRAM.twoFactor(credentials);
 
                 if (req.method.toLowerCase() == "post") {
+                    if (!req.params.user_id) {
+                        console.error("NO USERID");
+                        throw new ERRORS.BadRequest();
+                    }
+                    if (!req.cookies.SWOB) {
+                        console.error("NO COOKIE");
+                        throw new ERRORS.Forbidden();
+                    };
+
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.phone_number) {
                         throw new ERRORS.BadRequest();
@@ -116,18 +161,27 @@ module.exports = async (req, res, next) => {
                     let result = await platformObj.init(phoneNumber);
                     let code = result.status;
 
-                    if (code == 200) {
-                        throw new ERRORS.Conflict();
-                    };
+                    // if (code == 200) {
+                    //     throw new ERRORS.Conflict();
+                    // };
 
                     req.platformRes = {
-                        code: code
+                        body: code
                     }
                     return next();
                 };
 
                 if (req.method.toLowerCase() == "put") {
                     if (action == "register") {
+                        if (!req.params.user_id) {
+                            console.error("NO USERID");
+                            throw new ERRORS.BadRequest();
+                        }
+                        if (!req.cookies.SWOB) {
+                            console.error("NO COOKIE");
+                            throw new ERRORS.Forbidden();
+                        };
+
                         // ==================== REQUEST BODY CHECKS ====================
                         if (!req.body.phone_number) {
                             throw new ERRORS.BadRequest();
@@ -158,6 +212,15 @@ module.exports = async (req, res, next) => {
 
                             return next();
                         };
+                    };
+
+                    if (!req.params.user_id) {
+                        console.error("NO USERID");
+                        throw new ERRORS.BadRequest();
+                    }
+                    if (!req.cookies.SWOB) {
+                        console.error("NO COOKIE");
+                        throw new ERRORS.Forbidden();
                     };
 
                     // ==================== REQUEST BODY CHECKS ====================
@@ -194,7 +257,7 @@ module.exports = async (req, res, next) => {
                         let code = status;
 
                         req.platformRes = {
-                            code: code,
+                            body: code,
                             initialization_url: `/platforms/${platform}/protocols/${protocol}/register`,
                         };
 

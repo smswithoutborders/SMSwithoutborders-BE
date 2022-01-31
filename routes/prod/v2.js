@@ -294,7 +294,7 @@ module.exports = (app) => {
             const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
             const PLATFORM = req.params.platform;
             const URL = req.platformRes.url ? req.platformRes.url : "";
-            const CODE = req.platformRes.code ? req.platformRes.code : "";
+            const BODY = req.platformRes.body ? req.platformRes.body : "";
 
             let platform = await FIND_PLATFORMS(PLATFORM);
 
@@ -307,7 +307,7 @@ module.exports = (app) => {
 
             return res.status(200).json({
                 url: URL,
-                code: CODE,
+                body: BODY,
                 platform: platform.name.toLowerCase()
             });
 
@@ -351,7 +351,7 @@ module.exports = (app) => {
             const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
             const PLATFORM = req.params.platform;
             const RESULT = req.platformRes.result ? req.platformRes.result : "";
-            const CODE = req.platformRes.code ? req.platformRes.code : "";
+            const BODY = req.platformRes.body ? req.platformRes.body : "";
             const INIT_URL = req.platformRes.initialization_url ? req.platformRes.initialization_url : "";
 
             let user = await FIND_USERS(ID);
@@ -369,7 +369,7 @@ module.exports = (app) => {
             }, session.data)
 
             return res.status(200).json({
-                code: CODE,
+                body: BODY,
                 initialization_url: INIT_URL
             });
 

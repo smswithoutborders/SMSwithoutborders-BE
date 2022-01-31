@@ -355,7 +355,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful. Response body for Gmail = {url, platform}, Twitter = {url, platform}, Telegram = {code<201 = expecting telegram code>, platform}",
+            "description": "Successful. Response body for Gmail = {url, platform}, Twitter = {url, platform}, Telegram: (body[200 - Unauthorized, 201 - response code required], platform). The state of Telegram responses are in 'body' and should be parsed for current state of Telegram app. 200 meaning the user is not authorized to make this request, 201 meaning code has been sent back to user via SMS or Telegram session",
             "content": {
               "application/json": {
                 "schema": {
@@ -364,7 +364,7 @@
                     "url": {
                       "type": "string"
                     },
-                    "code": {
+                    "body": {
                       "type": "string"
                     },
                     "platform": {
@@ -495,13 +495,13 @@
         },
         "responses": {
           "200": {
-            "description": "Successful. Response body for Gmail = {}, Twitter = {}, Telegram = {if no account [code=202 (create a telegram account), initialization_url='string'] else [code='', initialization_url='']}",
+            "description": "Successful. Response body for Gmail = {}, Twitter = {}, Telegram: (body[202 - create a telegram account], initialization_url). The state of Telegram responses are in 'body' and should be parsed for current state of Telegram app. 202 meaning the user doesn't have a telegram account and need to create one. If body is 202 it comes with an initialization_url to start the next step of creating a telegram account",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "code": {
+                    "body": {
                       "type": "string"
                     },
                     "initialization_url": {
@@ -639,13 +639,13 @@
         },
         "responses": {
           "200": {
-            "description": "Successful. Response body for Telegram = {code='', initialization_url=''}",
+            "description": "Successful. Response body for Telegram: (body = '', initialization_url = ''). The state of Telegram responses are in 'body' and should be parsed for current state of Telegram app. Empty body string (body=''), and empty initialization_url string (initialization_url='') meaning the users account was created and stored successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "code": {
+                    "body": {
                       "type": "string"
                     },
                     "initialization_url": {
