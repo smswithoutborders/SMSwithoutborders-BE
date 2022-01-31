@@ -21,7 +21,7 @@ module.exports = async (phone_number, password) => {
     // RTURN = [], IF USERINFO IS NOT FOUND
     if (userInfo.length < 1) {
         console.error("NO USERINFO FOUND IN USERINFO TABLE");
-        throw new ERRORS.NotFound();
+        throw new ERRORS.Unauthorized();
     }
 
     // IF MORE THAN ONE USERINFO EXIST IN DATABASE
@@ -41,7 +41,7 @@ module.exports = async (phone_number, password) => {
 
     if (!user) {
         console.error("NO USER FOUND FROM USERINFO RECORD");
-        throw new ERRORS.NotFound();
+        throw new ERRORS.Unauthorized();
     };
 
     console.log("USER SUCCESSFULLY VERIFIED RETURNUNG USERID");
