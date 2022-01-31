@@ -9,13 +9,14 @@
         "api": {
             "API_PORT": "9000",
             "DEV_API_PORT": "10000",
-            "SESSION_SECRET": ""
+            "SESSION_SECRET": "",
+            "secure_sessions": false
         },
         "router": {
             "url": "",
             "port": ""
         },
-        "origin": ["localhost:18000"],
+        "origin": ["http://localhost:18000"],
         "ssl_api": {
             "API_PORT": "",
             "SESSION_SECRET": "",

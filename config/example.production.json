@@ -9,7 +9,8 @@
         "api": {
             "API_PORT": "9000",
             "DEV_API_PORT": "10000",
-            "SESSION_SECRET": ""
+            "SESSION_SECRET": "",
+            "secure_sessions": true
         },
         "router": {
             "url": "",
