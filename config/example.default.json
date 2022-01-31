@@ -15,7 +15,7 @@
             "url": "",
             "port": ""
         },
-        "origin": ["localhost:18000"],
+        "origin": ["http://localhost:18000"],
         "ssl_api": {
             "API_PORT": "",
             "SESSION_SECRET": "",
