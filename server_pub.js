@@ -20,10 +20,10 @@ app.use(express.urlencoded({
 // app.use(express.static('public'));
 
 // logger
-var successLogStream = fs.createWriteStream(path.join(__dirname, "logs/success.log"), {
+let successLogStream = fs.createWriteStream(path.join(__dirname, "logs/http_success.log"), {
     flags: 'a'
 })
-var errorLogStream = fs.createWriteStream(path.join(__dirname, "logs/error.log"), {
+let errorLogStream = fs.createWriteStream(path.join(__dirname, "logs/http_error.log"), {
     flags: 'a'
 });
 

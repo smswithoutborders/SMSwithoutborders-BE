@@ -9,6 +9,8 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 let cookieParser = require('cookie-parser');
+require('winston-daily-rotate-file');
+let logger = require("./logger");
 
 var app = express();
 
@@ -40,10 +42,10 @@ app.use('/v1/api-docs', swaggerUi.serveFiles(API_DOCS_V1, options), swaggerUi.se
 app.use('/v2/api-docs', swaggerUi.serveFiles(API_DOCS_V2, options), swaggerUi.setup(API_DOCS_V2));
 
 // logger
-var successLogStream = fs.createWriteStream(path.join(__dirname, "logs/success.log"), {
+let successLogStream = fs.createWriteStream(path.join(__dirname, "logs/http_success.log"), {
     flags: 'a'
 })
-var errorLogStream = fs.createWriteStream(path.join(__dirname, "logs/error.log"), {
+let errorLogStream = fs.createWriteStream(path.join(__dirname, "logs/http_error.log"), {
     flags: 'a'
 });
 
@@ -74,9 +76,9 @@ if (config.util.getEnv('NODE_ENV') !== 'test') {
 require("./routes/prod")(app);
 
 if (config.util.getEnv('NODE_ENV') !== 'production') {
-    console.info(`Environment: ${config.util.getEnv('NODE_ENV')}`);
-    console.warn("This is a development server. Do not use it in a production deployment.");
-    app.listen(SERVER_CFG.api.API_PORT, console.log(`Running on port ${SERVER_CFG.api.API_PORT}`));
+    logger.debug(`Environment: ${config.util.getEnv('NODE_ENV')}`);
+    logger.warn("This is a development server. Do not use it in a production deployment.");
+    app.listen(SERVER_CFG.api.API_PORT, logger.info(`Running on port ${SERVER_CFG.api.API_PORT}`));
     app.runningPort = SERVER_CFG.api.API_PORT
     app.is_ssl = false
 } else {
@@ -103,10 +105,10 @@ if (config.util.getEnv('NODE_ENV') !== 'production') {
         ca: ca
     };
 
-    console.info(`Environment: ${config.util.getEnv('NODE_ENV')}`);
+    logger.debug(`Environment: ${config.util.getEnv('NODE_ENV')}`);
     httpsServer = https.createServer(credentials, app);
     httpsServer.listen(SERVER_CFG.ssl_api.API_PORT);
-    console.log("Running secured on port:", SERVER_CFG.ssl_api.API_PORT)
+    logger.info("Running secured on port:", SERVER_CFG.ssl_api.API_PORT)
     app.runningPort = SERVER_CFG.ssl_api.API_PORT
     app.is_ssl = true
 };
