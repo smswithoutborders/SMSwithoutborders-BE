@@ -1,5 +1,6 @@
 const config = require('config');
 const credentials = config.get("CREDENTIALS");
+let logger = require("../../logger");
 
 const ERRORS = require("../../error.js");
 const gmail_token_scopes = [
@@ -29,11 +30,11 @@ module.exports = async (req, res, next) => {
 
                 if (req.method.toLowerCase() == "post") {
                     if (!req.params.user_id) {
-                        console.error("NO USERID");
+                        logger.error("NO USERID");
                         throw new ERRORS.BadRequest();
                     }
                     if (!req.cookies.SWOB) {
-                        console.error("NO COOKIE");
+                        logger.error("NO COOKIE");
                         throw new ERRORS.Forbidden();
                     };
 
@@ -46,11 +47,11 @@ module.exports = async (req, res, next) => {
 
                 if (req.method.toLowerCase() == "put") {
                     if (!req.params.user_id) {
-                        console.error("NO USERID");
+                        logger.error("NO USERID");
                         throw new ERRORS.BadRequest();
                     }
                     if (!req.cookies.SWOB) {
-                        console.error("NO COOKIE");
+                        logger.error("NO COOKIE");
                         throw new ERRORS.Forbidden();
                     };
 
@@ -84,11 +85,11 @@ module.exports = async (req, res, next) => {
 
                 if (req.method.toLowerCase() == "post") {
                     if (!req.params.user_id) {
-                        console.error("NO USERID");
+                        logger.error("NO USERID");
                         throw new ERRORS.BadRequest();
                     }
                     if (!req.cookies.SWOB) {
-                        console.error("NO COOKIE");
+                        logger.error("NO COOKIE");
                         throw new ERRORS.Forbidden();
                     };
 
@@ -101,11 +102,11 @@ module.exports = async (req, res, next) => {
 
                 if (req.method.toLowerCase() == "put") {
                     if (!req.params.user_id) {
-                        console.error("NO USERID");
+                        logger.error("NO USERID");
                         throw new ERRORS.BadRequest();
                     }
                     if (!req.cookies.SWOB) {
-                        console.error("NO COOKIE");
+                        logger.error("NO COOKIE");
                         throw new ERRORS.Forbidden();
                     };
 
@@ -142,11 +143,11 @@ module.exports = async (req, res, next) => {
 
                 if (req.method.toLowerCase() == "post") {
                     if (!req.params.user_id) {
-                        console.error("NO USERID");
+                        logger.error("NO USERID");
                         throw new ERRORS.BadRequest();
                     }
                     if (!req.cookies.SWOB) {
-                        console.error("NO COOKIE");
+                        logger.error("NO COOKIE");
                         throw new ERRORS.Forbidden();
                     };
 
@@ -174,11 +175,11 @@ module.exports = async (req, res, next) => {
                 if (req.method.toLowerCase() == "put") {
                     if (action == "register") {
                         if (!req.params.user_id) {
-                            console.error("NO USERID");
+                            logger.error("NO USERID");
                             throw new ERRORS.BadRequest();
                         }
                         if (!req.cookies.SWOB) {
-                            console.error("NO COOKIE");
+                            logger.error("NO COOKIE");
                             throw new ERRORS.Forbidden();
                         };
 
@@ -215,11 +216,11 @@ module.exports = async (req, res, next) => {
                     };
 
                     if (!req.params.user_id) {
-                        console.error("NO USERID");
+                        logger.error("NO USERID");
                         throw new ERRORS.BadRequest();
                     }
                     if (!req.cookies.SWOB) {
-                        console.error("NO COOKIE");
+                        logger.error("NO COOKIE");
                         throw new ERRORS.Forbidden();
                     };
 
@@ -289,7 +290,7 @@ module.exports = async (req, res, next) => {
             return res.status(409).send(err.message);
         } // 409
 
-        console.log(err);
+        logger.error(err);
         return res.status(500).send("internal server error");
     };
 }

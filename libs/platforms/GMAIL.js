@@ -43,7 +43,7 @@ class OAuth2 {
                 this.oauth2ClientToken = new google.auth.OAuth2(
                     this.credentials.google.GOOGLE_CLIENT_ID,
                     this.credentials.google.GOOGLE_CLIENT_SECRET,
-                    `${originalURL}/platforms/google/protocols/oauth2/redirect_codes/`
+                    `${originalURL}/platforms/gmail/protocols/oauth2/redirect_codes/`
                 );
 
                 const {
@@ -77,7 +77,7 @@ class OAuth2 {
                 this.oauth2ClientToken = new google.auth.OAuth2(
                     this.credentials.google.GOOGLE_CLIENT_ID,
                     this.credentials.google.GOOGLE_CLIENT_SECRET,
-                    `${originalURL}/platforms/google/protocols/oauth2/redirect_codes/`
+                    `${originalURL}/platforms/gmail/protocols/oauth2/redirect_codes/`
                 );
 
                 await this.oauth2ClientToken.setCredentials(token);
