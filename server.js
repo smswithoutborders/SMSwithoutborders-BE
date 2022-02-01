@@ -9,7 +9,6 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 let cookieParser = require('cookie-parser');
-require('winston-daily-rotate-file');
 let logger = require("./logger");
 
 var app = express();

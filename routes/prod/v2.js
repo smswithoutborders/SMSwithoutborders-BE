@@ -1,5 +1,6 @@
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
+let logger = require("../../logger");
 
 const fs = require('fs')
 const Security = require("../../models/security.models");
@@ -34,28 +35,28 @@ module.exports = (app) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.phone_number) {
-                console.error("NO PHONE NUMBER");
+                logger.error("NO PHONE NUMBER");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.name) {
-                console.error("NO NAME");
+                logger.error("NO NAME");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.country_code) {
-                console.error("NO COUNTRY CODE");
+                logger.error("NO COUNTRY CODE");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.password) {
-                console.error("NO PASSWORD");
+                logger.error("NO PASSWORD");
                 throw new ERRORS.BadRequest();
             };
 
             // TODO ADD MIDDLEWARE CHECKS
             if (req.body.password.length < 8) {
-                console.error("PASSWORD < 8 CHARS");
+                logger.error("PASSWORD < 8 CHARS");
                 throw new ERRORS.BadRequest();
             };
             // =============================================================
@@ -76,7 +77,7 @@ module.exports = (app) => {
                     svid: init_2fa.svid
                 })
             } else {
-                console.error("USER ALREADY HAS A RECORD IN USERINFO TABLE");
+                logger.error("USER ALREADY HAS A RECORD IN USERINFO TABLE");
                 throw new ERRORS.Conflict();
             };
         } catch (err) {
@@ -96,7 +97,7 @@ module.exports = (app) => {
                 return res.status(404).send(err.message);
             } // 404
 
-            console.error(err);
+            logger.error(err);
             return res.status(500).send("internal server error");
         }
     });
@@ -105,17 +106,17 @@ module.exports = (app) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.code) {
-                console.error("NO CODE");
+                logger.error("NO CODE");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.session_id) {
-                console.error("NO SESSION ID");
+                logger.error("NO SESSION ID");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.svid) {
-                console.error("NO SVID");
+                logger.error("NO SVID");
                 throw new ERRORS.BadRequest();
             };
             // =============================================================
@@ -140,7 +141,7 @@ module.exports = (app) => {
                     status: "verified",
                     iv: security.iv
                 }).catch(error => {
-                    console.error("ERROR UPDATING USER'S INFO AFTER SMS VERIFICATION");
+                    logger.error("ERROR UPDATING USER'S INFO AFTER SMS VERIFICATION");
                     throw new ERRORS.InternalServerError(error);
                 });
 
@@ -163,7 +164,7 @@ module.exports = (app) => {
                 return res.status(404).send(err.message);
             } // 404
 
-            console.error(err);
+            logger.error(err);
             return res.status(500).send("internal server error");
         }
     });
@@ -172,18 +173,18 @@ module.exports = (app) => {
         try {
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.phone_number) {
-                console.error("NO PHONE NUMBER");
+                logger.error("NO PHONE NUMBER");
                 throw new ERRORS.BadRequest();
             };
 
             if (!req.body.password) {
-                console.error("NO PASSWORD");
+                logger.error("NO PASSWORD");
                 throw new ERRORS.BadRequest();
             };
 
             // TODO ADD MIDDLEWARE CHECKS
             if (req.body.password.length < 8) {
-                console.error("PASSWORD < 8 CHARS");
+                logger.error("PASSWORD < 8 CHARS");
                 throw new ERRORS.BadRequest();
             };
             // =============================================================
@@ -220,7 +221,7 @@ module.exports = (app) => {
                 return res.status(404).send(err.message);
             } // 404
 
-            console.error(err);
+            logger.error(err);
             return res.status(500).send("internal server error");
         }
     });
@@ -228,11 +229,11 @@ module.exports = (app) => {
     app.get("/users/:user_id/platforms", async (req, res, next) => {
         try {
             if (!req.params.user_id) {
-                console.error("NO USERID");
+                logger.error("NO USERID");
                 throw new ERRORS.BadRequest();
             }
             if (!req.cookies.SWOB) {
-                console.error("NO COOKIE");
+                logger.error("NO COOKIE");
                 throw new ERRORS.Forbidden();
             };
             const SID = req.cookies.SWOB.sid;
@@ -270,7 +271,7 @@ module.exports = (app) => {
                 return res.status(404).send(err.message);
             } // 404
 
-            console.error(err);
+            logger.error(err);
             return res.status(500).send("internal server error");
         }
     });
@@ -279,11 +280,11 @@ module.exports = (app) => {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
         try {
             if (!req.params.user_id) {
-                console.error("NO USERID");
+                logger.error("NO USERID");
                 throw new ERRORS.BadRequest();
             }
             if (!req.cookies.SWOB) {
-                console.error("NO COOKIE");
+                logger.error("NO COOKIE");
                 throw new ERRORS.Forbidden();
             };
             const SID = req.cookies.SWOB.sid;
@@ -328,7 +329,7 @@ module.exports = (app) => {
                 return res.status(404).send(err.message);
             } // 404
 
-            console.error(err);
+            logger.error(err);
             return res.status(500).send("internal server error");
         }
     });
@@ -336,11 +337,11 @@ module.exports = (app) => {
     app.put("/users/:user_id/platforms/:platform/protocols/:protocol/:action?", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         try {
             if (!req.params.user_id) {
-                console.error("NO USERID");
+                logger.error("NO USERID");
                 throw new ERRORS.BadRequest();
             }
             if (!req.cookies.SWOB) {
-                console.error("NO COOKIE");
+                logger.error("NO COOKIE");
                 throw new ERRORS.Forbidden();
             };
             const SID = req.cookies.SWOB.sid;
@@ -390,7 +391,7 @@ module.exports = (app) => {
                 return res.status(404).send(err.message);
             } // 404
 
-            console.error(err);
+            logger.error(err);
             return res.status(500).send("internal server error");
         }
     });
@@ -398,11 +399,11 @@ module.exports = (app) => {
     app.post("/users/:user_id/logout", async (req, res, next) => {
         try {
             if (!req.params.user_id) {
-                console.error("NO USERID");
+                logger.error("NO USERID");
                 throw new ERRORS.BadRequest();
             }
             if (!req.cookies.SWOB) {
-                console.error("NO COOKIE");
+                logger.error("NO COOKIE");
                 throw new ERRORS.Forbidden();
             };
             const SID = req.cookies.SWOB.sid;
@@ -412,7 +413,7 @@ module.exports = (app) => {
 
             await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
 
-            console.log("CLEARING BROWSER COOKIE");
+            logger.info("CLEARING BROWSER COOKIE ...");
             res.clearCookie("SWOB");
 
             return res.status(200).json();
@@ -434,7 +435,7 @@ module.exports = (app) => {
                 return res.status(404).send(err.message);
             } // 404
 
-            console.error(err);
+            logger.error(err);
             return res.status(500).send("internal server error");
         }
     });

@@ -1,5 +1,6 @@
 const ERRORS = require("../error.js");
 const db = require("../schemas");
+let logger = require("../logger");
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
@@ -16,33 +17,37 @@ module.exports = async (sid, uid) => {
         sameSite: 'lax'
     };
 
+    logger.debug(`Secure Session: ${secure}`);
+    logger.debug(`Finding session ${sid} ...`);
+
     let session = await Session.findAll({
         where: {
             sid: sid,
             userId: uid
         }
     }).catch(error => {
-        console.error("ERROR FINDING SESSION IN SEESION TABLE");
+        logger.error("ERROR FINDING SESSION");
         throw new ERRORS.InternalServerError(error);
     });
 
     if (session.length < 1) {
-        console.error("NO SESSION FOUND");
+        logger.error("NO SESSION FOUND");
         throw new ERRORS.Forbidden();
     };
 
     if (session.length > 1) {
-        console.error("DUPLICATE SESSION FOUND");
+        logger.error("DUPLICATE SESSION FOUND");
         throw new ERRORS.Conflict();
     };
 
+    logger.debug(`Updating session ${sid} ...`);
 
     await session[0].update({
         expires: new Date(Date.now() + hour),
         data: JSON.stringify(data)
     })
 
-    console.log("SUCCESSFULLY UPDATED SESSION RETURNING DATA");
+    logger.info("SUCCESSFULLY UPDATED SESSION");
     return {
         sid: session[0].sid,
         uid: session[0].userId,

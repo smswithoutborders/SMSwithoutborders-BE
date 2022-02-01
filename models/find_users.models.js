@@ -1,31 +1,33 @@
 const ERRORS = require("../error.js");
 const db = require("../schemas");
+let logger = require("../logger");
 
 var User = db.users;
 
 module.exports = async (id) => {
     // SEARCH FOR USER IN DB
+    logger.debug(`Finding User ${id} ...`);
     let user = await User.findAll({
         where: {
             id: id
         }
     }).catch(error => {
-        console.error("ERROR FINDING USER IN USER TABLE")
+        logger.error("ERROR FINDING USER");
         throw new ERRORS.InternalServerError(error);
     })
 
     // RTURN = [], IF USER IS NOT FOUND
     if (user.length < 1) {
-        console.error("NO USER FOUND");
+        logger.error("NO USER FOUND");
         throw new ERRORS.Forbidden();
     }
 
     // IF MORE THAN ONE USER EXIST IN DATABASE
     if (user.length > 1) {
-        console.error("DUPLICATE USER FOUND");
+        logger.error("DUPLICATE USER FOUND");
         throw new ERRORS.Conflict();
     }
 
-    console.log("USER FOUND RETURNUNG USER")
+    logger.info("USER FOUND");
     return user[0];
 }

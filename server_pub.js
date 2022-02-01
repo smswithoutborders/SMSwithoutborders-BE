@@ -7,6 +7,7 @@ const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
+let logger = require("./logger");
 
 var app = express();
 
@@ -49,6 +50,6 @@ app.use(morgan('dev'));
 require("./routes/dev")(app);
 
 app.listen(SERVER_CFG.api.DEV_API_PORT, "127.0.0.1", 511, () => {
-    console.log(`Publisher server is running on port ${SERVER_CFG.api.DEV_API_PORT}`)
+    logger.info(`Publisher server is running on port ${SERVER_CFG.api.DEV_API_PORT}`)
 });
 app.runningPort = SERVER_CFG.api.DEV_API_PORT

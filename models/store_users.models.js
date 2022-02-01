@@ -1,6 +1,7 @@
 const ERRORS = require("../error.js");
 const db = require("../schemas");
 const Security = require("./security.models.js");
+let logger = require("../logger");
 
 const User = db.users;
 const UserInfo = db.usersInfo;
@@ -8,19 +9,23 @@ const UserInfo = db.usersInfo;
 module.exports = async (country_code, phone_number, password, name) => {
     let security = new Security();
 
+    logger.debug(`Creating User ${name} ...`);
+
     let newUser = await User.create({
         password: security.hash(password),
     }).catch(error => {
-        console.error("ERROR CREATING USER PASSWORD IN USER'S TABLE");
+        logger.error("ERROR CREATING USER PASSWORD");
         if (error.name == "SequelizeUniqueConstraintError") {
             if (error.original.code == "ER_DUP_ENTRY") {
-                console.error("USER ALREADY HAS RECORD IN USER'S TABLE");
+                logger.error("USER ALREADY HAS RECORD");
                 throw new ERRORS.Conflict();
             };
         };
 
         throw new ERRORS.InternalServerError(error);
     });
+
+    logger.debug(`Storing ${name}'s Info ...`);
 
     await UserInfo.create({
         phone_number: phone_number,
@@ -29,9 +34,9 @@ module.exports = async (country_code, phone_number, password, name) => {
         full_phone_number: country_code + phone_number,
         userId: newUser.id
     }).catch(error => {
-        console.error("ERROR CREATING USER IN USERSINFO TABLE");
+        logger.error("ERROR CREATING USERINFO");
         if (error.name == "SequelizeUniqueConstraintError") {
-            console.error("USER ALREADY HAS RECORD IN USERINFO TABLE");
+            logger.error("USERINFO ALREADY HAS RECORD");
             if (error.original.code == "ER_DUP_ENTRY") {
                 throw new ERRORS.Conflict();
             };
@@ -40,6 +45,6 @@ module.exports = async (country_code, phone_number, password, name) => {
         throw new ERRORS.InternalServerError(error);
     });
 
-    console.log("SUCCESSFULLY STORED USER RETURNING USERID");
+    logger.info("SUCCESSFULLY STORED USER");
     return newUser.id;
 }

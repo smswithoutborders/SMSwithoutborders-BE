@@ -1,5 +1,6 @@
 const ERRORS = require("../error.js");
 const db = require("../schemas");
+let logger = require("../logger");
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
@@ -15,15 +16,21 @@ module.exports = async (userId, user_agent) => {
         httpOnly: true,
         sameSite: 'lax'
     }
+
+    logger.debug(`Secure Session: ${secure}`);
+    logger.debug(`Creating session for ${userId} ...`);
+
     let session = await Session.create({
         userId: userId,
         user_agent: user_agent,
         expires: new Date(Date.now() + hour),
         data: JSON.stringify(data)
     }).catch(error => {
-        console.error("ERROR CREATING SESSION IN SESSIONS TABLE")
+        logger.error("ERROR CREATING SESSION")
         throw new ERRORS.InternalServerError(error);
     });
+
+    logger.info("SUCCESSFULLY CREATED SESSION");
 
     return {
         sid: session.sid,

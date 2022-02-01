@@ -1,4 +1,5 @@
 const db = require("../schemas");
+let logger = require("../logger");
 
 let MySQL = db.sequelize;
 let QueryTypes = db.sequelize.QueryTypes
@@ -17,6 +18,8 @@ module.exports = async (user) => {
                 LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = "${id}") AS t2 
                 ON t2.platformId = t1.id 
                 WHERE t2.platformId IS NULL`
+
+    logger.debug(`Fetching unsaved platforms for ${id} ...`);
 
     let unsaved_platforms = await MySQL.query(query, {
         type: QueryTypes.SELECT
@@ -37,6 +40,8 @@ module.exports = async (user) => {
             });
         };
     };
+
+    logger.debug(`Fetching saved platforms for ${id} ...`);
 
     let tokens = await user.getTokens();
 
@@ -59,6 +64,6 @@ module.exports = async (user) => {
         };
     };
 
-    console.log("RETURNING SAVED AND UNSAVED PLATFORMS");
+    logger.info("RETURNING SAVED AND UNSAVED PLATFORMS");
     return PLATFORMS;
 }
