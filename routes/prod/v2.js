@@ -7,7 +7,7 @@ const Security = require("../../models/security.models");
 const ERRORS = require("../../error.js");
 const FIND_USERS = require("../../models/find_users.models");
 const FIND_PLATFORMS = require("../../models/find_platforms.models");
-const STORE_TOKENS = require("../../models/store_tokens.models");
+const STORE_WALLETS = require("../../models/store_wallet.models");
 const VERIFY_USERS = require("../../models/verify_user.models");
 const STORE_SESSION = require("../../models/store_sessions.models");
 const FIND_USERSINFO = require("../../models/find_usersinfo.models");
@@ -360,7 +360,7 @@ module.exports = (app) => {
             let platform = await FIND_PLATFORMS(PLATFORM);
 
             if (RESULT) {
-                await STORE_TOKENS(user, platform, RESULT);
+                await STORE_WALLETS(user, platform, RESULT);
             }
 
             let session = await UPDATE_SESSION(SID, ID);

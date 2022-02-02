@@ -14,9 +14,11 @@ const TWITTER = require("./TWITTER");
 const TELEGRAM = require("./TELEGRAM");
 
 const FIND_USERS = require("../../models/find_users.models");
-const FIND_TOKENS = require("../../models/find_tokens.models");
+const FIND_WALLETS = require("../../models/find_wallet.models");
 const FIND_PLATFORMS = require("../../models/find_platforms.models");
-const DECRYPT_TOKENS = require("../../models/decrypt_tokens.models");
+const DECRYPT_WALLETS = require("../../models/decrypt_wallet.models");
+const FIND_SESSION = require("../../models/find_sessions.models");
+const VERIFY_PASSWORDS = require("../../models/verify_password.models");
 
 // HTTP response status codes
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses
@@ -43,6 +45,13 @@ module.exports = async (req, res, next) => {
                         throw new ERRORS.Forbidden();
                     };
 
+                    const SID = req.cookies.SWOB.sid;
+                    const UID = req.params.user_id;
+                    const COOKIE = req.cookies.SWOB.cookie;
+                    const USER_AGENT = req.get("user-agent");
+
+                    await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+
                     let url = await platformObj.init(originalURL);
                     req.platformRes = {
                         url: url
@@ -62,9 +71,18 @@ module.exports = async (req, res, next) => {
 
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.code) {
+                        logger.error("NO CODE");
                         throw new ERRORS.BadRequest();
                     };
                     // =============================================================
+
+                    const SID = req.cookies.SWOB.sid;
+                    const UID = req.params.user_id;
+                    const COOKIE = req.cookies.SWOB.cookie;
+                    const USER_AGENT = req.get("user-agent");
+
+                    await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+
                     // INFO - Google API returns a UTF-8 encoded verification code on second request of OAuth2 token
                     // INFO - Google API Client requires a non UTF-8 verification code, so we decode every verification code entry at API level  
                     // TODO Try checking double attempt to store tokens from the diff in auth_code
@@ -87,13 +105,28 @@ module.exports = async (req, res, next) => {
                         throw new ERRORS.Forbidden();
                     };
 
-                    const UID = req.params.user_id;
-                    const USER = await FIND_USERS(UID);
-                    const PLATFORM = await FIND_PLATFORMS(platform);
-                    const WALLET = await FIND_TOKENS(USER, PLATFORM);
-                    const DECRYPTED_WALLET = await DECRYPT_TOKENS(WALLET, USER);
+                    // ==================== REQUEST BODY CHECKS ====================
+                    if (!req.body.password) {
+                        logger.error("NO PASSWORD");
+                        throw new ERRORS.BadRequest();
+                    };
+                    // =============================================================
 
-                    let result = await platformObj.revoke(originalURL, DECRYPTED_WALLET.token);
+                    const SID = req.cookies.SWOB.sid;
+                    const UID = req.params.user_id;
+                    const PASSWORD = req.body.password;
+                    const COOKIE = req.cookies.SWOB.cookie;
+                    const USER_AGENT = req.get("user-agent");
+
+                    const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+                    await VERIFY_PASSWORDS(ID, PASSWORD);
+                    const USER = await FIND_USERS(ID);
+                    const PLATFORM = await FIND_PLATFORMS(platform);
+                    const WALLET = await FIND_WALLETS(USER, PLATFORM);
+                    const DECRYPTED_WALLET = await DECRYPT_WALLETS(WALLET, USER);
+                    const TOKEN = DECRYPTED_WALLET.token
+
+                    let result = await platformObj.revoke(originalURL, TOKEN);
 
                     if (result) {
                         req.platformRes = {
