@@ -49,7 +49,7 @@ app.use(morgan('dev'));
 // ROUTES
 require("./routes/dev")(app);
 
-app.listen(SERVER_CFG.api.DEV_API_PORT, "127.0.0.1", 511, () => {
-    logger.info(`Publisher server is running on port ${SERVER_CFG.api.DEV_API_PORT}`)
+app.listen(SERVER_CFG.api.Publisher_API_PORT, "127.0.0.1", 511, () => {
+    logger.info(`Publisher server is running on port ${SERVER_CFG.api.Publisher_API_PORT}`)
 });
-app.runningPort = SERVER_CFG.api.DEV_API_PORT
+app.runningPort = SERVER_CFG.api.Publisher_API_PORT

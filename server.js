@@ -77,8 +77,8 @@ require("./routes/prod")(app);
 if (config.util.getEnv('NODE_ENV') !== 'production') {
     logger.debug(`Environment: ${config.util.getEnv('NODE_ENV')}`);
     logger.warn("This is a development server. Do not use it in a production deployment.");
-    app.listen(SERVER_CFG.api.API_PORT, logger.info(`Running on port ${SERVER_CFG.api.API_PORT}`));
-    app.runningPort = SERVER_CFG.api.API_PORT
+    app.listen(SERVER_CFG.api.User_management_API_PORT, logger.info(`Running on port ${SERVER_CFG.api.User_management_API_PORT}`));
+    app.runningPort = SERVER_CFG.api.User_management_API_PORT
     app.is_ssl = false
 } else {
     if (!SERVER_CFG.ssl_api.CERTIFICATE && !fs.existsSync(SERVER_CFG.ssl_api.CERTIFICATE)) {
