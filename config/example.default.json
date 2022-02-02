@@ -10,7 +10,8 @@
             "API_PORT": "9000",
             "DEV_API_PORT": "10000",
             "SESSION_SECRET": "",
-            "secure_sessions": false
+            "secure_sessions": false,
+            "session_maxAge": "2 * 60 * 60 * 1000"
         },
         "router": {
             "url": "",

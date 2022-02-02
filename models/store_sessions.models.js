@@ -4,12 +4,18 @@ let logger = require("../logger");
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
-const secure = SERVER_CFG.api.secure_sessions;
+let secure = "";
+if (SERVER_CFG.api.secure_sessions == undefined) {
+    secure = true;
+} else {
+    secure = SERVER_CFG.api.secure_sessions
+}
+const maxAge = SERVER_CFG.api.session_maxAge;
 
 var Session = db.sessions;
 
 module.exports = async (userId, user_agent) => {
-    const hour = 2 * 60 * 60 * 1000;
+    const hour = eval(maxAge) || 2 * 60 * 60 * 1000;
     const data = {
         maxAge: hour,
         secure: secure,
@@ -18,6 +24,7 @@ module.exports = async (userId, user_agent) => {
     }
 
     logger.debug(`Secure Session: ${secure}`);
+    logger.debug(`Session maxAge: ${hour}`);
     logger.debug(`Creating session for ${userId} ...`);
 
     let session = await Session.create({
