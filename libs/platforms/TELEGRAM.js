@@ -7,7 +7,7 @@ class twoFactor {
     init(phoneNumber) {
         return new Promise((resolve, reject) => {
             try {
-                const HOST = this.credentials.telegram.TWITTER_REQUEST_HOST;
+                const HOST = this.credentials.telegram.TELEGRAM_REQUEST_HOST;
 
                 axios.post(`${HOST}/`, {
                         phonenumber: phoneNumber
@@ -36,7 +36,7 @@ class twoFactor {
     validate(phoneNumber, code) {
         return new Promise((resolve, reject) => {
             try {
-                const HOST = this.credentials.telegram.TWITTER_REQUEST_HOST;
+                const HOST = this.credentials.telegram.TELEGRAM_REQUEST_HOST;
 
                 axios.put(`${HOST}/`, {
                         phonenumber: phoneNumber,
@@ -74,7 +74,7 @@ class twoFactor {
     register(phoneNumber, firstName, lastName) {
         return new Promise((resolve, reject) => {
             try {
-                const HOST = this.credentials.telegram.TWITTER_REQUEST_HOST;
+                const HOST = this.credentials.telegram.TELEGRAM_REQUEST_HOST;
 
                 axios.post(`${HOST}/users`, {
                         phonenumber: phoneNumber,
