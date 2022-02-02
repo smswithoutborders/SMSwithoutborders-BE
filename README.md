@@ -25,7 +25,13 @@ npm install
 
     * To set up Database, API, and platform credentials, copy the template files "example.production.json" and rename to "production.json"
 
-### Start Cloud_API Server
+### Options 
+__Secure Sessions__
+Specifies the boolean value for the Secure Set-Cookie attribute. When truthy, the Secure attribute is set, otherwise it is not. By default, the Secure sessions attribute is set to truthy.
+
+__Session Max Age__
+Specifies the number (in milliseconds) to use when calculating the Expires Set-Cookie attribute. This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (2 * 60 * 60 * 1000).
+### Start Backend User management API
 __Development Environment__
 * With NPM
 ```bash
@@ -45,7 +51,7 @@ NODE_ENV=production npm run start_main
 ```bash
 NODE_ENV=production node server.js
 ```
-### Start Publisher Server
+### Start Backend Publisher API
 __Development Environment__
 * With NPM
 ```bash
@@ -65,7 +71,7 @@ NODE_ENV=production npm run start_pub
 ```bash
 NODE_ENV=production node server_pub.js
 ```
-### Start both Cloud_API and Publisher Servers
+### Start both Backend User management API and Backend Publisher API
 __Development Environment__
 * With NPM
 ```bash
