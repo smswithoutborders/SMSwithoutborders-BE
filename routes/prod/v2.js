@@ -18,6 +18,7 @@ const VERIFY_SV = require("../../models/verify_sv.models");
 const FIND_SESSION = require("../../models/find_sessions.models");
 const UPDATE_SESSION = require("../../models/update_sessions.models");
 const FIND_USERS_PLATFORMS = require("../../models/find_users_platform.models");
+const DELETE_WALLET = require("../../models/delete_wallet.models");
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -373,6 +374,58 @@ module.exports = (app) => {
                 body: BODY,
                 initialization_url: INIT_URL
             });
+
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+    app.delete("/users/:user_id/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+        try {
+            if (!req.params.user_id) {
+                logger.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            }
+            if (!req.cookies.SWOB) {
+                logger.error("NO COOKIE");
+                throw new ERRORS.Forbidden();
+            };
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const USER_AGENT = req.get("user-agent");
+
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+            const WALLET = req.platformRes.wallet;
+
+            await DELETE_WALLET(WALLET);
+
+            let session = await UPDATE_SESSION(SID, ID);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
+
+            return res.status(200).json();
 
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {

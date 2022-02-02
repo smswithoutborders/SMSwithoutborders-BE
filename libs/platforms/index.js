@@ -13,6 +13,11 @@ const GMAIL = require("./GMAIL");
 const TWITTER = require("./TWITTER");
 const TELEGRAM = require("./TELEGRAM");
 
+const FIND_USERS = require("../../models/find_users.models");
+const FIND_TOKENS = require("../../models/find_tokens.models");
+const FIND_PLATFORMS = require("../../models/find_platforms.models");
+const DECRYPT_TOKENS = require("../../models/decrypt_tokens.models");
+
 // HTTP response status codes
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses
 
@@ -70,6 +75,32 @@ module.exports = async (req, res, next) => {
                         result: result
                     };
                     return next();
+                };
+
+                if (req.method.toLowerCase() == "delete") {
+                    if (!req.params.user_id) {
+                        logger.error("NO USERID");
+                        throw new ERRORS.BadRequest();
+                    }
+                    if (!req.cookies.SWOB) {
+                        logger.error("NO COOKIE");
+                        throw new ERRORS.Forbidden();
+                    };
+
+                    const UID = req.params.user_id;
+                    const USER = await FIND_USERS(UID);
+                    const PLATFORM = await FIND_PLATFORMS(platform);
+                    const WALLET = await FIND_TOKENS(USER, PLATFORM);
+                    const DECRYPTED_WALLET = await DECRYPT_TOKENS(WALLET, USER);
+
+                    let result = await platformObj.revoke(originalURL, DECRYPTED_WALLET.token);
+
+                    if (result) {
+                        req.platformRes = {
+                            wallet: WALLET
+                        };
+                        return next();
+                    }
                 };
 
                 throw new ERRORS.BadRequest();
