@@ -4,7 +4,7 @@
 This is a cloud API and User management service. It is directly configurable with MySQL databases for managing users. Also provides out of the box integrations of Google OAuth-2.0, Twitter OAuth, and Telegram end-points and Account authentication.  
 
 ## Documentation
-1. [Bulding](docs/CONFIGURATIONS.md)
+1. [Building](docs/CONFIGURATIONS.md)
 2. [Features](docs/FEATURES.md)
 3. [Licensing](LICENSE)
 
