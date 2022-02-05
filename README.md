@@ -1,4 +1,4 @@
-<img src="https://github.com/smswithoutborders/SMSWithoutBorders-Resources/raw/master/multimedia/img/main%20logo_2.png" style="width:400px; margin:0px auto 0px; display: block" />
+<img src="https://github.com/smswithoutborders/SMSWithoutBorders-Resources/raw/master/multimedia/img/swob_logo_icon.png" align="right" width="450px"/>
 
 #  SMS Without Borders Back-end
 
