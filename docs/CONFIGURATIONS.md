@@ -1,36 +1,51 @@
-## SMSwithoutBorders OAuth-2.0-authentications/ Token/ User management-API
+# Configurations
 
-### Requirements
+## Table of contents
+
+1. [Requirements](#requirements)
+2. [Installation](#installation)
+3. [Setup](#setup)
+    1. [Development environment configurations](#development-environment-configurations)
+    2. [Production environment configurations](#production-environment-configurations)
+    3. [Options](#options)
+        1. [Secure Sessions](#Secure-Sessions)
+        2. [Session Max Age](#Session-Max-Age)
+
+
+## Requirements
 - MySQL (MariaDB)
 - nodejs
 - npm
 
-### Installation
-
-* Install all node packages
+## Installation
+All runtime dependencies are installed using npm 
 ```
 npm install
 ```
+## Setup
+All configuration files are found in the **[config](../config)** directory.
+Configuration files are named according to their **[environment variables](https://github.com/lorenwest/node-config/wiki/Environment-Variables)**.
 
-### Setup
-* Create configuration file
+### Development environment configurations
+**[default.json](../config/example.default.json)** is the configuration file for a development environment.
 
-    __./config/__
+To set up Database, API, and platform credentials for a development environment, copy the template files "example.default.json" and rename to "default.json"
 
-    __Development Configurations__
+```
+cp example.default.json default.json
+```
 
-    * To set up Database, API, and platform credentials, copy the template files "example.default.json" and rename to "default.json"
+### Production environment configurations
+**[production.json](../config/example.production.json)** is the configuration file for a development environment.
 
-     __Production Configurations__
-
-    * To set up Database, API, and platform credentials, copy the template files "example.production.json" and rename to "production.json"
+To set up Database, API, and platform credentials for a productoin environment, copy the template files "example.production.json" and rename to "production.json"
 
 ### Options 
-__Secure Sessions__
-Specifies the boolean value for the Secure Set-Cookie attribute. When truthy, the Secure attribute is set, otherwise it is not. By default, the Secure sessions attribute is set to truthy.
+#### Secure Sessions
+Specifies the boolean value for the [Secure Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). When truthy, the Secure attribute is set, otherwise it is not. By default, the Secure sessions attribute is set to truthy.
 
-__Session Max Age__
-Specifies the number (in milliseconds) to use when calculating the Expires Set-Cookie attribute. This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (2 * 60 * 60 * 1000).
+#### Session Max Age
+Specifies the number (in milliseconds) to use when calculating the [Expires Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (2 * 60 * 60 * 1000).
 ### Start Backend User management API
 __Development Environment__
 * With NPM
