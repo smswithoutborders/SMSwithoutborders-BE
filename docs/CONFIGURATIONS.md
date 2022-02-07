@@ -10,6 +10,18 @@
     3. [Options](#options)
         1. [Secure Sessions](#Secure-Sessions)
         2. [Session Max Age](#Session-Max-Age)
+4. [Running](#running)
+    1. [Start Backend User management API](#Start-Backend-User-management-API)
+        1. [Development Environment](#User-management-Development-Environment)
+        2. [Production Environment](#User-management-Production-Environment)
+    2. [Start Backend Publisher API](#Start-Backend-Publisher-API)
+        1. [Development Environment](#Publisher-Development-Environment)
+        2. [Production Environment](#Publisher-Production-Environment)
+    3. [Start both Backend User management API and Backend Publisher API](#Start-both-Backend-User-management-API-and-Backend-Publisher-API)
+        1. [Development Environment](#Development-Environment)
+        2. [Production Environment](#Production-Environment)
+5. [API SandBox](#API-SandBox)
+6. [Database tables](#Database-tables)
 
 
 ## Requirements
@@ -36,7 +48,7 @@ cp example.default.json default.json
 ```
 
 ### Production environment configurations
-**[production.json](../config/example.production.json)** is the configuration file for a development environment.
+**[production.json](../config/example.production.json)** is the configuration file for a production environment.
 
 To set up Database, API, and platform credentials for a productoin environment, copy the template files "example.production.json" and rename to "production.json"
 
@@ -46,66 +58,66 @@ Specifies the boolean value for the [Secure Set-Cookie attribute](https://develo
 
 #### Session Max Age
 Specifies the number (in milliseconds) to use when calculating the [Expires Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (2 * 60 * 60 * 1000).
+## Running
 ### Start Backend User management API
-__Development Environment__
+#### User management Development Environment
 * With NPM
 ```bash
 npm run start_main
 ```
 * With Node
 ```bash
-node server.js
+node controllers/sync_platforms.js && node server.js
 ```
 
-__Production Environment__
+#### User management Production Environment
 * With NPM
 ```bash
 NODE_ENV=production npm run start_main
 ```
 * With Node
 ```bash
-NODE_ENV=production node server.js
+NODE_ENV=production node controllers/sync_platforms.js && node server.js
 ```
 ### Start Backend Publisher API
-__Development Environment__
+#### Publisher Development Environment
 * With NPM
 ```bash
 npm run start_pub
 ```
 * With Node
 ```bash
-node server_pub.js
+node controllers/sync_platforms.js && node server_pub.js
 ```
-
-__Production Environment__
+#### Publisher Production Environment
 * With NPM
 ```bash
 NODE_ENV=production npm run start_pub
 ```
 * With Node
 ```bash
-NODE_ENV=production node server_pub.js
+NODE_ENV=production node controllers/sync_platforms.js && node server_pub.js
 ```
 ### Start both Backend User management API and Backend Publisher API
-__Development Environment__
+#### Development Environment
 * With NPM
 ```bash
 npm run start
 ```
 
-__Production Environment__
+#### Production Environment
 * With NPM
 ```bash
 NODE_ENV=production npm start
 ```
-### API SandBox
+## API SandBox
 ```
 http://localhost:{PORT}/v1/api-docs
 
 http://localhost:{PORT}/v2/api-docs
 ```
 
-### Database tables
+## Database tables
 __Users table__
 
 |      id     | password | auth_key |
