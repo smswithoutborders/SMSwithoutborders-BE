@@ -1,3 +1,5 @@
+"use strict";
+
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
 let logger = require("../../logger");
