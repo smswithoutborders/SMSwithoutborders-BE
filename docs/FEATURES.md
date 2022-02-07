@@ -67,7 +67,7 @@ If successful, the [response](https://developer.mozilla.org/en-US/docs/Web/API/R
 {}
 ```
 
-### 2. Authenticate an account
+## 2. Authenticate an account
 The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
 - Phone Number (with country code) 
 - Password
@@ -94,6 +94,9 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
     "uid": "xxxxxx-xxxx-xxxx-xxxx-xxxxxx"
 }
 ```
+
+## 3. Create a wallet
+
 
 
 
