@@ -194,6 +194,47 @@ module.exports = async (req, res, next) => {
                     return next();
                 };
 
+                if (req.method.toLowerCase() == "delete") {
+                    if (!req.params.user_id) {
+                        logger.error("NO USERID");
+                        throw new ERRORS.BadRequest();
+                    }
+                    if (!req.cookies.SWOB) {
+                        logger.error("NO COOKIE");
+                        throw new ERRORS.Forbidden();
+                    };
+
+                    // ==================== REQUEST BODY CHECKS ====================
+                    if (!req.body.password) {
+                        logger.error("NO PASSWORD");
+                        throw new ERRORS.BadRequest();
+                    };
+                    // =============================================================
+
+                    const SID = req.cookies.SWOB.sid;
+                    const UID = req.params.user_id;
+                    const PASSWORD = req.body.password;
+                    const COOKIE = req.cookies.SWOB.cookie;
+                    const USER_AGENT = req.get("user-agent");
+
+                    const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+                    await VERIFY_PASSWORDS(ID, PASSWORD);
+                    const USER = await FIND_USERS(ID);
+                    const PLATFORM = await FIND_PLATFORMS(platform);
+                    const WALLET = await FIND_WALLETS(USER, PLATFORM);
+                    const DECRYPTED_WALLET = await DECRYPT_WALLETS(WALLET, USER);
+                    const TOKEN = DECRYPTED_WALLET.token
+
+                    let result = await platformObj.revoke(originalURL, TOKEN);
+
+                    if (result) {
+                        req.platformRes = {
+                            wallet: WALLET
+                        };
+                        return next();
+                    }
+                };
+
                 throw new ERRORS.BadRequest();
             };
 
