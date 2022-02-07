@@ -126,20 +126,24 @@ module.exports = async (req, res, next) => {
                     const DECRYPTED_WALLET = await DECRYPT_WALLETS(WALLET, USER);
                     const TOKEN = DECRYPTED_WALLET.token
 
-                    let result = await platformObj.revoke(originalURL, TOKEN);
+                    await platformObj.revoke(originalURL, TOKEN).catch(err => {
+                        if (err.message = "invalid_token") {
+                            logger.error(err)
+                        }
+                    });
 
-                    if (result) {
-                        req.platformRes = {
-                            wallet: WALLET
-                        };
-                        return next();
-                    }
+                    req.platformRes = {
+                        wallet: WALLET
+                    };
+                    return next();
                 };
 
+                logger.error("INVALID METHOD")
                 throw new ERRORS.BadRequest();
             };
 
-            throw new ERRORS.NotFound();
+            logger.error("INVALID PROTOCOL")
+            throw new ERRORS.BadRequest();
         };
 
         if (platform == "twitter") {
@@ -225,20 +229,20 @@ module.exports = async (req, res, next) => {
                     const DECRYPTED_WALLET = await DECRYPT_WALLETS(WALLET, USER);
                     const TOKEN = DECRYPTED_WALLET.token
 
-                    let result = await platformObj.revoke(originalURL, TOKEN);
+                    await platformObj.revoke(originalURL, TOKEN);
 
-                    if (result) {
-                        req.platformRes = {
-                            wallet: WALLET
-                        };
-                        return next();
-                    }
+                    req.platformRes = {
+                        wallet: WALLET
+                    };
+                    return next();
                 };
 
+                logger.error("INVALID METHOD")
                 throw new ERRORS.BadRequest();
             };
 
-            throw new ERRORS.NotFound();
+            logger.error("INVALID PROTOCOL")
+            throw new ERRORS.BadRequest();
         };
 
         if (platform == "telegram") {
@@ -370,13 +374,15 @@ module.exports = async (req, res, next) => {
                         return next();
                     };
                 };
-
+                logger.error("INVALID METHOD")
                 throw new ERRORS.BadRequest();
             };
 
-            throw new ERRORS.NotFound();
+            logger.error("INVALID PROTOCOL")
+            throw new ERRORS.BadRequest();
         };
 
+        logger.error("INVALID PLATFORM")
         throw new ERRORS.NotFound();
     } catch (err) {
         if (err instanceof ERRORS.BadRequest) {
