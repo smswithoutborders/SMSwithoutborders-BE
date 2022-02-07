@@ -8,8 +8,8 @@
     "url": "http://localhost:9000"
   }],
   "tags": [{
-    "name": "Get new tokens",
-    "description": "Store new token(s) for a user by platform"
+    "name": "Wallets",
+    "description": "Manage all user wallets"
   }, {
     "name": "Register on platforms",
     "description": "Create an account on a third party platform"
@@ -308,9 +308,9 @@
     "/users/{user_id}/platforms/{platform}/protocols/{protocol}": {
       "post": {
         "tags": [
-          "Get new tokens"
+          "Wallets"
         ],
-        "summary": "Token Init. Request body for Gmail = {}, Twitter = {}, Telegram = {phone_number}",
+        "summary": "initialize a new wallet. Request body for Gmail = {}, Twitter = {}, Telegram = {phone_number}",
         "parameters": [{
             "in": "path",
             "name": "user_id",
@@ -439,9 +439,9 @@
       },
       "put": {
         "tags": [
-          "Get new tokens"
+          "Wallets"
         ],
-        "summary": "Token Verification. Request body for Gmail = {code}, Twitter = {oauth_token, oauth_verifier}, Telegram = {phone_number, code}",
+        "summary": "Verify a new wallet. Request body for Gmail = {code}, Twitter = {oauth_token, oauth_verifier}, Telegram = {phone_number, code}",
         "parameters": [{
             "in": "path",
             "name": "user_id",
@@ -508,6 +508,126 @@
                       "type": "string"
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g missing required fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (e.g User, Platform not found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (e.g User does not have access rights to the content, invalid verification code)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (e.g User not found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users, Platforms found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Wallets"
+        ],
+        "summary": "Delete wallet",
+        "parameters": [{
+            "in": "path",
+            "name": "user_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "User's Id"
+          }, {
+            "in": "path",
+            "name": "platform",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Platform's name (e.g gmail)"
+          },
+          {
+            "in": "path",
+            "name": "protocol",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Protocol's name (e.g oauth)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
                 }
               }
             }
