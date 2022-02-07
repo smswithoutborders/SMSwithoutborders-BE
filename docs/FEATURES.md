@@ -7,7 +7,7 @@ SMS without Borders provides a RESTful cloud API and User management services. I
 Using the REST User management API, a new user can be added to the SMS without Borders database. There are two processes involved in adding a new user:
 ### 1. Provide registration details
 The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
-- Phone Number (wihtout country code) 
+- Phone Number (without country code) 
 - Name
 - Country Code
 - Password
@@ -65,6 +65,34 @@ If successful, the [response](https://developer.mozilla.org/en-US/docs/Web/API/R
 
 ```bash
 {}
+```
+
+### 2. Authenticate an account
+The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
+- Phone Number (with country code) 
+- Password
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request POST 'http://localhost:9000/login' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "phone_number": "+xxxxx-xxx-xxx",
+    "password": "password"
+}'
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
+- uid
+
+```bash
+{
+    "uid": "xxxxxx-xxxx-xxxx-xxxx-xxxxxx"
+}
 ```
 
 
