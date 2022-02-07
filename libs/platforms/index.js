@@ -1,3 +1,5 @@
+"use strict";
+
 const config = require('config');
 const credentials = config.get("CREDENTIALS");
 let logger = require("../../logger");
@@ -127,7 +129,7 @@ module.exports = async (req, res, next) => {
                     const TOKEN = DECRYPTED_WALLET.token
 
                     await platformObj.revoke(originalURL, TOKEN).catch(err => {
-                        if (err.message = "invalid_token") {
+                        if (err.message == "invalid_token") {
                             logger.error(err)
                         }
                     });
@@ -229,7 +231,11 @@ module.exports = async (req, res, next) => {
                     const DECRYPTED_WALLET = await DECRYPT_WALLETS(WALLET, USER);
                     const TOKEN = DECRYPTED_WALLET.token
 
-                    await platformObj.revoke(originalURL, TOKEN);
+                    await platformObj.revoke(originalURL, TOKEN).catch(err => {
+                        if (err.statusCode = 401) {
+                            logger.error(err.data)
+                        };
+                    });
 
                     req.platformRes = {
                         wallet: WALLET
