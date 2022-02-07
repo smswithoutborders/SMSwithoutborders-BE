@@ -11,6 +11,7 @@ The user has to provide the following in the [request body](https://developer.mo
 - Name
 - Country Code
 - Password
+
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
 - [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
 
@@ -26,7 +27,8 @@ curl --location --request POST 'http://localhost:9000/signup' \
     "password": "password"
 }'
 ```
-If successful an [OTP](https://en.wikipedia.org/wiki/One-time_password) is sent to the user's phone number, the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and contain 
+
+If successful an [OTP](https://en.wikipedia.org/wiki/One-time_password) is sent to the user's phone number, the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
 - session_id
 - svid
 
@@ -43,7 +45,7 @@ The user has to provide the following in the [request body](https://developer.mo
 - SVID
 - code: The [OTP](https://en.wikipedia.org/wiki/One-time_password) got from [Provide registration details](#Provide-registration-details)
 
-see [Provide registration details](#Provide-registration-details) to get all the values mentioned above
+see [Provide registration details](#1.-Provide-registration-details) to get all the values mentioned above
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
 - [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
@@ -59,7 +61,7 @@ curl --location --request PUT 'http://localhost:9000/signup' \
     "code": "xxxxxx"
 }'
 ```
-If successful, the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body an empty object
+If successful, the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain an empty object
 
 ```bash
 {}
