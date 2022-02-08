@@ -23,7 +23,7 @@ async function initialize() {
     db.Sequelize = Sequelize;
 
     db.users = require("./users.schema.js")(sequelize, Sequelize);
-    db.tokens = require("./tokens.schema.js")(sequelize, Sequelize);
+    db.wallets = require("./wallets.schema.js")(sequelize, Sequelize);
     db.platforms = require("./platforms.schema.js")(sequelize, Sequelize);
     db.usersInfo = require("./usersInfo.schema.js")(sequelize, Sequelize);
     db.smsVerification = require("./smsVerification.schema.js")(sequelize, Sequelize);
@@ -31,11 +31,11 @@ async function initialize() {
 
     // https://sequelize.org/master/manual/assocs.html
 
-    // relationship users table -> tokens table 
-    db.users.hasMany(db.tokens, {
+    // relationship users table -> wallets table 
+    db.users.hasMany(db.wallets, {
         foreignKey: "userId"
     });
-    db.tokens.belongsTo(db.users);
+    db.wallets.belongsTo(db.users);
 
     // relationship users table -> usersInfo table 
     db.users.hasOne(db.usersInfo, {
@@ -43,11 +43,11 @@ async function initialize() {
     });
     db.usersInfo.belongsTo(db.users);
 
-    // relationship platforms table -> tokens table 
-    db.platforms.hasMany(db.tokens, {
+    // relationship platforms table -> wallets table 
+    db.platforms.hasMany(db.wallets, {
         foreignKey: "platformId"
     });
-    db.tokens.belongsTo(db.platforms);
+    db.wallets.belongsTo(db.platforms);
 
     // relationship smsVerification table -> users table 
     db.users.hasMany(db.smsVerification, {

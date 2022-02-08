@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-    let Token = sequelize.define("token", {
+    let Wallet = sequelize.define("wallet", {
         username: Sequelize.STRING,
         token: Sequelize.TEXT,
         uniqueId: Sequelize.STRING,
@@ -15,5 +15,5 @@ module.exports = (sequelize, Sequelize) => {
         }]
     });
 
-    return Token;
+    return Wallet;
 }

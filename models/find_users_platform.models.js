@@ -9,7 +9,6 @@ let QueryTypes = db.sequelize.QueryTypes
 module.exports = async (user) => {
     const id = user.id;
 
-    // store tokens from db
     let PLATFORMS = {
         unsaved_platforms: [],
         saved_platforms: []
@@ -17,7 +16,7 @@ module.exports = async (user) => {
 
     let query = `SELECT t1.*
                 FROM platforms t1
-                LEFT JOIN (SELECT * FROM tokens WHERE tokens.userId = "${id}") AS t2 
+                LEFT JOIN (SELECT * FROM wallets WHERE wallets.userId = "${id}") AS t2 
                 ON t2.platformId = t1.id 
                 WHERE t2.platformId IS NULL`
 
@@ -45,11 +44,11 @@ module.exports = async (user) => {
 
     logger.debug(`Fetching saved platforms for ${id} ...`);
 
-    let tokens = await user.getTokens();
+    let wallets = await user.getWallets();
 
-    if (tokens.length > 0) {
-        for (let i = 0; i < tokens.length; i++) {
-            let saved_platforms = await tokens[i].getPlatform();
+    if (wallets.length > 0) {
+        for (let i = 0; i < wallets.length; i++) {
+            let saved_platforms = await wallets[i].getPlatform();
             if (saved_platforms) {
                 let name = saved_platforms.name.toLowerCase();
                 let protocol = JSON.parse(saved_platforms.protocols);

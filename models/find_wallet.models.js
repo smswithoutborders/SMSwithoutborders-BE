@@ -4,13 +4,13 @@ const ERRORS = require("../error.js");
 const db = require("../schemas");
 let logger = require("../logger");
 
-var Token = db.tokens;
+var Wallet = db.wallets;
 
 module.exports = async (user, platform) => {
     logger.debug(`Finding Wallet for ${user.id} ...`);
 
-    // SEARCH FOR TOKEN IN DB
-    let token = await Token.findAll({
+    // SEARCH FOR WALLET IN DB
+    let wallet = await Wallet.findAll({
         where: {
             userId: user.id,
             platformId: platform.id
@@ -20,18 +20,18 @@ module.exports = async (user, platform) => {
         throw new ERRORS.InternalServerError(error);
     })
 
-    // RTURN = [], IF TOKEN IS NOT FOUND
-    if (token.length < 1) {
+    // RTURN = [], IF WALLET IS NOT FOUND
+    if (wallet.length < 1) {
         logger.error("NO WALLET FOUND");
         throw new ERRORS.NotFound();
     }
 
-    // IF MORE THAN ONE TOKEN EXIST IN DATABASE
-    if (token.length > 1) {
+    // IF MORE THAN ONE WALLET EXIST IN DATABASE
+    if (wallet.length > 1) {
         logger.error("DUPLICATE WALLET FOUND");
         throw new ERRORS.Conflict();
     }
 
     logger.info("WALLET FOUND");
-    return token[0];
+    return wallet[0];
 }
