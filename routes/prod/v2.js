@@ -9,7 +9,7 @@ const Security = require("../../models/security.models");
 const ERRORS = require("../../error.js");
 const FIND_USERS = require("../../models/find_users.models");
 const FIND_PLATFORMS = require("../../models/find_platforms.models");
-const STORE_WALLETS = require("../../models/store_wallet.models");
+const STORE_GRANTS = require("../../models/store_grant.models");
 const VERIFY_USERS = require("../../models/verify_user.models");
 const STORE_SESSION = require("../../models/store_sessions.models");
 const FIND_USERSINFO = require("../../models/find_usersinfo.models");
@@ -20,7 +20,7 @@ const VERIFY_SV = require("../../models/verify_sv.models");
 const FIND_SESSION = require("../../models/find_sessions.models");
 const UPDATE_SESSION = require("../../models/update_sessions.models");
 const FIND_USERS_PLATFORMS = require("../../models/find_users_platform.models");
-const DELETE_WALLET = require("../../models/delete_wallet.models");
+const DELETE_GRANTS = require("../../models/delete_grant.models");
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -362,7 +362,7 @@ module.exports = (app) => {
             let platform = await FIND_PLATFORMS(PLATFORM);
 
             if (RESULT) {
-                await STORE_WALLETS(user, platform, RESULT);
+                await STORE_GRANTS(user, platform, RESULT);
             }
 
             let session = await UPDATE_SESSION(SID, ID);
@@ -416,9 +416,9 @@ module.exports = (app) => {
             const USER_AGENT = req.get("user-agent");
 
             const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
-            const WALLET = req.platformRes.wallet;
+            const GRANT = req.platformRes.grant;
 
-            await DELETE_WALLET(WALLET);
+            await DELETE_GRANTS(GRANT);
 
             let session = await UPDATE_SESSION(SID, ID);
 

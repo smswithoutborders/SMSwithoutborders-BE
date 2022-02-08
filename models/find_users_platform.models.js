@@ -44,11 +44,11 @@ module.exports = async (user) => {
 
     logger.debug(`Fetching saved platforms for ${id} ...`);
 
-    let wallets = await user.getWallets();
+    let grants = await user.getWallets();
 
-    if (wallets.length > 0) {
-        for (let i = 0; i < wallets.length; i++) {
-            let saved_platforms = await wallets[i].getPlatform();
+    if (grants.length > 0) {
+        for (let i = 0; i < grants.length; i++) {
+            let saved_platforms = await grants[i].getPlatform();
             if (saved_platforms) {
                 let name = saved_platforms.name.toLowerCase();
                 let protocol = JSON.parse(saved_platforms.protocols);

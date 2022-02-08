@@ -16,7 +16,7 @@ module.exports = async (user, platform, result) => {
     const platform_name = platform.name.toLowerCase()
 
     if (platform_name == "gmail") {
-        logger.debug(`Storing ${platform_name} wallet for ${user.id} ...`);
+        logger.debug(`Storing ${platform_name} grant for ${user.id} ...`);
 
         await Wallet.create({
             userId: user.id,
@@ -27,10 +27,10 @@ module.exports = async (user, platform, result) => {
             uniqueIdHash: security.hash(result.profile.data.email),
             iv: security.iv
         }).catch(error => {
-            logger.error("ERROR CREATING GMAIL WALLET");
+            logger.error("ERROR CREATING GMAIL GRANT");
             if (error.name == "SequelizeUniqueConstraintError") {
                 if (error.original.code == "ER_DUP_ENTRY") {
-                    logger.error("GMAIL WALLET RECORD EXIST ALREADY");
+                    logger.error("GMAIL GRANT RECORD EXIST ALREADY");
                     throw new ERRORS.Conflict();
                 };
             };
@@ -38,12 +38,12 @@ module.exports = async (user, platform, result) => {
             throw new ERRORS.InternalServerError(error);
         });
 
-        logger.info("SUCCESSFULLY STORED GMAIL WALLET");
+        logger.info("SUCCESSFULLY STORED GMAIL GRANT");
         return true;
     };
 
     if (platform_name == "twitter") {
-        logger.debug(`Storing ${platform_name} wallet for ${user.id} ...`);
+        logger.debug(`Storing ${platform_name} grant for ${user.id} ...`);
 
         await Wallet.create({
             userId: user.id,
@@ -54,10 +54,10 @@ module.exports = async (user, platform, result) => {
             uniqueIdHash: security.hash(result.profile.screen_name),
             iv: security.iv
         }).catch(error => {
-            logger.error("ERROR CREATING TWITTER WALLET");
+            logger.error("ERROR CREATING TWITTER GRANT");
             if (error.name == "SequelizeUniqueConstraintError") {
                 if (error.original.code == "ER_DUP_ENTRY") {
-                    logger.error("TWITTER WALLET RECORD EXIST ALREADY");
+                    logger.error("TWITTER GRANT RECORD EXIST ALREADY");
                     throw new ERRORS.Conflict();
                 };
             };
@@ -65,12 +65,12 @@ module.exports = async (user, platform, result) => {
             throw new ERRORS.InternalServerError(error);
         });
 
-        logger.info("SUCCESSFULLY STORED TWITTER WALLET");
+        logger.info("SUCCESSFULLY STORED TWITTER GRANT");
         return true;
     };
 
     if (platform_name == "telegram") {
-        logger.debug(`Storing ${platform_name} wallet for ${user.id} ...`);
+        logger.debug(`Storing ${platform_name} grant for ${user.id} ...`);
 
         await Wallet.create({
             userId: user.id,
@@ -80,10 +80,10 @@ module.exports = async (user, platform, result) => {
             uniqueIdHash: security.hash(result),
             iv: security.iv
         }).catch(error => {
-            logger.error("ERROR CREATING TELEGRAM WALLET");
+            logger.error("ERROR CREATING TELEGRAM GRANT");
             if (error.name == "SequelizeUniqueConstraintError") {
                 if (error.original.code == "ER_DUP_ENTRY") {
-                    logger.error("TELEGRAM WALLET RECORD EXIST ALREADY");
+                    logger.error("TELEGRAM GRANT RECORD EXIST ALREADY");
                     throw new ERRORS.Conflict();
                 };
             };
@@ -91,7 +91,7 @@ module.exports = async (user, platform, result) => {
             throw new ERRORS.InternalServerError(error);
         });
 
-        logger.info("SUCCESSFULLY STORED TELEGRAM WALLET");
+        logger.info("SUCCESSFULLY STORED TELEGRAM GRANT");
         return true;
     };
 

@@ -16,9 +16,9 @@ const TWITTER = require("./TWITTER");
 const TELEGRAM = require("./TELEGRAM");
 
 const FIND_USERS = require("../../models/find_users.models");
-const FIND_WALLETS = require("../../models/find_wallet.models");
+const FIND_GRANTS = require("../../models/find_grant.models");
 const FIND_PLATFORMS = require("../../models/find_platforms.models");
-const DECRYPT_WALLETS = require("../../models/decrypt_wallet.models");
+const DECRYPT_GRANTS = require("../../models/decrypt_grant.models");
 const FIND_SESSION = require("../../models/find_sessions.models");
 const VERIFY_PASSWORDS = require("../../models/verify_password.models");
 
@@ -124,9 +124,9 @@ module.exports = async (req, res, next) => {
                     await VERIFY_PASSWORDS(ID, PASSWORD);
                     const USER = await FIND_USERS(ID);
                     const PLATFORM = await FIND_PLATFORMS(platform);
-                    const WALLET = await FIND_WALLETS(USER, PLATFORM);
-                    const DECRYPTED_WALLET = await DECRYPT_WALLETS(WALLET, USER);
-                    const TOKEN = DECRYPTED_WALLET.token
+                    const GRANT = await FIND_GRANTS(USER, PLATFORM);
+                    const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
+                    const TOKEN = DECRYPTED_GRANT.token
 
                     await platformObj.revoke(originalURL, TOKEN).catch(err => {
                         if (err.message == "invalid_token") {
@@ -135,7 +135,7 @@ module.exports = async (req, res, next) => {
                     });
 
                     req.platformRes = {
-                        wallet: WALLET
+                        grant: GRANT
                     };
                     return next();
                 };
@@ -227,9 +227,9 @@ module.exports = async (req, res, next) => {
                     await VERIFY_PASSWORDS(ID, PASSWORD);
                     const USER = await FIND_USERS(ID);
                     const PLATFORM = await FIND_PLATFORMS(platform);
-                    const WALLET = await FIND_WALLETS(USER, PLATFORM);
-                    const DECRYPTED_WALLET = await DECRYPT_WALLETS(WALLET, USER);
-                    const TOKEN = DECRYPTED_WALLET.token
+                    const GRANT = await FIND_GRANTS(USER, PLATFORM);
+                    const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
+                    const TOKEN = DECRYPTED_GRANT.token
 
                     await platformObj.revoke(originalURL, TOKEN).catch(err => {
                         if (err.statusCode = 401) {
@@ -238,7 +238,7 @@ module.exports = async (req, res, next) => {
                     });
 
                     req.platformRes = {
-                        wallet: WALLET
+                        grant: GRANT
                     };
                     return next();
                 };
