@@ -1,9 +1,14 @@
-var crypto = require('crypto');
+const crypto = require('crypto');
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+const salt = SERVER_CFG.api.SALT;
+
 module.exports =
     class Security {
         constructor(key) {
             this.algorithm = "aes-256-cbc";
             this.key = key ? key.substr(0, 32) : "";
+            this.salt = salt ? salt : "";
             this.iv = crypto.randomBytes(16).toString('hex').slice(0, 16);
         };
 
@@ -25,18 +30,10 @@ module.exports =
         };
 
         hash(data) {
-            var hash = crypto.createHash("sha512");
-            hash.update(data)
+            const hash = createHmac('sha512', this.salt)
+                .update(data)
+                .digest('hex');
 
-            return hash.digest("hex");
+            return hash;
         };
     };
-
-// let security = new Security();
-// let testHash = security.hash("testdata");
-// let testEnc = security.encrypt("Hello world");
-// let testDec = security.decrypt(testEnc.e_info, testEnc.iv);
-
-// console.log(testHash);
-// console.log(testEnc);
-// console.log(testDec);
