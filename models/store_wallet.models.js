@@ -1,12 +1,18 @@
+"use strict";
+
 const ERRORS = require("../error.js");
 const db = require("../schemas");
 const Security = require("./security.models.js");
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+const KEY = SERVER_CFG.api.KEY;
 let logger = require("../logger");
 
-var Token = db.tokens;
+let Token = db.tokens;
 
 module.exports = async (user, platform, result) => {
-    var security = new Security(user.password);
+    let security = new Security(KEY);
+    
     const platform_name = platform.name.toLowerCase()
 
     if (platform_name == "gmail") {

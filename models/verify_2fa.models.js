@@ -1,3 +1,5 @@
+"use strict";
+
 const ERRORS = require("../error.js");
 const _2FA = require("./2fa.models");
 let logger = require("../logger");

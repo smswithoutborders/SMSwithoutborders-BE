@@ -1,3 +1,5 @@
+"use strict";
+
 const ERRORS = require("../error.js");
 let logger = require("../logger");
 

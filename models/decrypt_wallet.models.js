@@ -1,8 +1,13 @@
+"use strict";
+
 const Security = require("./security.models.js");
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+const KEY = SERVER_CFG.api.KEY;
 let logger = require("../logger");
 
 module.exports = async (token, user) => {
-    var security = new Security(user.password);
+    var security = new Security(KEY);
 
     logger.debug(`Decrypting Wallet For ${user.id} ...`);
     let decrypted_token = {

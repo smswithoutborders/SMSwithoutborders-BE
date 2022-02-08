@@ -1,3 +1,5 @@
+"use strict";
+
 const ERRORS = require("../error.js");
 const db = require("../schemas");
 const Security = require("./security.models.js");

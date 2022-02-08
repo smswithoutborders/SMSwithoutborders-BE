@@ -1,3 +1,5 @@
+"use strict";
+
 const ERRORS = require("../error.js");
 const db = require("../schemas");
 const _2FA = require("./2fa.models");

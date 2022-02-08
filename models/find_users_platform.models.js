@@ -1,3 +1,5 @@
+"use strict";
+
 const db = require("../schemas");
 let logger = require("../logger");
 
