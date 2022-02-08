@@ -30,7 +30,7 @@ module.exports =
         };
 
         hash(data) {
-            const hash = createHmac('sha512', this.salt)
+            const hash = crypto.createHmac('sha512', this.salt)
                 .update(data)
                 .digest('hex');
 
