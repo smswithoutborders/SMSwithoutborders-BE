@@ -2,6 +2,8 @@
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
+const KEY = SERVER_CFG.api.SECRET_KEY;
+
 let logger = require("../../logger");
 
 const fs = require('fs')
@@ -23,6 +25,10 @@ const FIND_USERS_PLATFORMS = require("../../models/find_users_platform.models");
 const DELETE_GRANTS = require("../../models/delete_grant.models");
 const VERIFY_PASSWORDS = require("../../models/verify_password.models");
 const MODIFY_PASSWORDS = require("../../models/modify_password.models");
+const VERIFY_PHONE_NUMBER = require("../../models/verify_phone_number.models");
+const PURGE_GRANTS = require("../../models/purge_grants.models");
+const VERIFY_PLATFORMS = require("../../models/verify_platforms.models");
+
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -136,7 +142,7 @@ module.exports = (app) => {
             let verify_2fa = await VERIFY_2FA(usersInfo.full_phone_number, CODE, SESSION_ID);
 
             if (verify_2fa) {
-                var security = new Security(user.password);
+                let security = new Security(KEY);
 
                 await usersInfo.update({
                     phone_number: security.encrypt(usersInfo.phone_number).e_info,
@@ -506,6 +512,169 @@ module.exports = (app) => {
 
             return res.status(200).json();
 
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+    app.post("/recovery", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.phone_number) {
+                logger.error("NO PHONE NUMBER");
+                throw new ERRORS.BadRequest();
+            };
+            // =============================================================
+
+            const PHONE_NUMBER = req.body.phone_number;
+            const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
+
+            let init_2fa = await INIT_2FA(USERID, PHONE_NUMBER);
+
+            return res.status(200).json({
+                session_id: init_2fa.session_id,
+                svid: init_2fa.svid
+            })
+
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+    app.put("/recovery", async (req, res, next) => {
+        try {
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.code) {
+                logger.error("NO CODE");
+                throw new ERRORS.BadRequest();
+            };
+
+            if (!req.body.session_id) {
+                logger.error("NO SESSION ID");
+                throw new ERRORS.BadRequest();
+            };
+
+            if (!req.body.svid) {
+                logger.error("NO SVID");
+                throw new ERRORS.BadRequest();
+            };
+            // =============================================================
+            const CODE = req.body.code;
+            const SESSION_ID = req.body.session_id;
+            const SVID = req.body.svid;
+
+            let {
+                usersInfo,
+                user
+            } = await VERIFY_SV(SESSION_ID, SVID);
+            let verify_2fa = await VERIFY_2FA(usersInfo.full_phone_number, CODE, SESSION_ID);
+
+            if (verify_2fa) {
+                var security = new Security();
+
+                await usersInfo.update({
+                    full_phone_number: security.hash(usersInfo.full_phone_number),
+                    status: "verified"
+                }).catch(error => {
+                    logger.error("ERROR UPDATING USER'S INFO AFTER RECOVERY SMS VERIFICATION");
+                    throw new ERRORS.InternalServerError(error);
+                });
+
+                return res.status(200).json({
+                    uid: usersInfo.userId
+                });
+            }
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+    app.post("/users/:user_id/recovery", async (req, res, next) => {
+        try {
+            if (!req.params.user_id) {
+                logger.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            };
+
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.new_password) {
+                logger.error("NO NEW PASSWORD");
+                throw new ERRORS.BadRequest();
+            };
+
+            // TODO ADD MIDDLEWARE CHECKS
+            if (req.body.new_password.length < 8) {
+                logger.error("NEW PASSWORD < 8 CHARS");
+                throw new ERRORS.BadRequest();
+            };
+            // =============================================================
+
+            const UID = req.params.user_id;
+            const NEW_PASSWORD = req.body.new_password;
+            let USER = await FIND_USERS(UID);
+            let GRANTS = await USER.getWallets();
+            const originalURL = req.header("Origin");
+
+            for (let i = 0; i < GRANTS.length; i++) {
+                let PLATFORM = await VERIFY_PLATFORMS(GRANTS[i].platformId)
+                let GRANT = await PURGE_GRANTS(originalURL, PLATFORM.name, GRANTS[i], USER);
+                await DELETE_GRANTS(GRANT);
+            };
+
+            await MODIFY_PASSWORDS(USER, NEW_PASSWORD);
+
+            return res.status(200).json();
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
                 return res.status(400).send(err.message);

@@ -126,12 +126,17 @@ module.exports = async (req, res, next) => {
                     const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
                     const TOKEN = DECRYPTED_GRANT.token
 
+                    logger.debug(`Revoking ${platform} grant ...`);
                     await platformObj.revoke(originalURL, TOKEN).catch(err => {
                         if (err.message == "invalid_token") {
                             logger.error(err)
-                        }
+                        } else {
+                            logger.error(`Error revoking ${platform} grant`);
+                            throw new ERRORS.InternalServerError(err);
+                        };
                     });
 
+                    logger.info(`SUCCESFULLY REVOKED ${platform} GRANT`)
                     req.platformRes = {
                         grant: GRANT
                     };
@@ -229,8 +234,11 @@ module.exports = async (req, res, next) => {
                     const TOKEN = DECRYPTED_GRANT.token
 
                     await platformObj.revoke(originalURL, TOKEN).catch(err => {
-                        if (err.statusCode = 401) {
+                        if (err.statusCode == 401) {
                             logger.error(err.data)
+                        } else {
+                            logger.error(`Error revoking ${platform} grant`);
+                            throw new ERRORS.InternalServerError(err);
                         };
                     });
 
