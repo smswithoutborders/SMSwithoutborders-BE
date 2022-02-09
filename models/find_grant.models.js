@@ -7,7 +7,7 @@ let logger = require("../logger");
 var Wallet = db.wallets;
 
 module.exports = async (user, platform) => {
-    logger.debug(`Finding ${platform.id} grant for ${user.id} ...`);
+    logger.debug(`Finding ${platform.name} grant for ${user.id} ...`);
 
     // SEARCH FOR GRANT IN DB
     let grant = await Wallet.findAll({

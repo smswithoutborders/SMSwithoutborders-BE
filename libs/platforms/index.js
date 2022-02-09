@@ -15,7 +15,6 @@ const GMAIL = require("./GMAIL");
 const TWITTER = require("./TWITTER");
 const TELEGRAM = require("./TELEGRAM");
 
-const FIND_USERS = require("../../models/find_users.models");
 const FIND_GRANTS = require("../../models/find_grant.models");
 const FIND_PLATFORMS = require("../../models/find_platforms.models");
 const DECRYPT_GRANTS = require("../../models/decrypt_grant.models");
@@ -121,8 +120,7 @@ module.exports = async (req, res, next) => {
                     const USER_AGENT = req.get("user-agent");
 
                     const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
-                    await VERIFY_PASSWORDS(ID, PASSWORD);
-                    const USER = await FIND_USERS(ID);
+                    const USER = await VERIFY_PASSWORDS(ID, PASSWORD);
                     const PLATFORM = await FIND_PLATFORMS(platform);
                     const GRANT = await FIND_GRANTS(USER, PLATFORM);
                     const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
@@ -224,8 +222,7 @@ module.exports = async (req, res, next) => {
                     const USER_AGENT = req.get("user-agent");
 
                     const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
-                    await VERIFY_PASSWORDS(ID, PASSWORD);
-                    const USER = await FIND_USERS(ID);
+                    const USER = await VERIFY_PASSWORDS(ID, PASSWORD);
                     const PLATFORM = await FIND_PLATFORMS(platform);
                     const GRANT = await FIND_GRANTS(USER, PLATFORM);
                     const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);

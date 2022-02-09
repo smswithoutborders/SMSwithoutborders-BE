@@ -21,6 +21,8 @@ const FIND_SESSION = require("../../models/find_sessions.models");
 const UPDATE_SESSION = require("../../models/update_sessions.models");
 const FIND_USERS_PLATFORMS = require("../../models/find_users_platform.models");
 const DELETE_GRANTS = require("../../models/delete_grant.models");
+const VERIFY_PASSWORDS = require("../../models/verify_password.models");
+const MODIFY_PASSWORDS = require("../../models/modify_password.models");
 
 var rootCas = require('ssl-root-cas').create()
 
@@ -419,6 +421,81 @@ module.exports = (app) => {
             const GRANT = req.platformRes.grant;
 
             await DELETE_GRANTS(GRANT);
+
+            let session = await UPDATE_SESSION(SID, ID);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
+
+            return res.status(200).json();
+
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+    app.post("/users/:user_id/password", async (req, res, next) => {
+        try {
+            if (!req.params.user_id) {
+                logger.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            }
+            if (!req.cookies.SWOB) {
+                logger.error("NO COOKIE");
+                throw new ERRORS.Forbidden();
+            };
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.password) {
+                logger.error("NO PASSWORD");
+                throw new ERRORS.BadRequest();
+            };
+
+            // TODO ADD MIDDLEWARE CHECKS
+            if (req.body.password.length < 8) {
+                logger.error("PASSWORD < 8 CHARS");
+                throw new ERRORS.BadRequest();
+            };
+
+            if (!req.body.new_password) {
+                logger.error("NO NEW PASSWORD");
+                throw new ERRORS.BadRequest();
+            };
+
+            // TODO ADD MIDDLEWARE CHECKS
+            if (req.body.new_password.length < 8) {
+                logger.error("NEW PASSWORD < 8 CHARS");
+                throw new ERRORS.BadRequest();
+            };
+            // =============================================================
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const USER_AGENT = req.get("user-agent");
+            const PASSWORD = req.body.password;
+            const NEW_PASSWORD = req.body.new_password;
+
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+            const USER = await VERIFY_PASSWORDS(ID, PASSWORD);
+            await MODIFY_PASSWORDS(USER, NEW_PASSWORD);
 
             let session = await UPDATE_SESSION(SID, ID);
 
