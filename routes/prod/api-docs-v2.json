@@ -1111,19 +1111,11 @@
         },
         "responses": {
           "200": {
-            "description": "Successful",
+            "description": "A cookie is stored in the browser",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "session_id": {
-                      "type": "string"
-                    },
-                    "svid": {
-                      "type": "string"
-                    }
-                  }
+                  "type": "object"
                 }
               }
             }
@@ -1192,12 +1184,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "session_id": {
-                    "type": "string"
-                  },
-                  "svid": {
-                    "type": "string"
-                  },
                   "code": {
                     "type": "string"
                   }
@@ -1208,7 +1194,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful",
+            "description": "A cookie is stored in the browser",
             "content": {
               "application/json": {
                 "schema": {
