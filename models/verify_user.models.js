@@ -21,19 +21,19 @@ module.exports = async (phone_number, password) => {
             status: "verified"
         }
     }).catch(error => {
-        logger.error("ERROR FINDING USERINFO");
+        logger.error("ERROR FINDING USER'S PHONE NUMBER");
         throw new ERRORS.InternalServerError(error);
     })
 
     // RTURN = [], IF USERINFO IS NOT FOUND
     if (userInfo.length < 1) {
-        logger.error("NO USERINFO FOUND");
-        throw new ERRORS.Unauthorized();
+        logger.error("INVALID PHONENUMBER");
+        throw new ERRORS.Forbidden();
     }
 
     // IF MORE THAN ONE USERINFO EXIST IN DATABASE
     if (userInfo.length > 1) {
-        logger.error("DUPLICATE USERINFO FOUND");
+        logger.error("DUPLICATE PHONE NUMBERS FOUND");
         throw new ERRORS.Conflict();
     }
 
@@ -44,13 +44,13 @@ module.exports = async (phone_number, password) => {
             password: security.hash(password)
         }
     }).catch(error => {
-        logger.error("ERROR FINDING USER");
+        logger.error("ERROR FINDING USER'S PASSWORD");
         throw new ERRORS.InternalServerError(error);
     });
 
     if (!user) {
-        logger.error("NO USER FOUND");
-        throw new ERRORS.Unauthorized();
+        logger.error("INVALID PASSWORD");
+        throw new ERRORS.Forbidden();
     };
 
     logger.info("USER SUCCESSFULLY AUTHENTICATED");

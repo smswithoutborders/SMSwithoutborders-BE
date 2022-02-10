@@ -55,13 +55,13 @@ async function initialize() {
     });
     db.smsVerification.belongsTo(db.users);
 
-    // relationship users table -> sessions table 
-    db.users.hasMany(db.sessions, {
-        foreignKey: "unique_identifier"
-    });
-    db.sessions.belongsTo(db.users, {
-        foreignKey: "unique_identifier"
-    });
+    // // relationship users table -> sessions table 
+    // db.users.hasMany(db.sessions, {
+    //     foreignKey: "unique_identifier"
+    // });
+    // db.sessions.belongsTo(db.users, {
+    //     foreignKey: "unique_identifier"
+    // });
 
     // relationship smsVerification table -> sessions table 
     db.smsVerification.hasMany(db.sessions, {

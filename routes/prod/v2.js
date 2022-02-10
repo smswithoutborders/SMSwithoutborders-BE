@@ -28,6 +28,7 @@ const MODIFY_PASSWORDS = require("../../models/modify_password.models");
 const VERIFY_PHONE_NUMBER = require("../../models/verify_phone_number.models");
 const PURGE_GRANTS = require("../../models/purge_grants.models");
 const VERIFY_PLATFORMS = require("../../models/verify_platforms.models");
+const VERIFY_RECOVERY = require("../../models/verify_recovery.models");
 
 
 var rootCas = require('ssl-root-cas').create()
@@ -553,14 +554,19 @@ module.exports = (app) => {
             // =============================================================
 
             const PHONE_NUMBER = req.body.phone_number;
+            const USER_AGENT = req.get("user-agent");
             const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
-
             let init_2fa = await INIT_2FA(USERID, PHONE_NUMBER);
+            const SVID = init_2fa.svid
+            let session = await STORE_SESSION(PHONE_NUMBER, USER_AGENT, SVID, null, "recovery");
 
-            return res.status(200).json({
-                session_id: init_2fa.session_id,
-                svid: init_2fa.svid
-            })
+            res.cookie("SWOB", {
+                sid: session.sid,
+                svid: SVID,
+                cookie: session.data
+            }, session.data)
+
+            return res.status(200).json();
 
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
@@ -586,45 +592,44 @@ module.exports = (app) => {
 
     app.put("/recovery", async (req, res, next) => {
         try {
+            if (!req.cookies.SWOB) {
+                logger.error("NO COOKIE");
+                throw new ERRORS.Forbidden();
+            };
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.code) {
                 logger.error("NO CODE");
                 throw new ERRORS.BadRequest();
             };
-
-            if (!req.body.session_id) {
-                logger.error("NO SESSION ID");
-                throw new ERRORS.BadRequest();
-            };
-
-            if (!req.body.svid) {
-                logger.error("NO SVID");
-                throw new ERRORS.BadRequest();
-            };
             // =============================================================
+            const SVID = req.cookies.SWOB.svid;
+            const SID = req.cookies.SWOB.sid;
             const CODE = req.body.code;
-            const SESSION_ID = req.body.session_id;
-            const SVID = req.body.svid;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const USER_AGENT = req.get("user-agent");
 
-            let {
-                usersInfo,
-                user
-            } = await VERIFY_SV(SESSION_ID, SVID);
-            let verify_2fa = await VERIFY_2FA(usersInfo.full_phone_number, CODE, SESSION_ID);
+            const {
+                unique_identifier,
+                session_id
+            } = await VERIFY_RECOVERY(SID, SVID, USER_AGENT, null, COOKIE);
+
+            const SESSION_ID = session_id;
+            const PHONE_NUMBER = unique_identifier;
+
+            let verify_2fa = await VERIFY_2FA(PHONE_NUMBER, CODE, SESSION_ID);
 
             if (verify_2fa) {
-                var security = new Security();
+                const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
+                let session = await UPDATE_SESSION(SID, PHONE_NUMBER, "success");
 
-                await usersInfo.update({
-                    full_phone_number: security.hash(usersInfo.full_phone_number),
-                    status: "verified"
-                }).catch(error => {
-                    logger.error("ERROR UPDATING USER'S INFO AFTER RECOVERY SMS VERIFICATION");
-                    throw new ERRORS.InternalServerError(error);
-                });
+                res.cookie("SWOB", {
+                    sid: session.sid,
+                    svid: SVID,
+                    cookie: session.data
+                }, session.data)
 
                 return res.status(200).json({
-                    uid: usersInfo.userId
+                    uid: USERID
                 });
             }
         } catch (err) {
@@ -656,6 +661,11 @@ module.exports = (app) => {
                 throw new ERRORS.BadRequest();
             };
 
+            if (!req.cookies.SWOB) {
+                logger.error("NO COOKIE");
+                throw new ERRORS.Forbidden();
+            };
+
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.new_password) {
                 logger.error("NO NEW PASSWORD");
@@ -669,8 +679,19 @@ module.exports = (app) => {
             };
             // =============================================================
 
+            const SID = req.cookies.SWOB.sid;
+            const SVID = req.cookies.SWOB.svid;
             const UID = req.params.user_id;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const USER_AGENT = req.get("user-agent");
             const NEW_PASSWORD = req.body.new_password;
+
+            const {
+                unique_identifier,
+            } = await VERIFY_RECOVERY(SID, SVID, USER_AGENT, "success", COOKIE);
+
+            const PHONE_NUMBER = unique_identifier;
+
             let USER = await FIND_USERS(UID);
             let GRANTS = await USER.getWallets();
             const originalURL = req.header("Origin");
@@ -682,6 +703,8 @@ module.exports = (app) => {
             };
 
             await MODIFY_PASSWORDS(USER, NEW_PASSWORD);
+
+            await UPDATE_SESSION(SID, PHONE_NUMBER, "updated");
 
             return res.status(200).json();
         } catch (err) {
