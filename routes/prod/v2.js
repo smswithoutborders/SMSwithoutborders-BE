@@ -2,7 +2,7 @@
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
-const KEY = SERVER_CFG.api.SECRET_KEY;
+const KEY = SERVER_CFG.api.KEY;
 
 let logger = require("../../logger");
 
@@ -204,7 +204,7 @@ module.exports = (app) => {
             const USER_AGENT = req.get("user-agent");
 
             let userId = await VERIFY_USERS(PHONE_NUMBER, PASSWORD);
-            let session = await STORE_SESSION(userId, USER_AGENT);
+            let session = await STORE_SESSION(userId, USER_AGENT, null, null, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -252,11 +252,11 @@ module.exports = (app) => {
             const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
 
-            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
             let user = await FIND_USERS(ID);
             const usersPlatforms = await FIND_USERS_PLATFORMS(user);
 
-            let session = await UPDATE_SESSION(SID, ID);
+            let session = await UPDATE_SESSION(SID, ID, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -303,14 +303,14 @@ module.exports = (app) => {
             const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
 
-            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
             const PLATFORM = req.params.platform;
             const URL = req.platformRes.url ? req.platformRes.url : "";
             const BODY = req.platformRes.body ? req.platformRes.body : "";
 
             let platform = await FIND_PLATFORMS(PLATFORM);
 
-            let session = await UPDATE_SESSION(SID, ID);
+            let session = await UPDATE_SESSION(SID, ID, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -360,7 +360,7 @@ module.exports = (app) => {
             const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
 
-            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
             const PLATFORM = req.params.platform;
             const RESULT = req.platformRes.result ? req.platformRes.result : "";
             const BODY = req.platformRes.body ? req.platformRes.body : "";
@@ -373,7 +373,7 @@ module.exports = (app) => {
                 await STORE_GRANTS(user, platform, RESULT);
             }
 
-            let session = await UPDATE_SESSION(SID, ID);
+            let session = await UPDATE_SESSION(SID, ID, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -423,12 +423,12 @@ module.exports = (app) => {
             const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
 
-            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
             const GRANT = req.platformRes.grant;
 
             await DELETE_GRANTS(GRANT);
 
-            let session = await UPDATE_SESSION(SID, ID);
+            let session = await UPDATE_SESSION(SID, ID, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -499,7 +499,7 @@ module.exports = (app) => {
             const PASSWORD = req.body.password;
             const NEW_PASSWORD = req.body.new_password;
 
-            const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
             const USER = await VERIFY_PASSWORDS(ID, PASSWORD);
             let GRANTS = await USER.getWallets();
             const originalURL = req.header("Origin");
@@ -512,7 +512,7 @@ module.exports = (app) => {
 
             await MODIFY_PASSWORDS(USER, NEW_PASSWORD);
 
-            let session = await UPDATE_SESSION(SID, ID);
+            let session = await UPDATE_SESSION(SID, ID, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -721,7 +721,7 @@ module.exports = (app) => {
             const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
 
-            await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+            await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
             logger.info("CLEARING BROWSER COOKIE ...");
             res.clearCookie("SWOB");
