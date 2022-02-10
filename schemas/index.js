@@ -57,9 +57,15 @@ async function initialize() {
 
     // relationship users table -> sessions table 
     db.users.hasMany(db.sessions, {
-        foreignKey: "userId"
+        foreignKey: "unique_identifier"
     });
     db.sessions.belongsTo(db.users);
+
+    // relationship smsVerification table -> sessions table 
+    db.smsVerification.hasMany(db.sessions, {
+        foreignKey: "unique_identifier"
+    });
+    db.sessions.belongsTo(db.smsVerification);
 
     //db options
     const options = {
