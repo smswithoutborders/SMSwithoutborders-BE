@@ -192,10 +192,12 @@ module.exports = async (req, res, next) => {
 
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.oauth_token) {
+                        logger.error("NO OAUTH TOKEN");
                         throw new ERRORS.BadRequest();
                     };
 
                     if (!req.body.oauth_verifier) {
+                        logger.error("NO OAUTH VERIFIER");
                         throw new ERRORS.BadRequest();
                     };
                     // =============================================================
@@ -326,14 +328,17 @@ module.exports = async (req, res, next) => {
 
                         // ==================== REQUEST BODY CHECKS ====================
                         if (!req.body.phone_number) {
+                            logger.error("NO PHONE NUMBER");
                             throw new ERRORS.BadRequest();
                         };
 
                         if (!req.body.first_name) {
+                            logger.error("NO FIRST NAME");
                             throw new ERRORS.BadRequest();
                         };
 
                         if (!req.body.last_name) {
+                            logger.error("NO LAST NAME");
                             throw new ERRORS.BadRequest();
                         };
                         // =============================================================
@@ -374,10 +379,12 @@ module.exports = async (req, res, next) => {
 
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.phone_number) {
+                        logger.error("NO PHONE NUMBER");
                         throw new ERRORS.BadRequest();
                     };
 
                     if (!req.body.code) {
+                        logger.error("NO CODE");
                         throw new ERRORS.BadRequest();
                     };
                     // =============================================================
