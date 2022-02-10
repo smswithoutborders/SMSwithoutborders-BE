@@ -501,6 +501,15 @@ module.exports = (app) => {
 
             const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
             const USER = await VERIFY_PASSWORDS(ID, PASSWORD);
+            let GRANTS = await USER.getWallets();
+            const originalURL = req.header("Origin");
+
+            for (let i = 0; i < GRANTS.length; i++) {
+                let PLATFORM = await VERIFY_PLATFORMS(GRANTS[i].platformId)
+                let GRANT = await PURGE_GRANTS(originalURL, PLATFORM.name, GRANTS[i], USER);
+                await DELETE_GRANTS(GRANT);
+            };
+
             await MODIFY_PASSWORDS(USER, NEW_PASSWORD);
 
             let session = await UPDATE_SESSION(SID, ID);
