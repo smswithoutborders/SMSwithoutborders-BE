@@ -16,7 +16,7 @@ const maxAge = SERVER_CFG.api.session_maxAge;
 
 var Session = db.sessions;
 
-module.exports = async (userId, user_agent) => {
+module.exports = async (unique_identifier, user_agent, svid, status, type) => {
     const hour = eval(maxAge) || 2 * 60 * 60 * 1000;
     const data = {
         maxAge: hour,
@@ -27,11 +27,14 @@ module.exports = async (userId, user_agent) => {
 
     logger.debug(`Secure Session: ${secure}`);
     logger.debug(`Session maxAge: ${hour}`);
-    logger.debug(`Creating session for ${userId} ...`);
+    logger.debug(`Creating session for ${unique_identifier} ...`);
 
     let session = await Session.create({
-        userId: userId,
+        unique_identifier: unique_identifier,
         user_agent: user_agent,
+        status: status,
+        type: type,
+        svid: svid,
         expires: new Date(Date.now() + hour),
         data: JSON.stringify(data)
     }).catch(error => {
@@ -43,7 +46,7 @@ module.exports = async (userId, user_agent) => {
 
     return {
         sid: session.sid,
-        uid: session.userId,
+        uid: session.unique_identifier,
         data: data
     };
 }

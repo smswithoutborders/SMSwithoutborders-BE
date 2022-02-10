@@ -5,6 +5,7 @@ module.exports = (sequelize, Sequelize) => {
             defaultValue: Sequelize.UUIDV4,
             primaryKey: true
         },
+        unique_identifier: Sequelize.STRING,
         user_agent: Sequelize.STRING,
         expires: Sequelize.DATE,
         data: Sequelize.TEXT,

@@ -63,7 +63,7 @@ async function initialize() {
 
     // relationship smsVerification table -> sessions table 
     db.smsVerification.hasMany(db.sessions, {
-        foreignKey: "unique_identifier"
+        foreignKey: "svid"
     });
     db.sessions.belongsTo(db.smsVerification);
 

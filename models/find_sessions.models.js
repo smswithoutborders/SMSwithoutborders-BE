@@ -6,14 +6,17 @@ let logger = require("../logger");
 
 var Session = db.sessions;
 
-module.exports = async (sid, uid, user_agent, cookie) => {
+module.exports = async (sid, unique_identifier, user_agent, svid, status, type, cookie) => {
     logger.debug(`Finding User's session ${sid} ...`);
 
     let session = await Session.findAll({
         where: {
             sid: sid,
             user_agent: user_agent,
-            userId: uid
+            unique_identifier: unique_identifier,
+            status: status,
+            type: type,
+            svid: svid
         }
     }).catch(error => {
         logger.error("ERROR FINDING SESSION");
@@ -48,5 +51,5 @@ module.exports = async (sid, uid, user_agent, cookie) => {
     }
 
     logger.info("SESSION VERIFICATION SUCCESSFUL");
-    return session[0].userId;
+    return session[0].unique_identifier;
 }
