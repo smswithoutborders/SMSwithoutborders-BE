@@ -291,15 +291,6 @@ module.exports = (app) => {
     app.post("/users/:user_id/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
         try {
-            if (!req.params.user_id) {
-                logger.error("NO USERID");
-                throw new ERRORS.BadRequest();
-            }
-            if (!req.cookies.SWOB) {
-                logger.error("NO COOKIE");
-                throw new ERRORS.Forbidden();
-            };
-
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
             const PLATFORM = req.params.platform;
@@ -346,14 +337,6 @@ module.exports = (app) => {
 
     app.put("/users/:user_id/platforms/:platform/protocols/:protocol/:action?", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         try {
-            if (!req.params.user_id) {
-                logger.error("NO USERID");
-                throw new ERRORS.BadRequest();
-            }
-            if (!req.cookies.SWOB) {
-                logger.error("NO COOKIE");
-                throw new ERRORS.Forbidden();
-            };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
             const PLATFORM = req.params.platform;
@@ -406,14 +389,6 @@ module.exports = (app) => {
     app.delete("/users/:user_id/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
         try {
-            if (!req.params.user_id) {
-                logger.error("NO USERID");
-                throw new ERRORS.BadRequest();
-            }
-            if (!req.cookies.SWOB) {
-                logger.error("NO COOKIE");
-                throw new ERRORS.Forbidden();
-            };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
 
