@@ -51,7 +51,7 @@ module.exports = async (req, res, next) => {
                     const COOKIE = req.cookies.SWOB.cookie;
                     const USER_AGENT = req.get("user-agent");
 
-                    await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+                    await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
                     let url = await platformObj.init(originalURL);
                     req.platformRes = {
@@ -82,7 +82,7 @@ module.exports = async (req, res, next) => {
                     const COOKIE = req.cookies.SWOB.cookie;
                     const USER_AGENT = req.get("user-agent");
 
-                    await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+                    await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
                     // INFO - Google API returns a UTF-8 encoded verification code on second request of OAuth2 token
                     // INFO - Google API Client requires a non UTF-8 verification code, so we decode every verification code entry at API level  
@@ -119,7 +119,7 @@ module.exports = async (req, res, next) => {
                     const COOKIE = req.cookies.SWOB.cookie;
                     const USER_AGENT = req.get("user-agent");
 
-                    const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+                    const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
                     const USER = await VERIFY_PASSWORDS(ID, PASSWORD);
                     const PLATFORM = await FIND_PLATFORMS(platform);
                     const GRANT = await FIND_GRANTS(USER, PLATFORM);
@@ -166,6 +166,13 @@ module.exports = async (req, res, next) => {
                         throw new ERRORS.Forbidden();
                     };
 
+                    const SID = req.cookies.SWOB.sid;
+                    const UID = req.params.user_id;
+                    const COOKIE = req.cookies.SWOB.cookie;
+                    const USER_AGENT = req.get("user-agent");
+
+                    await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
+
                     let url = await platformObj.init(originalURL);
                     req.platformRes = {
                         url: url.url
@@ -192,6 +199,13 @@ module.exports = async (req, res, next) => {
                         throw new ERRORS.BadRequest();
                     };
                     // =============================================================
+
+                    const SID = req.cookies.SWOB.sid;
+                    const UID = req.params.user_id;
+                    const COOKIE = req.cookies.SWOB.cookie;
+                    const USER_AGENT = req.get("user-agent");
+
+                    await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
                     const AUTH_TOKEN = req.body.oauth_token;
                     const AUTH_VERIFIER = req.body.oauth_verifier;
@@ -226,7 +240,7 @@ module.exports = async (req, res, next) => {
                     const COOKIE = req.cookies.SWOB.cookie;
                     const USER_AGENT = req.get("user-agent");
 
-                    const ID = await FIND_SESSION(SID, UID, USER_AGENT, COOKIE);
+                    const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
                     const USER = await VERIFY_PASSWORDS(ID, PASSWORD);
                     const PLATFORM = await FIND_PLATFORMS(platform);
                     const GRANT = await FIND_GRANTS(USER, PLATFORM);
@@ -277,6 +291,13 @@ module.exports = async (req, res, next) => {
                     };
                     // =============================================================
 
+                    const SID = req.cookies.SWOB.sid;
+                    const UID = req.params.user_id;
+                    const COOKIE = req.cookies.SWOB.cookie;
+                    const USER_AGENT = req.get("user-agent");
+
+                    await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
+
                     let phoneNumber = req.body.phone_number;
 
                     let result = await platformObj.init(phoneNumber);
@@ -317,6 +338,13 @@ module.exports = async (req, res, next) => {
                         };
                         // =============================================================
 
+                        const SID = req.cookies.SWOB.sid;
+                        const UID = req.params.user_id;
+                        const COOKIE = req.cookies.SWOB.cookie;
+                        const USER_AGENT = req.get("user-agent");
+
+                        await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
+
                         let phoneNumber = req.body.phone_number;
                         let firstName = req.body.first_name;
                         let lastName = req.body.last_name;
@@ -353,6 +381,13 @@ module.exports = async (req, res, next) => {
                         throw new ERRORS.BadRequest();
                     };
                     // =============================================================
+
+                    const SID = req.cookies.SWOB.sid;
+                    const UID = req.params.user_id;
+                    const COOKIE = req.cookies.SWOB.cookie;
+                    const USER_AGENT = req.get("user-agent");
+
+                    await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
                     const PHONE_NUMBER = req.body.phone_number;
                     const AUTH_CODE = req.body.code;

@@ -299,19 +299,17 @@ module.exports = (app) => {
                 logger.error("NO COOKIE");
                 throw new ERRORS.Forbidden();
             };
+
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
-            const COOKIE = req.cookies.SWOB.cookie;
-            const USER_AGENT = req.get("user-agent");
-
-            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
             const PLATFORM = req.params.platform;
+
             const URL = req.platformRes.url ? req.platformRes.url : "";
             const BODY = req.platformRes.body ? req.platformRes.body : "";
 
             let platform = await FIND_PLATFORMS(PLATFORM);
 
-            let session = await UPDATE_SESSION(SID, ID, null);
+            let session = await UPDATE_SESSION(SID, UID, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -358,23 +356,20 @@ module.exports = (app) => {
             };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
-            const COOKIE = req.cookies.SWOB.cookie;
-            const USER_AGENT = req.get("user-agent");
-
-            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
             const PLATFORM = req.params.platform;
+
             const RESULT = req.platformRes.result ? req.platformRes.result : "";
             const BODY = req.platformRes.body ? req.platformRes.body : "";
             const INIT_URL = req.platformRes.initialization_url ? req.platformRes.initialization_url : "";
 
-            let user = await FIND_USERS(ID);
+            let user = await FIND_USERS(UID);
             let platform = await FIND_PLATFORMS(PLATFORM);
 
             if (RESULT) {
                 await STORE_GRANTS(user, platform, RESULT);
             }
 
-            let session = await UPDATE_SESSION(SID, ID, null);
+            let session = await UPDATE_SESSION(SID, UID, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -421,15 +416,12 @@ module.exports = (app) => {
             };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
-            const COOKIE = req.cookies.SWOB.cookie;
-            const USER_AGENT = req.get("user-agent");
 
-            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
             const GRANT = req.platformRes.grant;
 
             await DELETE_GRANTS(GRANT);
 
-            let session = await UPDATE_SESSION(SID, ID, null);
+            let session = await UPDATE_SESSION(SID, UID, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
