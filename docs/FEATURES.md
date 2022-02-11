@@ -306,7 +306,7 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
     "platform": "telegram"
 }
 ```
-The value of ```body``` tells the state of the telegram APU. 
+The value of ```body``` tells the state of the telegram API. 
 * If ```body = 201```, this means a verification code has been sent via sms or via an active telegram session.
 * If ```body = 200```, this means the user already has an active telegram session with sms without borders.
 
@@ -342,7 +342,7 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
 }
 ```
 
-The value of ```body``` tells the state of the telegram APU. 
+The value of ```body``` tells the state of the telegram API. 
 * If ```body = 202```, this means the user has no telegram account with the given phone number and one could be created by sms without borders for the user with the given phone number. In this case an initialization url is given which point to the [registration](#2a-registration) endpoint.
 
 #### 2a. Registration
