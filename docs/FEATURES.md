@@ -115,7 +115,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000 
 
 ```bash
-curl --location --request POST 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/gmail/protocols/oauth2' \
+curl --location --request POST 'http://localhost:9000/users/{uid}/gmail/protocols/oauth2' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw ''
@@ -145,7 +145,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000 
 
 ```bash
-curl --location --request PUT 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/gmail/protocols/oauth2' \
+curl --location --request PUT 'http://localhost:9000/users/{uid}/gmail/protocols/oauth2' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -174,7 +174,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000 
 
 ```bash
-curl --location --request DELETE 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/gmail/protocols/oauth2' \
+curl --location --request DELETE 'http://localhost:9000/users/{uid}/gmail/protocols/oauth2' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -199,7 +199,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000 
 
 ```bash
-curl --location --request POST 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/twitter/protocols/oauth' \
+curl --location --request POST 'http://localhost:9000/users/{uid}/twitter/protocols/oauth' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw ''
@@ -230,7 +230,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000 
 
 ```bash
-curl --location --request PUT 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/twitter/protocols/oauth' \
+curl --location --request PUT 'http://localhost:9000/users/{uid}/twitter/protocols/oauth' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -260,7 +260,137 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000 
 
 ```bash
-curl --location --request DELETE 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/twitter/protocols/oauth' \
+curl --location --request DELETE 'http://localhost:9000/users/{uid}/twitter/protocols/oauth' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw '{
+    "password": "xxxxxxxxxxxxxx"
+}'
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain an empty object 
+
+```bash
+{}
+```
+### 3. Telegram Grant
+SMS without Borders user managment API supports [Telegram](https://telegram.org/) platform using an [TwoFactor]() protocol
+#### 1. Initialization
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+- Phone number (with country code)
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request POST 'http://localhost:9000/users/{uid}/telegram/protocols/twofactor' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw '{
+    "phone_number": "+xxxxxxxxxxxxxxx"
+}'
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
+- url
+- body
+- platform
+
+```bash
+{
+    "url": "",
+    "body": 201/200,
+    "platform": "telegram"
+}
+```
+The value of ```body``` tells the state of the telegram APU. 
+* If ```body = 201```, this means a verification code has been sent via sms or via an active telegram session.
+* If ```body = 200```, this means the user already has an active telegram session with sms without borders.
+
+#### 2. Validation
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+- Code (This is an authentication code sent by the platform provider via sms or via an active telegram session)
+- Phone number (with country code)
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request PUT 'http://localhost:9000/users/{uid}/telegram/protocols/twofactor' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw '{
+    "code": "xxxxxxx",
+    "phone_number": "+xxxxxxxxxxxxxx"
+}'
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
+- body
+- initialization_url
+
+```bash
+{
+    "body": 202/"",
+    "initialization_url": `/platforms/{platform}/protocols/{protocol}/register`/""
+}
+```
+
+The value of ```body``` tells the state of the telegram APU. 
+* If ```body = 202```, this means the user has no telegram account with the given phone number and one could be created by sms without borders for the user with the given phone number. In this case an initialization url is given which point to the [registration](#2a-registration) endpoint.
+
+#### 2a. Registration
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+- First name
+- Last name
+- Phone number (with country code)
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request PUT 'http://localhost:9000/users/{uid}/telegram/protocols/twofactor/register' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw '{
+    "first_name": "xxxxxxx",
+    "last_name": "xxxxxxx",
+    "phone_number": "+xxxxxxxxxxxxxx"
+}'
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
+- body
+- initialization_url
+
+```bash
+{
+    "body": "",
+    "initialization_url": ""
+}
+```
+
+#### 3. Revoke
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+- Password
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request DELETE 'http://localhost:9000/users/{uid}/telegram/protocols/twofactor' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
