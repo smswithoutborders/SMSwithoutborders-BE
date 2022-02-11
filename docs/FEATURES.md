@@ -45,7 +45,7 @@ The user has to provide the following in the [request body](https://developer.mo
 - SVID
 - code: The [OTP](https://en.wikipedia.org/wiki/One-time_password) got from [Provide registration details](#Provide-registration-details)
 
-see [Provide registration details](#1.-Provide-registration-details) to get all the values mentioned above
+see [Provide registration details](#1-Provide-registration-details) to get all the values mentioned above
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
 - [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
@@ -106,7 +106,7 @@ There are three stages involved in managing grants with an SMS without Borders u
 ### 1. Gmail Grant
 SMS without Borders user managment API supports [Gmail](https://www.google.com/gmail/about/) platform using an [OAuth2](https://oauth.net/2/) protocol
 #### 1. Initialization
-The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2.-Authenticate-an-account)
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account)
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
 - [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
@@ -135,7 +135,7 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
 ```
 
 #### 2. Validation
-The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2.-Authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
 - Code (This is an authentication code given by the platform after approving the consent screen. It's often returned in a URL [query string](https://en.wikipedia.org/wiki/Query_string))
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
@@ -164,7 +164,7 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
 }
 ```
 #### 3. Revoke
-The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2.-Authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
 - Password
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
@@ -175,6 +175,92 @@ Here is an example. Running User management API locally on port 9000
 
 ```bash
 curl --location --request DELETE 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/gmail/protocols/oauth2' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw '{
+    "password": "xxxxxxxxxxxxxx"
+}'
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain an empty object 
+
+```bash
+{}
+```
+### 2. Twitter Grant
+SMS without Borders user managment API supports [Twitter](https://about.twitter.com/en) platform using an [OAuth](https://oauth.net/) protocol
+#### 1. Initialization
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account)
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request POST 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/twitter/protocols/oauth' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw ''
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
+- url
+- body
+- platform
+
+```bash
+{
+    "url": <consent screen url>,
+    "body": "",
+    "platform": "twitter"
+}
+```
+
+#### 2. Validation
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+- OAuth Token (This is an authentication token given by the platform after approving the consent screen. It's often returned in a URL [query string](https://en.wikipedia.org/wiki/Query_string))
+- OAuth Verifier (This is an authentication verifier given by the platform after approving the consent screen. It's often returned in a URL [query string](https://en.wikipedia.org/wiki/Query_string))
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request PUT 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/twitter/protocols/oauth' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw '{
+    "oauth_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "oauth_verifier": "xxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}'
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
+- body
+- initialization_url
+
+```bash
+{
+    "body": "",
+    "initialization_url": ""
+}
+```
+#### 3. Revoke
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+- Password
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request DELETE 'http://localhost:9000/users/xxxxxx-xxxx-xxxx-xxxx-xxxxxx/platforms/twitter/protocols/oauth' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
