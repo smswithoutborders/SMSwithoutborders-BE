@@ -29,6 +29,7 @@ const VERIFY_PHONE_NUMBER = require("../../models/verify_phone_number.models");
 const PURGE_GRANTS = require("../../models/purge_grants.models");
 const VERIFY_PLATFORMS = require("../../models/verify_platforms.models");
 const VERIFY_RECOVERY = require("../../models/verify_recovery.models");
+const DELETE_ACCOUNTS = require("../../models/delete_account.models");
 
 
 var rootCas = require('ssl-root-cas').create()
@@ -672,6 +673,71 @@ module.exports = (app) => {
             await MODIFY_PASSWORDS(USER, NEW_PASSWORD);
 
             await UPDATE_SESSION(SID, PHONE_NUMBER, "updated");
+
+            return res.status(200).json();
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+    app.delete("/users/:user_id", async (req, res, next) => {
+        try {
+            if (!req.params.user_id) {
+                logger.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            }
+            if (!req.cookies.SWOB) {
+                logger.error("NO COOKIE");
+                throw new ERRORS.Forbidden();
+            };
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.password) {
+                logger.error("NO PASSWORD");
+                throw new ERRORS.BadRequest();
+            };
+
+            // TODO ADD MIDDLEWARE CHECKS
+            if (req.body.password.length < 8) {
+                logger.error("PASSWORD < 8 CHARS");
+                throw new ERRORS.BadRequest();
+            };
+
+            // =============================================================
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const USER_AGENT = req.get("user-agent");
+            const PASSWORD = req.body.password;
+
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
+            const USER = await VERIFY_PASSWORDS(ID, PASSWORD);
+            let GRANTS = await USER.getWallets();
+            const originalURL = req.header("Origin");
+
+            for (let i = 0; i < GRANTS.length; i++) {
+                let PLATFORM = await VERIFY_PLATFORMS(GRANTS[i].platformId)
+                let GRANT = await PURGE_GRANTS(originalURL, PLATFORM.name, GRANTS[i], USER);
+                await DELETE_GRANTS(GRANT);
+            };
+
+            await DELETE_ACCOUNTS(USER);
 
             return res.status(200).json();
         } catch (err) {
