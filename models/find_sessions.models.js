@@ -25,7 +25,7 @@ module.exports = async (sid, unique_identifier, user_agent, svid, status, type, 
 
     if (session.length < 1) {
         logger.error("NO SESSION FOUND");
-        throw new ERRORS.Forbidden();
+        throw new ERRORS.Unauthorized();
     };
 
     // IF MORE THAN ONE SESSION EXIST IN DATABASE
@@ -42,12 +42,12 @@ module.exports = async (sid, unique_identifier, user_agent, svid, status, type, 
 
     if (age <= 0) {
         logger.error("EXPIRED SESSION");
-        throw new ERRORS.Forbidden();
+        throw new ERRORS.Unauthorized();
     }
 
     if (session[0].data !== JSON.stringify(cookie)) {
         logger.error("INVALID COOKIE");
-        throw new ERRORS.Forbidden();
+        throw new ERRORS.Unauthorized();
     }
 
     logger.info("SESSION VERIFICATION SUCCESSFUL");

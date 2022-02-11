@@ -97,9 +97,28 @@ class twoFactor {
         });
     }
 
-    revoke(originalURL, token) {
+    revoke(phonenumber_hashed) {
         return new Promise((resolve, reject) => {
+            try {
+                const HOST = this.credentials.telegram.TELEGRAM_REQUEST_HOST;
 
+                axios.delete(`${HOST}/users`, {
+                        data: {
+                            phonenumber_hash: `${phonenumber_hashed}`
+                        }
+                    })
+                    .then(res => {
+                        if (res.status == 200) {
+                            resolve({
+                                status: res.status
+                            });
+                        };
+                    }).catch(err => {
+                        reject(err);
+                    });
+            } catch (error) {
+                reject(error)
+            }
         });
     }
 };

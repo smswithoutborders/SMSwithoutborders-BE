@@ -25,7 +25,7 @@ module.exports = async (id, password) => {
     // RTURN = [], IF USER IS NOT FOUND
     if (user.length < 1) {
         logger.error("NO USER FOUND");
-        throw new ERRORS.Unauthorized();
+        throw new ERRORS.Forbidden();
     }
 
     // IF MORE THAN ONE USER EXIST IN DATABASE

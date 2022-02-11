@@ -11,7 +11,7 @@ module.exports = async (grant, user) => {
 
     logger.debug(`Decrypting grant For ${user.id} ...`);
     let decrypted_grant = {
-        username: JSON.parse(security.decrypt(grant.username, grant.iv)),
+        username: grant.username ? JSON.parse(security.decrypt(grant.username, grant.iv)) : "",
         token: JSON.parse(security.decrypt(grant.token, grant.iv)),
         uniqueId: JSON.parse(security.decrypt(grant.uniqueId, grant.iv))
     };

@@ -427,6 +427,48 @@ module.exports = async (req, res, next) => {
                         return next();
                     };
                 };
+
+                if (req.method.toLowerCase() == "delete") {
+                    if (!req.params.user_id) {
+                        logger.error("NO USERID");
+                        throw new ERRORS.BadRequest();
+                    }
+                    if (!req.cookies.SWOB) {
+                        logger.error("NO COOKIE");
+                        throw new ERRORS.Forbidden();
+                    };
+
+                    // ==================== REQUEST BODY CHECKS ====================
+                    if (!req.body.password) {
+                        logger.error("NO PASSWORD");
+                        throw new ERRORS.BadRequest();
+                    };
+                    // =============================================================
+
+                    const SID = req.cookies.SWOB.sid;
+                    const UID = req.params.user_id;
+                    const PASSWORD = req.body.password;
+                    const COOKIE = req.cookies.SWOB.cookie;
+                    const USER_AGENT = req.get("user-agent");
+
+                    const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
+                    const USER = await VERIFY_PASSWORDS(ID, PASSWORD);
+                    const PLATFORM = await FIND_PLATFORMS(platform);
+                    const GRANT = await FIND_GRANTS(USER, PLATFORM);
+                    const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
+                    const TOKEN = DECRYPTED_GRANT.token
+
+                    let result = await platformObj.revoke(TOKEN);
+                    let status = result.status;
+
+                    if (status == 200) {
+                        req.platformRes = {
+                            grant: GRANT
+                        };
+                        return next();
+                    };
+                };
+
                 logger.error("INVALID METHOD")
                 throw new ERRORS.BadRequest();
             };
@@ -449,6 +491,10 @@ module.exports = async (req, res, next) => {
         if (err instanceof ERRORS.Forbidden) {
             return res.status(403).send(err.message);
         } // 403
+
+        if (err instanceof ERRORS.Unauthorized) {
+            return res.status(401).send(err.message);
+        } // 401
 
         if (err instanceof ERRORS.Conflict) {
             return res.status(409).send(err.message);
