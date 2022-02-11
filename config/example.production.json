@@ -9,8 +9,8 @@
         "api": {
             "User_management_API_PORT": "9000",
             "Publisher_API_PORT": "10000",
-            "KEY": "",
-            "SALT": "",
+            "KEY": "de4053831a43d62d9e68fc11319270a9",
+            "SALT": "acaad78fd9dadcb056840c09073190a8",
             "secure_sessions": true,
             "session_maxAge": "2 * 60 * 60 * 1000"
         },
