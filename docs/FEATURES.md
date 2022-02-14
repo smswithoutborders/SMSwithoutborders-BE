@@ -403,7 +403,53 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
 ```bash
 {}
 ```
+## 4. Get saved and unsaved platforms
+Every [grant](#3-manage-grants) has an associate platform. For every grant stored, its associate platform is placed under **saved platforms** and for every grant not stored its associate platform is placed under **unsaved platforms**.
 
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account). 
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request GET 'http://localhost:9000/users/{uid}/platforms' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw ''
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain
+
+- unsaved_platforms
+- saved_platforms
+
+```bash
+{
+     "unsaved_platforms": [
+        {
+            "name": "xxx",
+            "description": "xxxx",
+            "logo": "xxxx",
+            "initialization_url": "xxxx",
+            "type": "xxx",
+            "letter": "x"
+        }
+    ],
+    "saved_platforms": [
+        {
+            "name": "xxx",
+            "description": "xxxx",
+            "logo": "xxxx",
+            "initialization_url": "xxxx",
+            "type": "xxx",
+            "letter": "x"
+        }
+    ]
+}
+```
 
 
 
