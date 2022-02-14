@@ -79,37 +79,58 @@ require("./routes/prod")(app);
 if (config.util.getEnv('NODE_ENV') !== 'production') {
     logger.debug(`Environment: ${config.util.getEnv('NODE_ENV')}`);
     logger.warn("This is a development server. Do not use it in a production deployment.");
-    app.listen(SERVER_CFG.api.User_management_API_PORT, logger.info(`Running on port ${SERVER_CFG.api.User_management_API_PORT}`));
-    app.runningPort = SERVER_CFG.api.User_management_API_PORT
-    app.is_ssl = false
-} else {
-    if (!SERVER_CFG.ssl_api.CERTIFICATE && !fs.existsSync(SERVER_CFG.ssl_api.CERTIFICATE)) {
-        throw new Error("No SSL CERTIFICATE");
-    };
-    if (!SERVER_CFG.ssl_api.KEY && !fs.existsSync(SERVER_CFG.ssl_api.KEY)) {
-        throw new Error("No SSL KEY");
-    };
-    if (!SERVER_CFG.ssl_api.PEM && !fs.existsSync(SERVER_CFG.ssl_api.PEM)) {
-        throw new Error("No SSL PEM");
-    };
 
     let httpsServer = ""
-    let privateKey = fs.readFileSync(SERVER_CFG.ssl_api.KEY, 'utf8');
-    let certificate = fs.readFileSync(SERVER_CFG.ssl_api.CERTIFICATE, 'utf8');
-    // let certificate = fs.readFileSync(SERVER_CFG.ssl_api.PEM, 'utf8');
-    let ca = [
-        fs.readFileSync(SERVER_CFG.ssl_api.PEM)
-    ]
-    let credentials = {
-        key: privateKey,
-        cert: certificate,
-        ca: ca
-    };
+    if ((SERVER_CFG.hasOwnProperty("ssl_api")) && fs.existsSync(SERVER_CFG.ssl_api.CERTIFICATE) && fs.existsSync(SERVER_CFG.ssl_api.KEY) && fs.existsSync(SERVER_CFG.ssl_api.PEM)) {
+        let privateKey = fs.readFileSync(SERVER_CFG.ssl_api.KEY, 'utf8');
+        let certificate = fs.readFileSync(SERVER_CFG.ssl_api.CERTIFICATE, 'utf8');
 
+        let ca = [
+            fs.readFileSync(SERVER_CFG.ssl_api.PEM)
+        ]
+        let credentials = {
+            key: privateKey,
+            cert: certificate,
+            ca: ca
+        };
+
+        httpsServer = https.createServer(credentials, app);
+        httpsServer.listen(SERVER_CFG.ssl_api.API_PORT);
+        logger.info("Running secured on port: " + SERVER_CFG.ssl_api.API_PORT)
+        app.runningPort = SERVER_CFG.ssl_api.API_PORT
+        app.is_ssl = true
+    } else {
+        logger.info("Running in-secured on port: " + SERVER_CFG.api.User_management_API_PORT)
+        app.listen(SERVER_CFG.api.User_management_API_PORT);
+        app.runningPort = SERVER_CFG.api.User_management_API_PORT
+        app.is_ssl = false
+    }
+} else {
     logger.debug(`Environment: ${config.util.getEnv('NODE_ENV')}`);
-    httpsServer = https.createServer(credentials, app);
-    httpsServer.listen(SERVER_CFG.ssl_api.API_PORT);
-    logger.info("Running secured on port:", SERVER_CFG.ssl_api.API_PORT)
-    app.runningPort = SERVER_CFG.ssl_api.API_PORT
-    app.is_ssl = true
+
+    let httpsServer = ""
+    if ((SERVER_CFG.hasOwnProperty("ssl_api")) && fs.existsSync(SERVER_CFG.ssl_api.CERTIFICATE) && fs.existsSync(SERVER_CFG.ssl_api.KEY) && fs.existsSync(SERVER_CFG.ssl_api.PEM)) {
+        let privateKey = fs.readFileSync(SERVER_CFG.ssl_api.KEY, 'utf8');
+        let certificate = fs.readFileSync(SERVER_CFG.ssl_api.CERTIFICATE, 'utf8');
+
+        let ca = [
+            fs.readFileSync(SERVER_CFG.ssl_api.PEM)
+        ]
+        let credentials = {
+            key: privateKey,
+            cert: certificate,
+            ca: ca
+        };
+
+        httpsServer = https.createServer(credentials, app);
+        httpsServer.listen(SERVER_CFG.ssl_api.API_PORT);
+        logger.info("Running secured on port: " + SERVER_CFG.ssl_api.API_PORT)
+        app.runningPort = SERVER_CFG.ssl_api.API_PORT
+        app.is_ssl = true
+    } else {
+        logger.info("Running in-secured on port: " + SERVER_CFG.api.User_management_API_PORT)
+        app.listen(SERVER_CFG.api.User_management_API_PORT);
+        app.runningPort = SERVER_CFG.api.User_management_API_PORT
+        app.is_ssl = false
+    }
 };
