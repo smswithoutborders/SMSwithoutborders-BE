@@ -5,7 +5,7 @@
 1. [Introduction](#introduction)
 2. [Create an account](#1-create-an-account)
     1. [Provide registration details](#1-provide-registration-details)
-    2. [Validate OTP and verify new account](#2-validate-[OTP](https://en.wikipedia.org/wiki/One-time_password)-and-verify-new-account)
+    2. [Validate OTP and verify new account](#2-validate-otp-and-verify-new-account)
 3. [Authenticate an account](#2-authenticate-an-account)
 4. [Manage Grants](#3-manage-grants)
     1. [Gmail Grant](#1-gmail-grant)
