@@ -1,5 +1,25 @@
 # Features
 
+## Table of contents
+
+1. [Introduction](#introduction)
+2. [Create an account](#1-create-an-account)
+    1. [Provide registration details](#1-provide-registration-details)
+    2. [Validate OTP and verify new account](#2-validate-[OTP](https://en.wikipedia.org/wiki/One-time_password)-and-verify-new-account)
+3. [Authenticate an account](#2-authenticate-an-account)
+4. [Manage Grants](#3-manage-grants)
+    1. [Gmail Grant](#1-gmail-grant)
+    2. [Twitter Grant](#2-twitter-grant)
+    3. [Telegram Grant](#3-telegram-grant)
+5. [Get saved and unsaved platforms](#4-get-saved-and-unsaved-platforms)
+6. [Recover password](#5-recover-password)
+    1. [Verify phone number](#1-verify-phone-number)
+    2. [Validate OTP](#2-validate-OTP)
+    3. [Provide new password](#3-provide-new-password)
+7. [Change Password](#6-change-password)
+8. [Delete SMS without Borders account](#7-delete-SMS-without-Borders-account)
+9. [Destroy session cookie](#8-destroy-session-cookie)
+
 ## Introduction
 SMS without Borders provides a RESTful cloud API and User management services. It is directly configurable with MySQL databases for managing users. Also provides out of the box integrations of Google OAuth-2.0, Twitter OAuth, and Telegram end-points and Account authentication. Here are a list of features made available by thsi tool. 
 
