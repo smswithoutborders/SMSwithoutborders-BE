@@ -26,8 +26,8 @@
 
 ## Requirements
 - MySQL (MariaDB)
-- nodejs
-- npm
+- [nodejs](https://nodejs.org) (version >= [16.14.0](https://nodejs.org/dist/v16.14.0/node-v16.14.0-linux-x64.tar.xz))
+- npm (version >= 8.3.1)
 
 ## Installation
 All runtime dependencies are installed using npm 
