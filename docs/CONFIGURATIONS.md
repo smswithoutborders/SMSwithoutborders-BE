@@ -25,7 +25,7 @@
 
 
 ## Requirements
-- MySQL (MariaDB)
+- [MySQL](https://www.mysql.com/) (version >= 8.0.28) ([MariaDB](https://mariadb.org/))
 - [nodejs](https://nodejs.org) (version >= [16.14.0](https://nodejs.org/dist/v16.14.0/node-v16.14.0-linux-x64.tar.xz))
 - npm (version >= 8.3.1)
 
