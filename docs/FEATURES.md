@@ -587,5 +587,27 @@ If successful, the user's account and all [grants](#3-manage-grants) are deleted
 {}
 ```
 
+## 8. Destroy session cookie
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account).
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request POST 'http://localhost:9000/users/{uid}/logout' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw ''
+```
+
+If successful, the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on the user's agent will be destroyed invalidating that user's session. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain an empty object. 
+
+```bash
+{}
+```
+
 
 
