@@ -43,7 +43,7 @@ module.exports = async (req, res, next) => {
                     }
                     if (!req.cookies.SWOB) {
                         logger.error("NO COOKIE");
-                        throw new ERRORS.Forbidden();
+                        throw new ERRORS.Unauthorized();
                     };
 
                     const SID = req.cookies.SWOB.sid;
@@ -67,7 +67,7 @@ module.exports = async (req, res, next) => {
                     }
                     if (!req.cookies.SWOB) {
                         logger.error("NO COOKIE");
-                        throw new ERRORS.Forbidden();
+                        throw new ERRORS.Unauthorized();
                     };
 
                     // ==================== REQUEST BODY CHECKS ====================
@@ -103,7 +103,7 @@ module.exports = async (req, res, next) => {
                     }
                     if (!req.cookies.SWOB) {
                         logger.error("NO COOKIE");
-                        throw new ERRORS.Forbidden();
+                        throw new ERRORS.Unauthorized();
                     };
 
                     // ==================== REQUEST BODY CHECKS ====================
@@ -163,7 +163,7 @@ module.exports = async (req, res, next) => {
                     }
                     if (!req.cookies.SWOB) {
                         logger.error("NO COOKIE");
-                        throw new ERRORS.Forbidden();
+                        throw new ERRORS.Unauthorized();
                     };
 
                     const SID = req.cookies.SWOB.sid;
@@ -187,7 +187,7 @@ module.exports = async (req, res, next) => {
                     }
                     if (!req.cookies.SWOB) {
                         logger.error("NO COOKIE");
-                        throw new ERRORS.Forbidden();
+                        throw new ERRORS.Unauthorized();
                     };
 
                     // ==================== REQUEST BODY CHECKS ====================
@@ -226,7 +226,7 @@ module.exports = async (req, res, next) => {
                     }
                     if (!req.cookies.SWOB) {
                         logger.error("NO COOKIE");
-                        throw new ERRORS.Forbidden();
+                        throw new ERRORS.Unauthorized();
                     };
 
                     // ==================== REQUEST BODY CHECKS ====================
@@ -284,7 +284,7 @@ module.exports = async (req, res, next) => {
                     }
                     if (!req.cookies.SWOB) {
                         logger.error("NO COOKIE");
-                        throw new ERRORS.Forbidden();
+                        throw new ERRORS.Unauthorized();
                     };
 
                     // ==================== REQUEST BODY CHECKS ====================
@@ -374,7 +374,7 @@ module.exports = async (req, res, next) => {
                     }
                     if (!req.cookies.SWOB) {
                         logger.error("NO COOKIE");
-                        throw new ERRORS.Forbidden();
+                        throw new ERRORS.Unauthorized();
                     };
 
                     // ==================== REQUEST BODY CHECKS ====================
@@ -435,7 +435,7 @@ module.exports = async (req, res, next) => {
                     }
                     if (!req.cookies.SWOB) {
                         logger.error("NO COOKIE");
-                        throw new ERRORS.Forbidden();
+                        throw new ERRORS.Unauthorized();
                     };
 
                     // ==================== REQUEST BODY CHECKS ====================

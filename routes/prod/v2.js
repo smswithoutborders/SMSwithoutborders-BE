@@ -98,11 +98,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -165,11 +165,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -222,11 +222,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -247,7 +247,7 @@ module.exports = (app) => {
             }
             if (!req.cookies.SWOB) {
                 logger.error("NO COOKIE");
-                throw new ERRORS.Forbidden();
+                throw new ERRORS.Unauthorized();
             };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
@@ -272,11 +272,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -319,11 +319,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -370,11 +370,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -411,11 +411,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -436,7 +436,7 @@ module.exports = (app) => {
             }
             if (!req.cookies.SWOB) {
                 logger.error("NO COOKIE");
-                throw new ERRORS.Forbidden();
+                throw new ERRORS.Unauthorized();
             };
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.password) {
@@ -495,11 +495,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -541,11 +541,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -562,7 +562,7 @@ module.exports = (app) => {
         try {
             if (!req.cookies.SWOB) {
                 logger.error("NO COOKIE");
-                throw new ERRORS.Forbidden();
+                throw new ERRORS.Unauthorized();
             };
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.code) {
@@ -605,11 +605,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -631,7 +631,7 @@ module.exports = (app) => {
 
             if (!req.cookies.SWOB) {
                 logger.error("NO COOKIE");
-                throw new ERRORS.Forbidden();
+                throw new ERRORS.Unauthorized();
             };
 
             // ==================== REQUEST BODY CHECKS ====================
@@ -680,11 +680,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
@@ -705,7 +705,7 @@ module.exports = (app) => {
             }
             if (!req.cookies.SWOB) {
                 logger.error("NO COOKIE");
-                throw new ERRORS.Forbidden();
+                throw new ERRORS.Unauthorized();
             };
             // ==================== REQUEST BODY CHECKS ====================
             if (!req.body.password) {
@@ -745,10 +745,10 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
             } // 403
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
@@ -770,7 +770,7 @@ module.exports = (app) => {
             }
             if (!req.cookies.SWOB) {
                 logger.error("NO COOKIE");
-                throw new ERRORS.Forbidden();
+                throw new ERRORS.Unauthorized();
             };
             const SID = req.cookies.SWOB.sid;
             const UID = req.params.user_id;
@@ -789,11 +789,11 @@ module.exports = (app) => {
                 return res.status(400).send(err.message);
             } // 400
             if (err instanceof ERRORS.Forbidden) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Unauthorized) {
                 return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409
