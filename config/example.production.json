@@ -21,7 +21,6 @@
         "origin": ["https://smswithoutborders.com:18000"],
         "ssl_api": {
             "API_PORT": "",
-            "SESSION_SECRET": "",
             "CERTIFICATE": "",
             "KEY": "",
             "PEM": ""
@@ -38,9 +37,6 @@
         },
         "telegram": {
             "TELEGRAM_REQUEST_HOST": ""
-        },
-        "twilio": {
-            "AUTH_TOKEN": ""
         }
     }
 }
