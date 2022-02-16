@@ -7,9 +7,9 @@
 3. [Setup](#setup)
     1. [Development environment configurations](#development-environment-configurations)
     2. [Production environment configurations](#production-environment-configurations)
-    3. [Options](#options)
-        1. [Secure Sessions](#Secure-Sessions)
-        2. [Session Max Age](#Session-Max-Age)
+    3. [Configuration Options](#configuration-options)
+        1. [Server](#sever)
+        2. [Credentials](#credentials)
 4. [Running](#running)
     1. [Start Backend User management API](#Start-Backend-User-management-API)
         1. [Development Environment](#User-management-Development-Environment)
@@ -101,14 +101,14 @@ __GOOGLE__
 Acquire credentials from [Google Cloud Platform Console](https://console.cloud.google.com/)
 
 1. **GOOGLE CLIENT ID**: Your Google Client ID
-2. **GOOGLE_CLIENT_SECRET**: Your Google Client Secret
+2. **GOOGLE CLIENT SECRET**: Your Google Client Secret
 
 __TWITTER__
 
 Acquire credentials from [Twitter Developers Portal](https://developer.twitter.com/en/docs/developer-portal/overview)
 
-1. **GOOGLE CLIENT ID**: Your Google Client ID
-2. **GOOGLE_CLIENT_SECRET**: Your Google Client Secret
+1. **TWITTER CLIENT ID**: Your Twitter Client ID
+2. **TWITTER CLIENT SECRET**: Your Twitter Client Secret
 
 __TELEGRAM__
 
