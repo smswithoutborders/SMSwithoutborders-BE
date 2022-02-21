@@ -10,7 +10,7 @@
     3. [Configuration Options](#configuration-options)
         1. [Server](#sever)
         2. [Credentials](#credentials)
-4. [Running](#running)
+4. [How to use](#how-to-use)
     1. [Start Backend User management API](#Start-Backend-User-management-API)
         1. [Development Environment](#User-management-Development-Environment)
         2. [Production Environment](#User-management-Production-Environment)
@@ -21,7 +21,8 @@
         1. [Development Environment](#Development-Environment)
         2. [Production Environment](#Production-Environment)
 5. [API SandBox](#API-SandBox)
-6. [Database tables](#Database-tables)
+6. [API logs](#api-logs)
+7. [Database tables](#Database-tables)
 
 
 ## Requirements
@@ -116,7 +117,7 @@ This is a use-case of the [SMSWithoutBorders-customplatform-Telegram](https://gi
 
 1. **TELEGRAM REQUEST HOST**: The URL of the telegram custom platform server you are connecting to.
 
-## Running
+## How to use
 ### Start Backend User management API
 #### User management Development Environment
 * With NPM
@@ -174,6 +175,9 @@ http://localhost:{PORT}/v1/api-docs
 
 http://localhost:{PORT}/v2/api-docs
 ```
+
+## API Logs
+All log files are found in the logs directory. [Read more](../logs/README.md) ...
 
 ## Database tables
 __Users table__
