@@ -13,8 +13,8 @@ class OAuth {
                 this.oauthClientToken = new twitter.OAuth(
                     'https://api.twitter.com/oauth/request_token',
                     'https://api.twitter.com/oauth/access_token',
-                    this.credentials.twitter.TWITTER_CLIENT_ID,
-                    this.credentials.twitter.TWITTER_CLIENT_SECRET,
+                    this.credentials.twitter.TWITTER_API_KEY,
+                    this.credentials.twitter.TWITTER_API_KEY_SECRET,
                     '1.0A',
                     `${originalURL}/platforms/twitter/protocols/oauth/redirect_codes/`,
                     'HMAC-SHA1'
@@ -48,8 +48,8 @@ class OAuth {
                 this.oauthClientToken = new twitter.OAuth(
                     'https://api.twitter.com/oauth/request_token',
                     'https://api.twitter.com/oauth/access_token',
-                    this.credentials.twitter.TWITTER_CLIENT_ID,
-                    this.credentials.twitter.TWITTER_CLIENT_SECRET,
+                    this.credentials.twitter.TWITTER_API_KEY,
+                    this.credentials.twitter.TWITTER_API_KEY_SECRET,
                     '1.0A',
                     `${originalURL}/platforms/twitter/protocols/oauth/redirect_codes/`,
                     'HMAC-SHA1'
@@ -85,8 +85,8 @@ class OAuth {
                 this.oauthClientToken = new twitter.OAuth(
                     'https://api.twitter.com/oauth/request_token',
                     'https://api.twitter.com/oauth/access_token',
-                    this.credentials.twitter.TWITTER_CLIENT_ID,
-                    this.credentials.twitter.TWITTER_CLIENT_SECRET,
+                    this.credentials.twitter.TWITTER_API_KEY,
+                    this.credentials.twitter.TWITTER_API_KEY_SECRET,
                     '1.0A',
                     `${originalURL}/platforms/twitter/protocols/oauth/redirect_codes/`,
                     'HMAC-SHA1'

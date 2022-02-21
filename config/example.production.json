@@ -32,8 +32,8 @@
             "GOOGLE_CLIENT_SECRET": ""
         },
         "twitter": {
-            "TWITTER_CLIENT_ID": "",
-            "TWITTER_CLIENT_SECRET": ""
+            "TWITTER_API_KEY": "",
+            "TWITTER_API_KEY_SECRET": ""
         },
         "telegram": {
             "TELEGRAM_REQUEST_HOST": ""
