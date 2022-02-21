@@ -173,7 +173,12 @@ module.exports = async (req, res, next) => {
 
                     await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
-                    let url = await platformObj.init(originalURL);
+                    let url = await platformObj.init(originalURL).catch(err => {
+                        logger.error(`Error initialising ${platform} grant`);
+                        logger.error(err.data)
+                        throw new ERRORS.InternalServerError(err);
+                    });
+
                     req.platformRes = {
                         url: url.url
                     }
@@ -212,7 +217,12 @@ module.exports = async (req, res, next) => {
                     const AUTH_TOKEN = req.body.oauth_token;
                     const AUTH_VERIFIER = req.body.oauth_verifier;
 
-                    let result = await platformObj.validate(originalURL, AUTH_TOKEN, AUTH_VERIFIER);
+                    let result = await platformObj.validate(originalURL, AUTH_TOKEN, AUTH_VERIFIER).catch(err => {
+                        logger.error(`Error validating ${platform} grant`);
+                        logger.error(err.data)
+                        throw new ERRORS.InternalServerError(err);
+                    });
+
                     req.platformRes = {
                         result: result
                     };

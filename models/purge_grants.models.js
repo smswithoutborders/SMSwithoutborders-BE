@@ -70,11 +70,11 @@ module.exports = async (ORIGINALURL, PLATFORM, GRANT, USER) => {
         const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
         const TOKEN = DECRYPTED_GRANT.token
 
-        logger.debug(`Revoking ${platform} grant ...`);
-        await platformObj.revoke(originalURL, TOKEN).catch(err => {
-            logger.error(`Error revoking ${platform} grant`);
-            throw new ERRORS.InternalServerError(err);
-        });
+        // logger.debug(`Revoking ${platform} grant ...`);
+        // await platformObj.revoke(originalURL, TOKEN).catch(err => {
+        //     logger.error(`Error revoking ${platform} grant`);
+        //     throw new ERRORS.InternalServerError(err);
+        // });
 
         logger.info(`SUCCESFULLY REVOKED ${platform} GRANT`)
         return GRANT;

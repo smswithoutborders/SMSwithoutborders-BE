@@ -2,13 +2,11 @@
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
-const credentials = config.get("CREDENTIALS");
 let logger = require("../logger");
 
 const Axios = require('axios');
 const ERRORS = require("../error.js");
 const chalk = require("chalk");
-const AUTH_TOKEN = credentials.twilio.AUTH_TOKEN;
 
 if (!SERVER_CFG.router.url) {
     logger.warn(chalk.red("NO ROUTER URL PRESENT IN CONFIGS"));
@@ -23,8 +21,7 @@ let send = async (number) => {
 
     logger.debug("Requesting OTP code ...")
     let result = await Axios.post(url, {
-        number: number,
-        auth_token: AUTH_TOKEN,
+        number: number
     }).catch(function (error) {
         logger.error("ERROR REQUESTING OTP CODE CHECK INPUTS OR INTERNET CONNECTION")
         throw new ERRORS.InternalServerError(error);
@@ -44,7 +41,6 @@ let verify = async (number, session_id, code) => {
     let result = await Axios.post(url, {
         session_id: session_id,
         code: code,
-        auth_token: AUTH_TOKEN,
         number: number
     }).catch(function (error) {
         logger.error("ERROR VERIFYING OTP CODE CHECK INPUTS OR INTERNET CONNECTION")
