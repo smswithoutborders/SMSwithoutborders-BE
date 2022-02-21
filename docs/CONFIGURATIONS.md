@@ -108,8 +108,8 @@ __TWITTER__
 
 Acquire credentials from [Twitter Developers Portal](https://developer.twitter.com/en/docs/developer-portal/overview)
 
-1. **TWITTER CLIENT ID**: Your Twitter Client ID
-2. **TWITTER CLIENT SECRET**: Your Twitter Client Secret
+1. **TWITTER API KEY**: Your Twitter Client ID
+2. **TWITTER API KEY SECRET**: Your Twitter Client Secret
 
 __TELEGRAM__
 
