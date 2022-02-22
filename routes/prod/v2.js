@@ -796,6 +796,7 @@ module.exports = (app) => {
 
                 throw new ERRORS.InternalServerError(err);
             });
+            
             let session = await STORE_SESSION(USER.id, USER_AGENT, null, null, null);
 
             res.cookie("SWOB", {
