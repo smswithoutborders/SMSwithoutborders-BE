@@ -749,7 +749,71 @@ module.exports = (app) => {
             } // 403
             if (err instanceof ERRORS.Unauthorized) {
                 return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+    app.post("/users/:user_id/verify", async (req, res, next) => {
+        try {
+            if (!req.params.user_id) {
+                logger.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            }
+            // ==================== REQUEST BODY CHECKS ====================
+            if (!req.body.password) {
+                logger.error("NO PASSWORD");
+                throw new ERRORS.BadRequest();
+            };
+
+            // TODO ADD MIDDLEWARE CHECKS
+            if (req.body.password.length < 8) {
+                logger.error("PASSWORD < 8 CHARS");
+                throw new ERRORS.BadRequest();
+            };
+
+            // =============================================================
+            const UID = req.params.user_id;
+            const USER_AGENT = req.get("user-agent");
+            const PASSWORD = req.body.password;
+
+            const USER = await VERIFY_PASSWORDS(UID, PASSWORD).catch(err => {
+                if (err instanceof ERRORS.Forbidden) {
+                    throw new ERRORS.Unauthorized();
+                } //401
+
+                if (err instanceof ERRORS.Conflict) {
+                    throw new ERRORS.Conflict();
+                } // 409
+
+                throw new ERRORS.InternalServerError(err);
+            });
+            let session = await STORE_SESSION(USER.id, USER_AGENT, null, null, null);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
+
+            return res.status(200).json();
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
             } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
                 return res.status(409).send(err.message);
             } // 409

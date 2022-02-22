@@ -8,7 +8,7 @@
     2. [Validate OTP and verify new account](#2-validate-otp-and-verify-new-account)
 3. [Authenticate an account](#2-authenticate-an-account)
     1. [With phone number](#1-with-phone-number)
-    2. [With user's ID](#2-with-user's-id)
+    2. [With user's ID](#2-with-users-id)
 4. [Manage Grants](#3-manage-grants)
     1. [Gmail Grant](#1-gmail-grant)
     2. [Twitter Grant](#2-twitter-grant)
