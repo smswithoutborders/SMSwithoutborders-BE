@@ -28,6 +28,7 @@ async function initialize() {
     db.usersInfo = require("./usersInfo.schema.js")(sequelize, Sequelize);
     db.smsVerification = require("./smsVerification.schema.js")(sequelize, Sequelize);
     db.sessions = require("./sessions.schema.js")(sequelize, Sequelize);
+    db.retries = require("./retries.schema.js")(sequelize, Sequelize);
 
     // https://sequelize.org/master/manual/assocs.html
 

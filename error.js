@@ -71,6 +71,16 @@ class UnprocessableEntity extends ErrorHandler {
     }
 }
 
+// 429 Too Many Requests
+class TooManyRequests extends ErrorHandler {
+    constructor(m) {
+        if (arguments.length === 0)
+            super('too many requests');
+        else
+            super(m);
+    }
+}
+
 // 500 Internal Server Error
 class InternalServerError extends ErrorHandler {
     constructor(m) {
@@ -88,3 +98,4 @@ module.exports.NotFound = NotFound;
 module.exports.Conflict = Conflict;
 module.exports.UnprocessableEntity = UnprocessableEntity;
 module.exports.InternalServerError = InternalServerError;
+module.exports.TooManyRequests = TooManyRequests;
