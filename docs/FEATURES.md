@@ -7,6 +7,8 @@
     1. [Provide registration details](#1-provide-registration-details)
     2. [Validate OTP and verify new account](#2-validate-otp-and-verify-new-account)
 3. [Authenticate an account](#2-authenticate-an-account)
+    1. [With phone number](#1-with-phone-number)
+    2. [With user's ID](#2-with-user's-id)
 4. [Manage Grants](#3-manage-grants)
     1. [Gmail Grant](#1-gmail-grant)
     2. [Twitter Grant](#2-twitter-grant)
@@ -88,6 +90,8 @@ If successful, the [response](https://developer.mozilla.org/en-US/docs/Web/API/R
 ```
 
 ## 2. Authenticate an account
+
+### 1. With phone number
 The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
 - Phone Number (with country code) 
 - Password
@@ -113,6 +117,29 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
 {
     "uid": "xxxxxx-xxxx-xxxx-xxxx-xxxxxx"
 }
+```
+
+### 2. With user's ID
+The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
+- Password
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request POST 'http://localhost:9000/users/{uid}/verify' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "password": "password"
+}'
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should be an empty object 
+
+```bash
+{}
 ```
 
 ## 3. Manage Grants
