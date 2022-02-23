@@ -21,11 +21,14 @@ let check = async (uniqueId) => {
     });
 
     if (counter.length < 1) {
-        logger.debug(`Creating retry record ${UNIQUE_ID} ...`);
-        let new_counter = await count.update({
+        logger.debug(`Creating retry record for ${UNIQUE_ID} ...`);
+        let new_counter = await Retry.create({
             uniqueId: UNIQUE_ID,
             count: 0
-        });
+        }).catch(error => {
+            logger.error("ERROR CREATING RETRY RECORD")
+            throw new ERRORS.InternalServerError(error);
+        });;
 
         logger.info("SUCCESSFULLY CREATED RETRY RECORD");
         return new_counter;
@@ -36,8 +39,20 @@ let check = async (uniqueId) => {
         throw new ERRORS.Conflict();
     };
 
-    logger.debug(`Checking retry count for ${UNIQUE_ID} ...`)
-    if (counter[0].count + 1 == ATTEMPTS) {
+    logger.debug(`Checking retry count for ${UNIQUE_ID} ...`);
+
+    if (counter[0].count >= ATTEMPTS) {
+        throw new ERRORS.TooManyRequests();
+    };
+
+    logger.info(`FOUND RETRY RECORD. ${ATTEMPTS - counter[0].count} ATTEMPTS LEFT`);
+    return counter[0];
+};
+
+let add = async (counter) => {
+    const UNIQUE_ID = counter.uniqueId;
+
+    if (counter.count + 1 == ATTEMPTS) {
         logger.debug("Generating retry event code ...");
         let code = generator.generate({
             length: 5,
@@ -58,23 +73,34 @@ let check = async (uniqueId) => {
         logger.info("SUCCESSFULLY CREATED RETRY EVENT")
     };
 
-    if (counter[0].count >= ATTEMPTS) {
-        throw new ERRORS.TooManyRequests();
-    };
-
-    logger.info(`FOUND RETRY RECORD. ${ATTEMPTS - counter[0].count} ATTEMPTS LEFT`);
-    return counter[0];
-};
-
-let add = async (counter) => {
-    const UNIQUE_ID = counter.uniqueId;
-
-    await check(UNIQUE_ID);
-
     logger.debug(`Adding retry count for ${UNIQUE_ID} ...`)
 
-    await counter[0].update({
-        count: counter[0].count + 1
+    await counter.update({
+        count: counter.count + 1
     });
 
+    logger.info("SUCCESSFULLY ADDED RETRY COUNT");
+    return {
+        state: "success"
+    }
 };
+
+let remove = async (counter) => {
+    const UNIQUE_ID = counter.uniqueId;
+
+    logger.debug(`Deleting retry count for ${UNIQUE_ID} ...`)
+
+    await counter.destroy();
+
+    logger.info("SUCCESSFULLY REMOVED RETRY COUNT");
+
+    return {
+        state: "success"
+    }
+};
+
+module.exports = {
+    check,
+    add,
+    remove
+}

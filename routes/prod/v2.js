@@ -31,7 +31,6 @@ const VERIFY_PLATFORMS = require("../../models/verify_platforms.models");
 const VERIFY_RECOVERY = require("../../models/verify_recovery.models");
 const DELETE_ACCOUNTS = require("../../models/delete_account.models");
 
-
 var rootCas = require('ssl-root-cas').create()
 
 require('https').globalAgent.options.ca = rootCas
@@ -233,6 +232,9 @@ module.exports = (app) => {
             if (err instanceof ERRORS.NotFound) {
                 return res.status(404).send(err.message);
             } // 404
+            if (err instanceof ERRORS.TooManyRequests) {
+                return res.status(429).send(err.message);
+            } // 429
 
             logger.error(err);
             return res.status(500).send("internal server error");
@@ -796,7 +798,7 @@ module.exports = (app) => {
 
                 throw new ERRORS.InternalServerError(err);
             });
-            
+
             let session = await STORE_SESSION(USER.id, USER_AGENT, null, null, null);
 
             res.cookie("SWOB", {

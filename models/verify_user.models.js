@@ -7,17 +7,21 @@ const config = require('config');
 const SERVER_CFG = config.get("SERVER");
 const KEY = SERVER_CFG.api.SECRET_KEY;
 let logger = require("../logger");
+const RETRY_COUNTER = require("./retry_counter.models");
 
 let UserInfo = db.usersInfo;
 
 module.exports = async (phone_number, password) => {
     let security = new Security(KEY);
+    const phoneNumberHash = security.hash(phone_number)
+
+    let counter = await RETRY_COUNTER.check(phoneNumberHash);
 
     // SEARCH FOR USERINFO IN DB
     logger.debug(`Finding Phone number ${phone_number} ...`);
     let userInfo = await UserInfo.findAll({
         where: {
-            full_phone_number: security.hash(phone_number),
+            full_phone_number: phoneNumberHash,
             status: "verified"
         }
     }).catch(error => {
@@ -27,8 +31,11 @@ module.exports = async (phone_number, password) => {
 
     // RTURN = [], IF USERINFO IS NOT FOUND
     if (userInfo.length < 1) {
-        logger.error("INVALID PHONENUMBER");
-        throw new ERRORS.Forbidden();
+        let addCount = await RETRY_COUNTER.add(counter);
+        if (addCount.state == "success") {
+            logger.error("INVALID PHONENUMBER");
+            throw new ERRORS.Unauthorized();
+        };
     }
 
     // IF MORE THAN ONE USERINFO EXIST IN DATABASE
@@ -49,10 +56,16 @@ module.exports = async (phone_number, password) => {
     });
 
     if (!user) {
-        logger.error("INVALID PASSWORD");
-        throw new ERRORS.Forbidden();
+        let addCount = await RETRY_COUNTER.add(counter);
+        if (addCount.state == "success") {
+            logger.error("INVALID PASSWORD");
+            throw new ERRORS.Unauthorized();
+        };
     };
 
-    logger.info("USER SUCCESSFULLY AUTHENTICATED");
-    return user.id;
+    let removeCount = await RETRY_COUNTER.remove(counter);
+    if (removeCount.state == "success") {
+        logger.info("USER SUCCESSFULLY AUTHENTICATED");
+        return user.id;
+    };
 }
