@@ -786,10 +786,10 @@ module.exports = (app) => {
             const UID = req.params.user_id;
             const USER_AGENT = req.get("user-agent");
             const PASSWORD = req.body.password;
-            const RETRY_COUNTER = require("./retry_counter.models");
+            const RETRY_COUNTER = require("../../models/retry_counter.models");
 
             let counter = await RETRY_COUNTER.check(UID);
-            const USER = await VERIFY_PASSWORDS(UID, PASSWORD).catch(err => {
+            const USER = await VERIFY_PASSWORDS(UID, PASSWORD).catch(async (err) => {
                 if (err instanceof ERRORS.Forbidden) {
                     let addCount = await RETRY_COUNTER.add(counter);
                     if (addCount.state == "success") {
