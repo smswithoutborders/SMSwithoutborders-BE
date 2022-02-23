@@ -786,12 +786,16 @@ module.exports = (app) => {
             const UID = req.params.user_id;
             const USER_AGENT = req.get("user-agent");
             const PASSWORD = req.body.password;
+            const RETRY_COUNTER = require("./retry_counter.models");
 
+            let counter = await RETRY_COUNTER.check(UID);
             const USER = await VERIFY_PASSWORDS(UID, PASSWORD).catch(err => {
                 if (err instanceof ERRORS.Forbidden) {
-                    throw new ERRORS.Unauthorized();
-                } //401
-
+                    let addCount = await RETRY_COUNTER.add(counter);
+                    if (addCount.state == "success") {
+                        throw new ERRORS.Unauthorized(); //401
+                    };
+                }
                 if (err instanceof ERRORS.Conflict) {
                     throw new ERRORS.Conflict();
                 } // 409
@@ -806,7 +810,10 @@ module.exports = (app) => {
                 cookie: session.data
             }, session.data)
 
-            return res.status(200).json();
+            let removeCount = await RETRY_COUNTER.remove(counter);
+            if (removeCount.state == "success") {
+                return res.status(200).json();
+            };
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
                 return res.status(400).send(err.message);
@@ -823,6 +830,9 @@ module.exports = (app) => {
             if (err instanceof ERRORS.NotFound) {
                 return res.status(404).send(err.message);
             } // 404
+            if (err instanceof ERRORS.TooManyRequests) {
+                return res.status(429).send(err.message);
+            } // 429
 
             logger.error(err);
             return res.status(500).send("internal server error");

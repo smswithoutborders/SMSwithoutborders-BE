@@ -46,9 +46,11 @@ let check = async (uniqueId) => {
     logger.debug(`Checking retry count for ${UNIQUE_ID} ...`);
 
     if (counter[0].count >= ATTEMPTS) {
+        logger.error("TOO MANY REQUESTS");
         throw new ERRORS.TooManyRequests();
     };
     if (counter[0].block >= BLOCKS) {
+        logger.error("TOO MANY REQUESTS");
         throw new ERRORS.TooManyRequests();
     };
 

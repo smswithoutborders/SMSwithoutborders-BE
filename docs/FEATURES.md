@@ -90,6 +90,7 @@ If successful, the [response](https://developer.mozilla.org/en-US/docs/Web/API/R
 ```
 
 ## 2. Authenticate an account
+Authentication is the process whereby a user provides their credentials for identification to obtain adequate resources. The user has 5 failed authentication attempts which when exceeded, the user is unauthorized for 15 minutes. If the user accumulates a sum of 3 subsequent unauthorized sessions (45 failed authentication attempts) they'll be unauthorized for the next 24 hours.
 
 ### 1. With phone number
 The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
