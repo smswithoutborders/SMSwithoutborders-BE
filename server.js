@@ -13,6 +13,7 @@ const cors = require("cors");
 let cookieParser = require('cookie-parser');
 let logger = require("./logger");
 const checkIsSSL = require("./models/checkSSL.models");
+const helmet = require("helmet");
 
 var app = express();
 
@@ -37,6 +38,7 @@ app.use(express.urlencoded({
 }));
 
 app.use('/public', express.static(path.join(__dirname, 'logos')));
+app.use(helmet());
 
 // Create swagger docs
 var options = {}

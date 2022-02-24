@@ -13,6 +13,7 @@
     "express": "^4.17.1",
     "generate-password": "^1.7.0",
     "googleapis": "^72.0.0",
+    "helmet": "^5.0.2",
     "js-sha512": "^0.8.0",
     "morgan": "^1.10.0",
     "mysql2": "^2.2.5",
