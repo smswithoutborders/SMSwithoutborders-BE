@@ -177,6 +177,13 @@ http://localhost:{PORT}/v2/api-docs
 ```
 
 ## API Logs
+
+By default [log levels](../logs/README.md#log-levels) are set to "info". You can change the default [log levels](../logs/README.md#log-levels). For example, [Start both Backend User management API and Backend Publisher API](#Start-both-Backend-User-management-API-and-Backend-Publisher-API) with [log levels](../logs/README.md#log-levels) set to "debug"  
+
+```
+LOG_LEVEL=debug npm start
+```
+
 All log files are found in the logs directory. [Read more](../logs/README.md) ...
 
 ## Database tables

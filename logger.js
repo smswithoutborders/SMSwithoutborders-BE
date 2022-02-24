@@ -10,7 +10,7 @@ let logger = winston.createLogger({
         winston.format.timestamp(),
         winston.format.prettyPrint()
     ),
-    level: 'debug',
+    level: process.env.LOG_LEVEL || 'info',
     transports: [
         new winston.transports.DailyRotateFile({
             filename: path.join(__dirname, 'logs/combined-%DATE%.log'),
