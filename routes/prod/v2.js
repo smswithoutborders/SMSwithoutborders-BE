@@ -834,6 +834,62 @@ module.exports = (app) => {
         }
     });
 
+    app.get("/users/:user_id/dashboard", async (req, res, next) => {
+        try {
+            if (!req.params.user_id) {
+                logger.error("NO USERID");
+                throw new ERRORS.BadRequest();
+            };
+
+            if (!req.cookies.SWOB) {
+                logger.error("NO COOKIE");
+                throw new ERRORS.Unauthorized();
+            };
+
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const USER_AGENT = req.get("user-agent");
+
+            const ID = await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
+
+            let USER = await FIND_USERS(ID);
+            let createdAt = USER.createdAt;
+            let updatedAt = USER.updatedAt;
+
+            let session = await UPDATE_SESSION(SID, ID, null);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
+
+            return res.status(200).json({
+                createdAt: createdAt,
+                updatedAt: updatedAt
+            });
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
     app.post("/users/:user_id/logout", async (req, res, next) => {
         try {
             if (!req.params.user_id) {
