@@ -51,11 +51,6 @@ module.exports = (app) => {
                 throw new ERRORS.BadRequest();
             };
 
-            if (!req.body.name) {
-                logger.error("NO NAME");
-                throw new ERRORS.BadRequest();
-            };
-
             if (!req.body.country_code) {
                 logger.error("NO COUNTRY CODE");
                 throw new ERRORS.BadRequest();
@@ -73,7 +68,7 @@ module.exports = (app) => {
             };
             // =============================================================
             const COUNTRY_CODE = req.body.country_code;
-            const NAME = req.body.name;
+            const NAME = req.body.name ? req.body.name : "";
             const PHONE_NUMBER = req.body.phone_number;
             const FULL_PHONE_NUMBER = req.body.country_code + req.body.phone_number;
             const PASSWORD = req.body.password;
