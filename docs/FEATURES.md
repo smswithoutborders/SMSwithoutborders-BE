@@ -21,6 +21,7 @@
 7. [Change Password](#6-change-password)
 8. [Delete SMS without Borders account](#7-delete-SMS-without-Borders-account)
 9. [Destroy session cookie](#8-destroy-session-cookie)
+10. [Dashboard](#9-dashboard)
 
 ## Introduction
 SMS without Borders provides a RESTful cloud API and User management services. It is directly configurable with MySQL databases for managing users. Also provides out of the box integrations of Google OAuth-2.0, Twitter OAuth, and Telegram end-points and Account authentication. Here are a list of features made available by thsi tool. 
@@ -655,6 +656,34 @@ If successful, the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/He
 
 ```bash
 {}
+```
+
+## 9. Dashboard
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Authentication](#2-authenticate-an-account).
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request GET 'http://localhost:9000/users/{uid}/dashboard' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw ''
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain
+
+- createdAt
+- updatedAt
+
+```bash
+{
+    "createdAt": "yyyy-mm-ddxxx:xx:xx.xxxZ",
+    "updatedAt": "yyyy-mm-ddTxx:xx:xx.xxxZ"
+}
 ```
 
 
