@@ -6,7 +6,7 @@ This is a cloud API and User management service. It is directly configurable wit
 
 ## Documentation
 1. [Configurations](docs/CONFIGURATIONS.md)
-2. [Features](docs/FEATURES.md)
+2. [Features](docs/API_VERSIONS.md)
 3. [Licensing](LICENSE)
 
 ## Contribution

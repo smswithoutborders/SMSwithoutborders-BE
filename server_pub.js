@@ -49,7 +49,8 @@ app.use([morgan('combined', {
 app.use(morgan('dev'));
 
 // ROUTES
-require("./routes/dev")(app);
+// let v2 = require("./routes/publisher/v2");
+// app.use("/v2", v2);
 
 app.listen(SERVER_CFG.api.Publisher_API_PORT, "127.0.0.1", 511, () => {
     logger.info(`Publisher server is running on port ${SERVER_CFG.api.Publisher_API_PORT}`)
