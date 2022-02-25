@@ -17,8 +17,8 @@ const helmet = require("helmet");
 
 var app = express();
 
-const API_DOCS_V1 = require("./routes/prod/api-docs-v1.json");
-const API_DOCS_V2 = require("./routes/prod/api-docs-v2.json");
+const API_DOCS_V1 = require("./routes/user_management/api-docs-v1.json");
+const API_DOCS_V2 = require("./routes/user_management/api-docs-v2.json");
 
 const https = require("https")
 
@@ -77,7 +77,8 @@ if (config.util.getEnv('NODE_ENV') !== 'test') {
 };
 
 // ROUTES
-require("./routes/prod")(app);
+let v2 = require("./routes/user_management/v2");
+app.use("/v2", v2);
 
 // Check SSL
 let isSSL = checkIsSSL(SERVER_CFG.ssl_api.CERTIFICATE, SERVER_CFG.ssl_api.KEY, SERVER_CFG.ssl_api.PEM);
