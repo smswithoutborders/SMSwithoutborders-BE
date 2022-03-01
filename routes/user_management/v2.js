@@ -2,6 +2,9 @@
 
 const express = require('express');
 const router = express.Router();
+const {
+    validationResult
+} = require('express-validator');
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
@@ -34,6 +37,8 @@ const VERIFY_PLATFORMS = require("../../models/verify_platforms.models");
 const VERIFY_RECOVERY = require("../../models/verify_recovery.models");
 const DELETE_ACCOUNTS = require("../../models/delete_account.models");
 
+const VALIDATOR = require("../../models/validator.models");
+
 var rootCas = require('ssl-root-cas').create()
 
 require('https').globalAgent.options.ca = rootCas
@@ -45,71 +50,62 @@ if ((SERVER_CFG.hasOwnProperty("ssl_api") && SERVER_CFG.hasOwnProperty("PEM")) &
     rootCas.addFile('/var/www/ssl/server.pem')
 }
 
-router.post("/signup", async (req, res, next) => {
-    try {
-        // ==================== REQUEST BODY CHECKS ====================
-        if (!req.body.phone_number) {
-            logger.error("NO PHONE NUMBER");
-            throw new ERRORS.BadRequest();
-        };
+router.post("/signup",
+    VALIDATOR.phoneNumber,
+    VALIDATOR.password,
+    async (req, res, next) => {
+        try {
+            // Finds the validation errors in this request and wraps them in an object with handy functions
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                errors.array().map(err => {
+                    logger.error(`${err.param}: ${err.msg}`);
+                });
+                throw new ERRORS.BadRequest();
+            }
+            // =============================================================
 
-        if (!req.body.country_code) {
-            logger.error("NO COUNTRY CODE");
-            throw new ERRORS.BadRequest();
-        };
+            const COUNTRY_CODE = req.body.country_code;
+            const NAME = req.body.name ? req.body.name : "";
+            const PHONE_NUMBER = req.body.phone_number;
+            const FULL_PHONE_NUMBER = req.body.country_code + req.body.phone_number;
+            const PASSWORD = req.body.password;
 
-        if (!req.body.password) {
-            logger.error("NO PASSWORD");
-            throw new ERRORS.BadRequest();
-        };
+            let userInfo = await FIND_USERSINFO(COUNTRY_CODE, PHONE_NUMBER);
 
-        // TODO ADD MIDDLEWARE CHECKS
-        if (req.body.password.length < 8) {
-            logger.error("PASSWORD < 8 CHARS");
-            throw new ERRORS.BadRequest();
-        };
-        // =============================================================
-        const COUNTRY_CODE = req.body.country_code;
-        const NAME = req.body.name ? req.body.name : "";
-        const PHONE_NUMBER = req.body.phone_number;
-        const FULL_PHONE_NUMBER = req.body.country_code + req.body.phone_number;
-        const PASSWORD = req.body.password;
+            if (!userInfo) {
+                let userId = await STORE_USERS(COUNTRY_CODE, PHONE_NUMBER, PASSWORD, NAME);
+                let init_2fa = await INIT_2FA(userId, FULL_PHONE_NUMBER);
 
-        let userInfo = await FIND_USERSINFO(COUNTRY_CODE, PHONE_NUMBER);
+                return res.status(200).json({
+                    session_id: init_2fa.session_id,
+                    svid: init_2fa.svid
+                })
+            } else {
+                logger.error("USER ALREADY HAS A RECORD IN USERINFO TABLE");
+                throw new ERRORS.Conflict();
+            };
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
 
-        if (!userInfo) {
-            let userId = await STORE_USERS(COUNTRY_CODE, PHONE_NUMBER, PASSWORD, NAME);
-            let init_2fa = await INIT_2FA(userId, FULL_PHONE_NUMBER);
-
-            return res.status(200).json({
-                session_id: init_2fa.session_id,
-                svid: init_2fa.svid
-            })
-        } else {
-            logger.error("USER ALREADY HAS A RECORD IN USERINFO TABLE");
-            throw new ERRORS.Conflict();
-        };
-    } catch (err) {
-        if (err instanceof ERRORS.BadRequest) {
-            return res.status(400).send(err.message);
-        } // 400
-        if (err instanceof ERRORS.Forbidden) {
-            return res.status(403).send(err.message);
-        } // 403
-        if (err instanceof ERRORS.Unauthorized) {
-            return res.status(401).send(err.message);
-        } // 401
-        if (err instanceof ERRORS.Conflict) {
-            return res.status(409).send(err.message);
-        } // 409
-        if (err instanceof ERRORS.NotFound) {
-            return res.status(404).send(err.message);
-        } // 404
-
-        logger.error(err);
-        return res.status(500).send("internal server error");
-    }
-});
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
 
 router.put("/signup", async (req, res, next) => {
     try {
