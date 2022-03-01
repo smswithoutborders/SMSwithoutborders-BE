@@ -11,13 +11,7 @@ let phoneNumber = () => {
         .exists({
             checkFalsy: true
         })
-        .withMessage("NO PHONE NUMBER"),
-
-        body('country_code')
-        .exists({
-            checkFalsy: true
-        })
-        .withMessage("NO COUNTRY CODE")
+        .withMessage("NO PHONE NUMBER")
     ]
 };
 
@@ -36,7 +30,17 @@ let password = () => {
     ]
 };
 
+let countryCode = () => {
+    return [body('country_code')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO COUNTRY CODE")
+    ]
+}
+
 module.exports = {
     phoneNumber: phoneNumber(),
-    password: password()
+    password: password(),
+    countryCode: countryCode()
 }

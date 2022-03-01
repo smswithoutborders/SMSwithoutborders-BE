@@ -52,6 +52,7 @@ if ((SERVER_CFG.hasOwnProperty("ssl_api") && SERVER_CFG.hasOwnProperty("PEM")) &
 
 router.post("/signup",
     VALIDATOR.phoneNumber,
+    VALIDATOR.countryCode,
     VALIDATOR.password,
     async (req, res, next) => {
         try {
