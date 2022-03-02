@@ -1,6 +1,8 @@
 const {
     body,
-    header
+    header,
+    param,
+    cookie
 } = require('express-validator');
 
 // Phone number input validation
@@ -92,6 +94,26 @@ let userAgent = () => {
     ]
 };
 
+let cookies = () => {
+    return [
+        cookie('SWOB')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO COOKIE")
+    ]
+};
+
+let userId = () => {
+    return [
+        param('user_id')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO USERID")
+    ]
+};
+
 module.exports = {
     phoneNumber: phoneNumber(),
     password: password(),
@@ -100,5 +122,7 @@ module.exports = {
     sessionId: sessionId(),
     svid: svid(),
     name: name(),
-    userAgent: userAgent()
+    userAgent: userAgent(),
+    cookies: cookies(),
+    userId: userId()
 }
