@@ -116,7 +116,7 @@ let userId = () => {
 
 let newPassword = () => {
     return [
-        param('new_password')
+        body('new_password')
         .exists({
             checkFalsy: true
         })
