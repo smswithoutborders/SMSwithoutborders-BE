@@ -37,15 +37,6 @@ module.exports = async (req, res, next) => {
                 let platformObj = new GMAIL.OAuth2(credentials, gmail_token_scopes);
 
                 if (req.method.toLowerCase() == "post") {
-                    if (!req.params.user_id) {
-                        logger.error("NO USERID");
-                        throw new ERRORS.BadRequest();
-                    }
-                    if (!req.cookies.SWOB) {
-                        logger.error("NO COOKIE");
-                        throw new ERRORS.Unauthorized();
-                    };
-
                     const SID = req.cookies.SWOB.sid;
                     const UID = req.params.user_id;
                     const COOKIE = req.cookies.SWOB.cookie;
@@ -61,15 +52,6 @@ module.exports = async (req, res, next) => {
                 }
 
                 if (req.method.toLowerCase() == "put") {
-                    if (!req.params.user_id) {
-                        logger.error("NO USERID");
-                        throw new ERRORS.BadRequest();
-                    }
-                    if (!req.cookies.SWOB) {
-                        logger.error("NO COOKIE");
-                        throw new ERRORS.Unauthorized();
-                    };
-
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.code) {
                         logger.error("NO CODE");
@@ -97,15 +79,6 @@ module.exports = async (req, res, next) => {
                 };
 
                 if (req.method.toLowerCase() == "delete") {
-                    if (!req.params.user_id) {
-                        logger.error("NO USERID");
-                        throw new ERRORS.BadRequest();
-                    }
-                    if (!req.cookies.SWOB) {
-                        logger.error("NO COOKIE");
-                        throw new ERRORS.Unauthorized();
-                    };
-
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.password) {
                         logger.error("NO PASSWORD");
@@ -157,15 +130,6 @@ module.exports = async (req, res, next) => {
                 let platformObj = new TWITTER.OAuth(credentials);
 
                 if (req.method.toLowerCase() == "post") {
-                    if (!req.params.user_id) {
-                        logger.error("NO USERID");
-                        throw new ERRORS.BadRequest();
-                    }
-                    if (!req.cookies.SWOB) {
-                        logger.error("NO COOKIE");
-                        throw new ERRORS.Unauthorized();
-                    };
-
                     const SID = req.cookies.SWOB.sid;
                     const UID = req.params.user_id;
                     const COOKIE = req.cookies.SWOB.cookie;
@@ -186,15 +150,6 @@ module.exports = async (req, res, next) => {
                 }
 
                 if (req.method.toLowerCase() == "put") {
-                    if (!req.params.user_id) {
-                        logger.error("NO USERID");
-                        throw new ERRORS.BadRequest();
-                    }
-                    if (!req.cookies.SWOB) {
-                        logger.error("NO COOKIE");
-                        throw new ERRORS.Unauthorized();
-                    };
-
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.oauth_token) {
                         logger.error("NO OAUTH TOKEN");
@@ -230,15 +185,6 @@ module.exports = async (req, res, next) => {
                 };
 
                 if (req.method.toLowerCase() == "delete") {
-                    if (!req.params.user_id) {
-                        logger.error("NO USERID");
-                        throw new ERRORS.BadRequest();
-                    }
-                    if (!req.cookies.SWOB) {
-                        logger.error("NO COOKIE");
-                        throw new ERRORS.Unauthorized();
-                    };
-
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.password) {
                         logger.error("NO PASSWORD");
@@ -288,15 +234,6 @@ module.exports = async (req, res, next) => {
                 let platformObj = new TELEGRAM.twoFactor(credentials);
 
                 if (req.method.toLowerCase() == "post") {
-                    if (!req.params.user_id) {
-                        logger.error("NO USERID");
-                        throw new ERRORS.BadRequest();
-                    }
-                    if (!req.cookies.SWOB) {
-                        logger.error("NO COOKIE");
-                        throw new ERRORS.Unauthorized();
-                    };
-
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.phone_number) {
                         throw new ERRORS.BadRequest();
@@ -327,15 +264,6 @@ module.exports = async (req, res, next) => {
 
                 if (req.method.toLowerCase() == "put") {
                     if (action == "register") {
-                        if (!req.params.user_id) {
-                            logger.error("NO USERID");
-                            throw new ERRORS.BadRequest();
-                        }
-                        if (!req.cookies.SWOB) {
-                            logger.error("NO COOKIE");
-                            throw new ERRORS.Forbidden();
-                        };
-
                         // ==================== REQUEST BODY CHECKS ====================
                         if (!req.body.phone_number) {
                             logger.error("NO PHONE NUMBER");
@@ -376,15 +304,6 @@ module.exports = async (req, res, next) => {
 
                             return next();
                         };
-                    };
-
-                    if (!req.params.user_id) {
-                        logger.error("NO USERID");
-                        throw new ERRORS.BadRequest();
-                    }
-                    if (!req.cookies.SWOB) {
-                        logger.error("NO COOKIE");
-                        throw new ERRORS.Unauthorized();
                     };
 
                     // ==================== REQUEST BODY CHECKS ====================
@@ -439,15 +358,6 @@ module.exports = async (req, res, next) => {
                 };
 
                 if (req.method.toLowerCase() == "delete") {
-                    if (!req.params.user_id) {
-                        logger.error("NO USERID");
-                        throw new ERRORS.BadRequest();
-                    }
-                    if (!req.cookies.SWOB) {
-                        logger.error("NO COOKIE");
-                        throw new ERRORS.Unauthorized();
-                    };
-
                     // ==================== REQUEST BODY CHECKS ====================
                     if (!req.body.password) {
                         logger.error("NO PASSWORD");

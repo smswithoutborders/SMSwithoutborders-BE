@@ -291,52 +291,56 @@ router.get("/users/:user_id/platforms",
         }
     });
 
-router.post("/users/:user_id/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
-    try {
-        const SID = req.cookies.SWOB.sid;
-        const UID = req.params.user_id;
-        const PLATFORM = req.params.platform;
+router.post("/users/:user_id/platforms/:platform/protocols/:protocol",
+    VALIDATOR.userId,
+    VALIDATOR.cookies,
+    VALIDATOR.userAgent,
+    async (req, res, next) => PLATFORMS(req, res, next), async (req, res) => {
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+        try {
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const PLATFORM = req.params.platform;
 
-        const URL = req.platformRes.url ? req.platformRes.url : "";
-        const BODY = req.platformRes.body ? req.platformRes.body : "";
+            const URL = req.platformRes.url ? req.platformRes.url : "";
+            const BODY = req.platformRes.body ? req.platformRes.body : "";
 
-        let platform = await FIND_PLATFORMS(PLATFORM);
+            let platform = await FIND_PLATFORMS(PLATFORM);
 
-        let session = await UPDATE_SESSION(SID, UID, null);
+            let session = await UPDATE_SESSION(SID, UID, null);
 
-        res.cookie("SWOB", {
-            sid: session.sid,
-            cookie: session.data
-        }, session.data)
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
 
-        return res.status(200).json({
-            url: URL,
-            body: BODY,
-            platform: platform.name.toLowerCase()
-        });
+            return res.status(200).json({
+                url: URL,
+                body: BODY,
+                platform: platform.name.toLowerCase()
+            });
 
-    } catch (err) {
-        if (err instanceof ERRORS.BadRequest) {
-            return res.status(400).send(err.message);
-        } // 400
-        if (err instanceof ERRORS.Forbidden) {
-            return res.status(403).send(err.message);
-        } // 403
-        if (err instanceof ERRORS.Unauthorized) {
-            return res.status(401).send(err.message);
-        } // 401
-        if (err instanceof ERRORS.Conflict) {
-            return res.status(409).send(err.message);
-        } // 409
-        if (err instanceof ERRORS.NotFound) {
-            return res.status(404).send(err.message);
-        } // 404
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
 
-        logger.error(err);
-        return res.status(500).send("internal server error");
-    }
-});
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
 
 router.put("/users/:user_id/platforms/:platform/protocols/:protocol/:action?", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
     try {
