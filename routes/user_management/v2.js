@@ -520,6 +520,20 @@ router.post("/recovery",
     VALIDATOR.userAgent,
     async (req, res) => {
         try {
+            // Finds the validation errors in this request and wraps them in an object with handy functions
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                errors.array().map(err => {
+                    if (err.param == "SWOB") {
+                        logger.error(`${err.param}: ${err.msg}`);
+                        throw new ERRORS.Unauthorized();
+                    }
+                    logger.error(`${err.param}: ${err.msg}`);
+                });
+                throw new ERRORS.BadRequest();
+            }
+            // =============================================================
+
             const PHONE_NUMBER = req.body.phone_number;
             const USER_AGENT = req.get("user-agent");
             const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
@@ -557,69 +571,77 @@ router.post("/recovery",
         }
     });
 
-router.put("/recovery", async (req, res, next) => {
-    try {
-        if (!req.cookies.SWOB) {
-            logger.error("NO COOKIE");
-            throw new ERRORS.Unauthorized();
-        };
-        // ==================== REQUEST BODY CHECKS ====================
-        if (!req.body.code) {
-            logger.error("NO CODE");
-            throw new ERRORS.BadRequest();
-        };
-        // =============================================================
-        const SVID = req.cookies.SWOB.svid;
-        const SID = req.cookies.SWOB.sid;
-        const CODE = req.body.code;
-        const COOKIE = req.cookies.SWOB.cookie;
-        const USER_AGENT = req.get("user-agent");
+router.put("/recovery",
+    VALIDATOR.userAgent,
+    VALIDATOR.cookies,
+    VALIDATOR.code,
+    async (req, res) => {
+        try {
+            // Finds the validation errors in this request and wraps them in an object with handy functions
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                errors.array().map(err => {
+                    if (err.param == "SWOB") {
+                        logger.error(`${err.param}: ${err.msg}`);
+                        throw new ERRORS.Unauthorized();
+                    }
+                    logger.error(`${err.param}: ${err.msg}`);
+                });
+                throw new ERRORS.BadRequest();
+            }
+            // =============================================================
 
-        const {
-            unique_identifier,
-            session_id
-        } = await VERIFY_RECOVERY(SID, SVID, USER_AGENT, null, COOKIE);
+            const SVID = req.cookies.SWOB.svid;
+            const SID = req.cookies.SWOB.sid;
+            const CODE = req.body.code;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const USER_AGENT = req.get("user-agent");
 
-        const SESSION_ID = session_id;
-        const PHONE_NUMBER = unique_identifier;
+            const {
+                unique_identifier,
+                session_id
+            } = await VERIFY_RECOVERY(SID, SVID, USER_AGENT, null, COOKIE);
 
-        let verify_2fa = await VERIFY_2FA(PHONE_NUMBER, CODE, SESSION_ID);
+            const SESSION_ID = session_id;
+            const PHONE_NUMBER = unique_identifier;
 
-        if (verify_2fa) {
-            const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
-            let session = await UPDATE_SESSION(SID, PHONE_NUMBER, "success");
+            let verify_2fa = await VERIFY_2FA(PHONE_NUMBER, CODE, SESSION_ID);
 
-            res.cookie("SWOB", {
-                sid: session.sid,
-                svid: SVID,
-                cookie: session.data
-            }, session.data)
+            if (verify_2fa) {
+                const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
+                let session = await UPDATE_SESSION(SID, PHONE_NUMBER, "success");
 
-            return res.status(200).json({
-                uid: USERID
-            });
+                res.cookie("SWOB", {
+                    sid: session.sid,
+                    svid: SVID,
+                    cookie: session.data
+                }, session.data)
+
+                return res.status(200).json({
+                    uid: USERID
+                });
+            }
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
         }
-    } catch (err) {
-        if (err instanceof ERRORS.BadRequest) {
-            return res.status(400).send(err.message);
-        } // 400
-        if (err instanceof ERRORS.Forbidden) {
-            return res.status(403).send(err.message);
-        } // 403
-        if (err instanceof ERRORS.Unauthorized) {
-            return res.status(401).send(err.message);
-        } // 401
-        if (err instanceof ERRORS.Conflict) {
-            return res.status(409).send(err.message);
-        } // 409
-        if (err instanceof ERRORS.NotFound) {
-            return res.status(404).send(err.message);
-        } // 404
-
-        logger.error(err);
-        return res.status(500).send("internal server error");
-    }
-});
+    });
 
 router.post("/users/:user_id/recovery", async (req, res, next) => {
     try {
