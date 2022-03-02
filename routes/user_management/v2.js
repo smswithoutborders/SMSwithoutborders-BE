@@ -397,46 +397,50 @@ router.put("/users/:user_id/platforms/:platform/protocols/:protocol/:action?",
         }
     });
 
-router.delete("/users/:user_id/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
-    try {
-        const SID = req.cookies.SWOB.sid;
-        const UID = req.params.user_id;
+router.delete("/users/:user_id/platforms/:platform/protocols/:protocol",
+    VALIDATOR.userId,
+    VALIDATOR.cookies,
+    VALIDATOR.userAgent,
+    async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+        try {
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
 
-        const GRANT = req.platformRes.grant;
+            const GRANT = req.platformRes.grant;
 
-        await DELETE_GRANTS(GRANT);
+            await DELETE_GRANTS(GRANT);
 
-        let session = await UPDATE_SESSION(SID, UID, null);
+            let session = await UPDATE_SESSION(SID, UID, null);
 
-        res.cookie("SWOB", {
-            sid: session.sid,
-            cookie: session.data
-        }, session.data)
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
 
-        return res.status(200).json();
+            return res.status(200).json();
 
-    } catch (err) {
-        if (err instanceof ERRORS.BadRequest) {
-            return res.status(400).send(err.message);
-        } // 400
-        if (err instanceof ERRORS.Forbidden) {
-            return res.status(403).send(err.message);
-        } // 403
-        if (err instanceof ERRORS.Unauthorized) {
-            return res.status(401).send(err.message);
-        } // 401
-        if (err instanceof ERRORS.Conflict) {
-            return res.status(409).send(err.message);
-        } // 409
-        if (err instanceof ERRORS.NotFound) {
-            return res.status(404).send(err.message);
-        } // 404
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
 
-        logger.error(err);
-        return res.status(500).send("internal server error");
-    }
-});
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
 
 router.post("/users/:user_id/password", async (req, res, next) => {
     try {
