@@ -524,10 +524,6 @@ router.post("/recovery",
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
                 errors.array().map(err => {
-                    if (err.param == "SWOB") {
-                        logger.error(`${err.param}: ${err.msg}`);
-                        throw new ERRORS.Unauthorized();
-                    }
                     logger.error(`${err.param}: ${err.msg}`);
                 });
                 throw new ERRORS.BadRequest();
@@ -777,80 +773,82 @@ router.delete("/users/:user_id",
         }
     });
 
-router.post("/users/:user_id/verify", async (req, res, next) => {
-    try {
-        if (!req.params.user_id) {
-            logger.error("NO USERID");
-            throw new ERRORS.BadRequest();
-        }
-        // ==================== REQUEST BODY CHECKS ====================
-        if (!req.body.password) {
-            logger.error("NO PASSWORD");
-            throw new ERRORS.BadRequest();
-        };
-
-        // TODO ADD MIDDLEWARE CHECKS
-        if (req.body.password.length < 8) {
-            logger.error("PASSWORD < 8 CHARS");
-            throw new ERRORS.BadRequest();
-        };
-
-        // =============================================================
-        const UID = req.params.user_id;
-        const USER_AGENT = req.get("user-agent");
-        const PASSWORD = req.body.password;
-        const RETRY_COUNTER = require("../../models/retry_counter.models");
-
-        let counter = await RETRY_COUNTER.check(UID);
-        const USER = await VERIFY_PASSWORDS(UID, PASSWORD).catch(async (err) => {
-            if (err instanceof ERRORS.Forbidden) {
-                let addCount = await RETRY_COUNTER.add(counter);
-                if (addCount.state == "success") {
-                    throw new ERRORS.Unauthorized(); //401
-                };
+router.post("/users/:user_id/verify",
+    VALIDATOR.userId,
+    VALIDATOR.userAgent,
+    VALIDATOR.cookies,
+    VALIDATOR.password,
+    async (req, res) => {
+        try {
+            // Finds the validation errors in this request and wraps them in an object with handy functions
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                errors.array().map(err => {
+                    if (err.param == "SWOB") {
+                        logger.error(`${err.param}: ${err.msg}`);
+                        throw new ERRORS.Unauthorized();
+                    }
+                    logger.error(`${err.param}: ${err.msg}`);
+                });
+                throw new ERRORS.BadRequest();
             }
+            // =============================================================
+
+            const UID = req.params.user_id;
+            const USER_AGENT = req.get("user-agent");
+            const PASSWORD = req.body.password;
+            const RETRY_COUNTER = require("../../models/retry_counter.models");
+
+            let counter = await RETRY_COUNTER.check(UID);
+            const USER = await VERIFY_PASSWORDS(UID, PASSWORD).catch(async (err) => {
+                if (err instanceof ERRORS.Forbidden) {
+                    let addCount = await RETRY_COUNTER.add(counter);
+                    if (addCount.state == "success") {
+                        throw new ERRORS.Unauthorized(); //401
+                    };
+                }
+                if (err instanceof ERRORS.Conflict) {
+                    throw new ERRORS.Conflict();
+                } // 409
+
+                throw new ERRORS.InternalServerError(err);
+            });
+
+            let session = await STORE_SESSION(USER.id, USER_AGENT, null, null, null);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
+
+            let removeCount = await RETRY_COUNTER.remove(counter);
+            if (removeCount.state == "success") {
+                return res.status(200).json();
+            };
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
             if (err instanceof ERRORS.Conflict) {
-                throw new ERRORS.Conflict();
+                return res.status(409).send(err.message);
             } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+            if (err instanceof ERRORS.TooManyRequests) {
+                return res.status(429).send(err.message);
+            } // 429
 
-            throw new ERRORS.InternalServerError(err);
-        });
-
-        let session = await STORE_SESSION(USER.id, USER_AGENT, null, null, null);
-
-        res.cookie("SWOB", {
-            sid: session.sid,
-            cookie: session.data
-        }, session.data)
-
-        let removeCount = await RETRY_COUNTER.remove(counter);
-        if (removeCount.state == "success") {
-            return res.status(200).json();
-        };
-    } catch (err) {
-        if (err instanceof ERRORS.BadRequest) {
-            return res.status(400).send(err.message);
-        } // 400
-        if (err instanceof ERRORS.Forbidden) {
-            return res.status(403).send(err.message);
-        } // 403
-        if (err instanceof ERRORS.Unauthorized) {
-            return res.status(401).send(err.message);
-        } // 401
-        if (err instanceof ERRORS.Conflict) {
-            return res.status(409).send(err.message);
-        } // 409
-        if (err instanceof ERRORS.NotFound) {
-            return res.status(404).send(err.message);
-        } // 404
-        if (err instanceof ERRORS.TooManyRequests) {
-            return res.status(429).send(err.message);
-        } // 429
-
-        logger.error(err);
-        return res.status(500).send("internal server error");
-    }
-});
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
 
 router.get("/users/:user_id/dashboard", async (req, res, next) => {
     try {
