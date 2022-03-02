@@ -23,7 +23,7 @@ module.exports = async (userId, phone_number) => {
             throw new ERRORS.InternalServerError(error);
         });
 
-        logger.info("SUCCESSFULLY REQUESTED OTP CODE");
+        logger.info("INITIALISING SMS VERIFICATION SUCCESSFUL");
         return {
             session_id: SV.session_id,
             svid: SV.svid
