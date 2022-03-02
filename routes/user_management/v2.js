@@ -515,51 +515,47 @@ router.post("/users/:user_id/password",
         }
     });
 
-router.post("/recovery", async (req, res, next) => {
-    try {
-        // ==================== REQUEST BODY CHECKS ====================
-        if (!req.body.phone_number) {
-            logger.error("NO PHONE NUMBER");
-            throw new ERRORS.BadRequest();
-        };
-        // =============================================================
+router.post("/recovery",
+    VALIDATOR.phoneNumber,
+    VALIDATOR.userAgent,
+    async (req, res) => {
+        try {
+            const PHONE_NUMBER = req.body.phone_number;
+            const USER_AGENT = req.get("user-agent");
+            const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
+            let init_2fa = await INIT_2FA(USERID, PHONE_NUMBER);
+            const SVID = init_2fa.svid
+            let session = await STORE_SESSION(PHONE_NUMBER, USER_AGENT, SVID, null, "recovery");
 
-        const PHONE_NUMBER = req.body.phone_number;
-        const USER_AGENT = req.get("user-agent");
-        const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
-        let init_2fa = await INIT_2FA(USERID, PHONE_NUMBER);
-        const SVID = init_2fa.svid
-        let session = await STORE_SESSION(PHONE_NUMBER, USER_AGENT, SVID, null, "recovery");
+            res.cookie("SWOB", {
+                sid: session.sid,
+                svid: SVID,
+                cookie: session.data
+            }, session.data)
 
-        res.cookie("SWOB", {
-            sid: session.sid,
-            svid: SVID,
-            cookie: session.data
-        }, session.data)
+            return res.status(200).json();
 
-        return res.status(200).json();
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
 
-    } catch (err) {
-        if (err instanceof ERRORS.BadRequest) {
-            return res.status(400).send(err.message);
-        } // 400
-        if (err instanceof ERRORS.Forbidden) {
-            return res.status(403).send(err.message);
-        } // 403
-        if (err instanceof ERRORS.Unauthorized) {
-            return res.status(401).send(err.message);
-        } // 401
-        if (err instanceof ERRORS.Conflict) {
-            return res.status(409).send(err.message);
-        } // 409
-        if (err instanceof ERRORS.NotFound) {
-            return res.status(404).send(err.message);
-        } // 404
-
-        logger.error(err);
-        return res.status(500).send("internal server error");
-    }
-});
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
 
 router.put("/recovery", async (req, res, next) => {
     try {
