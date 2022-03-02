@@ -54,7 +54,8 @@ router.post("/signup",
     VALIDATOR.phoneNumber,
     VALIDATOR.countryCode,
     VALIDATOR.password,
-    async (req, res, next) => {
+    // VALIDATOR.name,
+    async (req, res) => {
         try {
             // Finds the validation errors in this request and wraps them in an object with handy functions
             const errors = validationResult(req);
@@ -108,72 +109,70 @@ router.post("/signup",
         }
     });
 
-router.put("/signup", async (req, res, next) => {
-    try {
-        // ==================== REQUEST BODY CHECKS ====================
-        if (!req.body.code) {
-            logger.error("NO CODE");
-            throw new ERRORS.BadRequest();
-        };
+router.put("/signup",
+    VALIDATOR.code,
+    VALIDATOR.sessionId,
+    VALIDATOR.svid,
+    async (req, res) => {
+        try {
+            // Finds the validation errors in this request and wraps them in an object with handy functions
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                errors.array().map(err => {
+                    logger.error(`${err.param}: ${err.msg}`);
+                });
+                throw new ERRORS.BadRequest();
+            }
+            // =============================================================
 
-        if (!req.body.session_id) {
-            logger.error("NO SESSION ID");
-            throw new ERRORS.BadRequest();
-        };
+            const CODE = req.body.code;
+            const SESSION_ID = req.body.session_id;
+            const SVID = req.body.svid;
 
-        if (!req.body.svid) {
-            logger.error("NO SVID");
-            throw new ERRORS.BadRequest();
-        };
-        // =============================================================
-        const CODE = req.body.code;
-        const SESSION_ID = req.body.session_id;
-        const SVID = req.body.svid;
+            let {
+                usersInfo,
+                user
+            } = await VERIFY_SV(SESSION_ID, SVID);
+            let verify_2fa = await VERIFY_2FA(usersInfo.full_phone_number, CODE, SESSION_ID);
 
-        let {
-            usersInfo,
-            user
-        } = await VERIFY_SV(SESSION_ID, SVID);
-        let verify_2fa = await VERIFY_2FA(usersInfo.full_phone_number, CODE, SESSION_ID);
+            if (verify_2fa) {
+                let security = new Security(KEY);
 
-        if (verify_2fa) {
-            let security = new Security(KEY);
+                await usersInfo.update({
+                    phone_number: security.encrypt(usersInfo.phone_number).e_info,
+                    name: security.encrypt(usersInfo.name).e_info,
+                    country_code: security.encrypt(usersInfo.country_code).e_info,
+                    full_phone_number: security.hash(usersInfo.full_phone_number),
+                    status: "verified",
+                    iv: security.iv
+                }).catch(error => {
+                    logger.error("ERROR UPDATING USER'S INFO AFTER SMS VERIFICATION");
+                    throw new ERRORS.InternalServerError(error);
+                });
 
-            await usersInfo.update({
-                phone_number: security.encrypt(usersInfo.phone_number).e_info,
-                name: security.encrypt(usersInfo.name).e_info,
-                country_code: security.encrypt(usersInfo.country_code).e_info,
-                full_phone_number: security.hash(usersInfo.full_phone_number),
-                status: "verified",
-                iv: security.iv
-            }).catch(error => {
-                logger.error("ERROR UPDATING USER'S INFO AFTER SMS VERIFICATION");
-                throw new ERRORS.InternalServerError(error);
-            });
+                return res.status(200).json();
+            };
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
 
-            return res.status(200).json();
-        };
-    } catch (err) {
-        if (err instanceof ERRORS.BadRequest) {
-            return res.status(400).send(err.message);
-        } // 400
-        if (err instanceof ERRORS.Forbidden) {
-            return res.status(403).send(err.message);
-        } // 403
-        if (err instanceof ERRORS.Unauthorized) {
-            return res.status(401).send(err.message);
-        } // 401
-        if (err instanceof ERRORS.Conflict) {
-            return res.status(409).send(err.message);
-        } // 409
-        if (err instanceof ERRORS.NotFound) {
-            return res.status(404).send(err.message);
-        } // 404
-
-        logger.error(err);
-        return res.status(500).send("internal server error");
-    }
-});
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
 
 router.post("/login", async (req, res, next) => {
     try {

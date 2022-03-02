@@ -31,16 +31,62 @@ let password = () => {
 };
 
 let countryCode = () => {
-    return [body('country_code')
+    return [
+        body('country_code')
         .exists({
             checkFalsy: true
         })
         .withMessage("NO COUNTRY CODE")
     ]
-}
+};
+
+let code = () => {
+    return [
+        body('code')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO CODE")
+    ]
+};
+
+let sessionId = () => {
+    return [
+        body('session_id')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO SESSION ID")
+    ]
+};
+
+let svid = () => {
+    return [
+        body('svid')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO SVID")
+    ]
+};
+
+let name = () => {
+    return [
+        body('name')
+        .if(body("name").exists({
+            checkFalsy: true
+        }))
+        .isAlphanumeric()
+        .withMessage("INVALID CHARACTERS IN NAME")
+    ]
+};
 
 module.exports = {
     phoneNumber: phoneNumber(),
     password: password(),
-    countryCode: countryCode()
+    countryCode: countryCode(),
+    code: code(),
+    sessionId: sessionId(),
+    svid: svid(),
+    name: name()
 }

@@ -29,6 +29,7 @@
     "start": "node controllers/sync_platforms.js && concurrently --kill-others --raw -c \"bgBlue.bold,bgMagenta.bold\" \"node server.js\" \"node server_pub.js\"",
     "start_pub": "node controllers/sync_platforms.js && node server_pub.js",
     "start_main": "node controllers/sync_platforms.js && node server.js",
+    "dev": "node controllers/sync_platforms.js && nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -43,6 +44,7 @@
   },
   "homepage": "https://github.com/SMSwithoutBorders/OAuth-2.0-authentications-API#readme",
   "devDependencies": {
-    "inquirer": "^8.2.0"
+    "inquirer": "^8.2.0",
+    "nodemon": "^2.0.15"
   }
 }
