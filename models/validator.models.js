@@ -114,6 +114,20 @@ let userId = () => {
     ]
 };
 
+let newPassword = () => {
+    return [
+        param('new_password')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO NEW PASSWORD")
+        .isLength({
+            min: 8
+        })
+        .withMessage("NEW PASSWORD < 8 CHARS")
+    ]
+};
+
 module.exports = {
     phoneNumber: phoneNumber(),
     password: password(),
@@ -124,5 +138,6 @@ module.exports = {
     name: name(),
     userAgent: userAgent(),
     cookies: cookies(),
-    userId: userId()
+    userId: userId(),
+    newPassword: newPassword()
 }
