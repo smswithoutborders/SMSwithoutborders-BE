@@ -1,5 +1,6 @@
 const {
-    body
+    body,
+    header
 } = require('express-validator');
 
 // Phone number input validation
@@ -81,6 +82,16 @@ let name = () => {
     ]
 };
 
+let userAgent = () => {
+    return [
+        header('user-agent')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO USER AGENT")
+    ]
+};
+
 module.exports = {
     phoneNumber: phoneNumber(),
     password: password(),
@@ -88,5 +99,6 @@ module.exports = {
     code: code(),
     sessionId: sessionId(),
     svid: svid(),
-    name: name()
+    name: name(),
+    userAgent: userAgent()
 }

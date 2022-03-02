@@ -174,65 +174,62 @@ router.put("/signup",
         }
     });
 
-router.post("/login", async (req, res, next) => {
-    try {
-        // ==================== REQUEST BODY CHECKS ====================
-        if (!req.body.phone_number) {
-            logger.error("NO PHONE NUMBER");
-            throw new ERRORS.BadRequest();
-        };
+router.post("/login",
+    VALIDATOR.phoneNumber,
+    VALIDATOR.password,
+    VALIDATOR.userAgent,
+    async (req, res, next) => {
+        try {
+            // Finds the validation errors in this request and wraps them in an object with handy functions
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                errors.array().map(err => {
+                    logger.error(`${err.param}: ${err.msg}`);
+                });
+                throw new ERRORS.BadRequest();
+            }
+            // =============================================================
 
-        if (!req.body.password) {
-            logger.error("NO PASSWORD");
-            throw new ERRORS.BadRequest();
-        };
+            const PHONE_NUMBER = req.body.phone_number;
+            const PASSWORD = req.body.password;
+            const USER_AGENT = req.get("user-agent");
 
-        // TODO ADD MIDDLEWARE CHECKS
-        if (req.body.password.length < 8) {
-            logger.error("PASSWORD < 8 CHARS");
-            throw new ERRORS.BadRequest();
-        };
-        // =============================================================
-        const PHONE_NUMBER = req.body.phone_number;
-        const PASSWORD = req.body.password;
-        const USER_AGENT = req.get("user-agent");
+            let userId = await VERIFY_USERS(PHONE_NUMBER, PASSWORD);
+            let session = await STORE_SESSION(userId, USER_AGENT, null, null, null);
 
-        let userId = await VERIFY_USERS(PHONE_NUMBER, PASSWORD);
-        let session = await STORE_SESSION(userId, USER_AGENT, null, null, null);
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
 
-        res.cookie("SWOB", {
-            sid: session.sid,
-            cookie: session.data
-        }, session.data)
+            return res.status(200).json({
+                uid: session.uid
+            });
 
-        return res.status(200).json({
-            uid: session.uid
-        });
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+            if (err instanceof ERRORS.TooManyRequests) {
+                return res.status(429).send(err.message);
+            } // 429
 
-    } catch (err) {
-        if (err instanceof ERRORS.BadRequest) {
-            return res.status(400).send(err.message);
-        } // 400
-        if (err instanceof ERRORS.Forbidden) {
-            return res.status(403).send(err.message);
-        } // 403
-        if (err instanceof ERRORS.Unauthorized) {
-            return res.status(401).send(err.message);
-        } // 401
-        if (err instanceof ERRORS.Conflict) {
-            return res.status(409).send(err.message);
-        } // 409
-        if (err instanceof ERRORS.NotFound) {
-            return res.status(404).send(err.message);
-        } // 404
-        if (err instanceof ERRORS.TooManyRequests) {
-            return res.status(429).send(err.message);
-        } // 429
-
-        logger.error(err);
-        return res.status(500).send("internal server error");
-    }
-});
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
 
 router.get("/users/:user_id/platforms", async (req, res, next) => {
     try {
