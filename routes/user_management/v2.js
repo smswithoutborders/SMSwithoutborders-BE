@@ -342,56 +342,60 @@ router.post("/users/:user_id/platforms/:platform/protocols/:protocol",
         }
     });
 
-router.put("/users/:user_id/platforms/:platform/protocols/:protocol/:action?", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
-    try {
-        const SID = req.cookies.SWOB.sid;
-        const UID = req.params.user_id;
-        const PLATFORM = req.params.platform;
+router.put("/users/:user_id/platforms/:platform/protocols/:protocol/:action?",
+    VALIDATOR.userId,
+    VALIDATOR.cookies,
+    VALIDATOR.userAgent,
+    async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
+        try {
+            const SID = req.cookies.SWOB.sid;
+            const UID = req.params.user_id;
+            const PLATFORM = req.params.platform;
 
-        const RESULT = req.platformRes.result ? req.platformRes.result : "";
-        const BODY = req.platformRes.body ? req.platformRes.body : "";
-        const INIT_URL = req.platformRes.initialization_url ? req.platformRes.initialization_url : "";
+            const RESULT = req.platformRes.result ? req.platformRes.result : "";
+            const BODY = req.platformRes.body ? req.platformRes.body : "";
+            const INIT_URL = req.platformRes.initialization_url ? req.platformRes.initialization_url : "";
 
-        let user = await FIND_USERS(UID);
-        let platform = await FIND_PLATFORMS(PLATFORM);
+            let user = await FIND_USERS(UID);
+            let platform = await FIND_PLATFORMS(PLATFORM);
 
-        if (RESULT) {
-            await STORE_GRANTS(user, platform, RESULT);
+            if (RESULT) {
+                await STORE_GRANTS(user, platform, RESULT);
+            }
+
+            let session = await UPDATE_SESSION(SID, UID, null);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                cookie: session.data
+            }, session.data)
+
+            return res.status(200).json({
+                body: BODY,
+                initialization_url: INIT_URL
+            });
+
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
         }
-
-        let session = await UPDATE_SESSION(SID, UID, null);
-
-        res.cookie("SWOB", {
-            sid: session.sid,
-            cookie: session.data
-        }, session.data)
-
-        return res.status(200).json({
-            body: BODY,
-            initialization_url: INIT_URL
-        });
-
-    } catch (err) {
-        if (err instanceof ERRORS.BadRequest) {
-            return res.status(400).send(err.message);
-        } // 400
-        if (err instanceof ERRORS.Forbidden) {
-            return res.status(403).send(err.message);
-        } // 403
-        if (err instanceof ERRORS.Unauthorized) {
-            return res.status(401).send(err.message);
-        } // 401
-        if (err instanceof ERRORS.Conflict) {
-            return res.status(409).send(err.message);
-        } // 409
-        if (err instanceof ERRORS.NotFound) {
-            return res.status(404).send(err.message);
-        } // 404
-
-        logger.error(err);
-        return res.status(500).send("internal server error");
-    }
-});
+    });
 
 router.delete("/users/:user_id/platforms/:platform/protocols/:protocol", async (req, res, next) => PLATFORMS(req, res, next), async (req, res, next) => {
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status

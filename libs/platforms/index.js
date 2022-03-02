@@ -21,11 +21,30 @@ const DECRYPT_GRANTS = require("../../models/decrypt_grant.models");
 const FIND_SESSION = require("../../models/find_sessions.models");
 const VERIFY_PASSWORDS = require("../../models/verify_password.models");
 
+const {
+    validationResult
+} = require('express-validator');
+
+
 // HTTP response status codes
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses
 
 module.exports = async (req, res, next) => {
     try {
+        // Finds the validation errors in this request and wraps them in an object with handy functions
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            errors.array().map(err => {
+                if (err.param == "SWOB") {
+                    logger.error(`${err.param}: ${err.msg}`);
+                    throw new ERRORS.Unauthorized();
+                }
+                logger.error(`${err.param}: ${err.msg}`);
+            });
+            throw new ERRORS.BadRequest();
+        }
+        // =============================================================
+
         const originalURL = req.header("Origin");
         const platform = req.params.platform.toLowerCase();
         const protocol = req.params.protocol.toLowerCase();
