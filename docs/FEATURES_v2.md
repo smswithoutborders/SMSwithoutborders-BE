@@ -34,6 +34,7 @@ The user has to provide the following in the [request body](https://developer.mo
 - Name
 - Country Code
 - Password
+- [Captcha token](https://developers.google.com/recaptcha/docs/verify)
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
 - [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
@@ -98,6 +99,7 @@ Authentication is the process whereby a user provides their credentials for iden
 The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
 - Phone Number (with country code) 
 - Password
+- [Captcha token](https://developers.google.com/recaptcha/docs/verify)
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
 - [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
