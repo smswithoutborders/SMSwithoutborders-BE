@@ -47,7 +47,8 @@ curl --location --request POST 'http://localhost:9000/v2/signup' \
     "phone_number":"xxx-xxx-xxx",
     "name": "username",
     "country_code": "+xx",
-    "password": "password"
+    "password": "password",
+    "captcha_token": "xxxx-xxxx-xxxx"
 }'
 ```
 
@@ -108,7 +109,8 @@ curl --location --request POST 'http://localhost:9000/v2/login' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "phone_number": "+xxxxx-xxx-xxx",
-    "password": "password"
+    "password": "password",
+    "captcha_token": "xxxx-xxxx-xxxx"
 }'
 ```
 

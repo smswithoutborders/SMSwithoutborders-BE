@@ -48,6 +48,9 @@
                   },
                   "password": {
                     "type": "string"
+                  },
+                  "captcha_token": {
+                    "type": "string"
                   }
                 }
               }
@@ -232,6 +235,9 @@
                     "type": "string"
                   },
                   "password": {
+                    "type": "string"
+                  },
+                  "captcha_token": {
                     "type": "string"
                   }
                 }
