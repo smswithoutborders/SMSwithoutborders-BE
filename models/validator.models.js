@@ -128,6 +128,16 @@ let newPassword = () => {
     ]
 };
 
+let captchaToken = () => {
+    return [
+        body('captcha_token')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO CAPTCHA TOKEN")
+    ]
+};
+
 module.exports = {
     phoneNumber: phoneNumber(),
     password: password(),
@@ -139,5 +149,6 @@ module.exports = {
     userAgent: userAgent(),
     cookies: cookies(),
     userId: userId(),
-    newPassword: newPassword()
+    newPassword: newPassword(),
+    captchaToken: captchaToken()
 }

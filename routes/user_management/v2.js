@@ -36,6 +36,7 @@ const PURGE_GRANTS = require("../../models/purge_grants.models");
 const VERIFY_PLATFORMS = require("../../models/verify_platforms.models");
 const VERIFY_RECOVERY = require("../../models/verify_recovery.models");
 const DELETE_ACCOUNTS = require("../../models/delete_account.models");
+const RECAPTCHA = require("../../models/recaptcha.models");
 
 const VALIDATOR = require("../../models/validator.models");
 
@@ -54,6 +55,7 @@ router.post("/signup",
     VALIDATOR.phoneNumber,
     VALIDATOR.countryCode,
     VALIDATOR.password,
+    VALIDATOR.captchaToken,
     // VALIDATOR.name,
     async (req, res) => {
         try {
@@ -72,20 +74,29 @@ router.post("/signup",
             const PHONE_NUMBER = req.body.phone_number;
             const FULL_PHONE_NUMBER = req.body.country_code + req.body.phone_number;
             const PASSWORD = req.body.password;
+            const CAPTCHATOKEN = req.body.captcha_token;
+            const remoteIp = req.ip;
 
-            let userInfo = await FIND_USERSINFO(COUNTRY_CODE, PHONE_NUMBER);
+            let authRecaptcha = await RECAPTCHA(CAPTCHATOKEN, remoteIp);
 
-            if (!userInfo) {
-                let userId = await STORE_USERS(COUNTRY_CODE, PHONE_NUMBER, PASSWORD, NAME);
-                let init_2fa = await INIT_2FA(userId, FULL_PHONE_NUMBER);
+            if (authRecaptcha) {
+                let userInfo = await FIND_USERSINFO(COUNTRY_CODE, PHONE_NUMBER);
 
-                return res.status(200).json({
-                    session_id: init_2fa.session_id,
-                    svid: init_2fa.svid
-                })
+                if (!userInfo) {
+                    let userId = await STORE_USERS(COUNTRY_CODE, PHONE_NUMBER, PASSWORD, NAME);
+                    let init_2fa = await INIT_2FA(userId, FULL_PHONE_NUMBER);
+
+                    return res.status(200).json({
+                        session_id: init_2fa.session_id,
+                        svid: init_2fa.svid
+                    })
+                } else {
+                    logger.error("USER ALREADY HAS A RECORD IN USERINFO TABLE");
+                    throw new ERRORS.Conflict();
+                };
             } else {
-                logger.error("USER ALREADY HAS A RECORD IN USERINFO TABLE");
-                throw new ERRORS.Conflict();
+                logger.error("INVALID CAPTCHATOKEN");
+                throw new ERRORS.BadRequest();
             };
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
@@ -178,6 +189,7 @@ router.post("/login",
     VALIDATOR.phoneNumber,
     VALIDATOR.password,
     VALIDATOR.userAgent,
+    VALIDATOR.captchaToken,
     async (req, res) => {
         try {
             // Finds the validation errors in this request and wraps them in an object with handy functions
@@ -193,19 +205,27 @@ router.post("/login",
             const PHONE_NUMBER = req.body.phone_number;
             const PASSWORD = req.body.password;
             const USER_AGENT = req.get("user-agent");
+            const CAPTCHATOKEN = req.body.captcha_token;
+            const remoteIp = req.ip;
 
-            let userId = await VERIFY_USERS(PHONE_NUMBER, PASSWORD);
-            let session = await STORE_SESSION(userId, USER_AGENT, null, null, null);
+            let authRecaptcha = await RECAPTCHA(CAPTCHATOKEN, remoteIp);
 
-            res.cookie("SWOB", {
-                sid: session.sid,
-                cookie: session.data
-            }, session.data)
+            if (authRecaptcha) {
+                let userId = await VERIFY_USERS(PHONE_NUMBER, PASSWORD);
+                let session = await STORE_SESSION(userId, USER_AGENT, null, null, null);
 
-            return res.status(200).json({
-                uid: session.uid
-            });
+                res.cookie("SWOB", {
+                    sid: session.sid,
+                    cookie: session.data
+                }, session.data)
 
+                return res.status(200).json({
+                    uid: session.uid
+                });
+            } else {
+                logger.error("INVALID CAPTCHATOKEN");
+                throw new ERRORS.BadRequest();
+            };
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
                 return res.status(400).send(err.message);

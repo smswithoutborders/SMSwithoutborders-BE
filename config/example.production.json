@@ -38,5 +38,8 @@
         "telegram": {
             "TELEGRAM_REQUEST_HOST": ""
         }
+    },
+    "RECAPTCHA": {
+        "SECRET_KEY": ""
     }
 }
