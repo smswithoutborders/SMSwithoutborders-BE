@@ -10,6 +10,7 @@
     3. [Configuration Options](#configuration-options)
         1. [Server](#sever)
         2. [Credentials](#credentials)
+        3. [Recaptcha](#recaptcha)
 4. [How to use](#how-to-use)
     1. [Start Backend User management API](#Start-Backend-User-management-API)
         1. [Development Environment](#User-management-Development-Environment)
@@ -74,6 +75,11 @@ __API__
 4. **SALT**: The salt used to hash a user's data. (Default: "acaad78fd9dadcb056840c09073190a8")
 5. **SECURE SESSIONS**: Specifies the boolean value for the [Secure Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). When truthy, the Secure attribute is set, otherwise it is not. By default, the Secure sessions attribute is set to truthy.
 6. **SESSION MAXAGE**: Specifies the number (in milliseconds) to use when calculating the [Expires Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (2 * 60 * 60 * 1000).
+7. **ENABLE BLOCKING**: Specifies the boolean value for tracking user failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts.
+8. **SHORT BLOCK ATTEMPTS**: Specifies the number of failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts before a short block. Several short blocks results to a long block.
+9. **LONG BLOCK ATTEMPTS**: Specifies the number of failed short block attempts before a long block.
+10. **SHORT BLOCK DURATION**: Specifies the duration (in minutes) of a short block.
+11. **LONG BLOCK DURATION**: Specifies the duration (in minutes) of a long block.
 
 __GATEWAY SERVER__
 
@@ -116,6 +122,12 @@ __TELEGRAM__
 This is a use-case of the [SMSWithoutBorders-customplatform-Telegram](https://github.com/smswithoutborders/SMSWithoutBorders-customplatform-Telegram) project.
 
 1. **TELEGRAM REQUEST HOST**: The URL of the telegram custom platform server you are connecting to.
+
+#### RECAPTCHA
+
+Acquire KEY from [Google reCAPTCHA](https://developers.google.com/recaptcha)
+
+1. **SECRET KEY**: Your Google reCAPTCHA Secret key
 
 ## How to use
 ### Start Backend User management API

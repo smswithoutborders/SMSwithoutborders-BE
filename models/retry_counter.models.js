@@ -8,10 +8,13 @@ let generator = require('generate-password');
 let MySQL = db.sequelize;
 let Retry = db.retries;
 let QueryTypes = db.sequelize.QueryTypes;
-const ATTEMPTS = 5;
-const BLOCKS = 3;
-const ATTEMPTS_TIME = 15;
-const BLOCKS_TIME = 1440;
+
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+const ATTEMPTS = SERVER_CFG.api.short_block_attempts;
+const BLOCKS = SERVER_CFG.api.long_block_attempts;
+const ATTEMPTS_TIME = SERVER_CFG.api.short_block_duration;
+const BLOCKS_TIME = SERVER_CFG.api.long_block_duration;
 
 let check = async (uniqueId) => {
     const UNIQUE_ID = uniqueId;

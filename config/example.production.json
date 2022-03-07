@@ -12,7 +12,12 @@
             "KEY": "de4053831a43d62d9e68fc11319270a9",
             "SALT": "acaad78fd9dadcb056840c09073190a8",
             "secure_sessions": true,
-            "session_maxAge": "2 * 60 * 60 * 1000"
+            "session_maxAge": "2 * 60 * 60 * 1000",
+            "enable_blocking": true,
+            "short_block_attempts": 5,
+            "long_block_attempts": 3,
+            "short_block_duration": 15,
+            "long_block_duration": 1440
         },
         "router": {
             "url": "",
