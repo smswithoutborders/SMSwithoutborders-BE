@@ -81,6 +81,16 @@ __API__
 10. **SHORT BLOCK DURATION**: Specifies the duration (in minutes) of a short block.
 11. **LONG BLOCK DURATION**: Specifies the duration (in minutes) of a long block.
 
+__OTP__
+
+A user has four attempts to request an OTP code daily
+
+1. **ENABLE_OTP_BLOCKING**: Specifies the boolean value for switching on/off tracking OTP code requests.
+2. **FIRST RESEND DURATION**: Specifies the duration (in milliseconds) for the first OTP request.
+3. **SECOND RESEND DURATION**: Specifies the duration (in milliseconds) for the second OTP request.
+4. **THIRD RESEND DURATION**: Specifies the duration (in milliseconds) for the third OTP request.
+5. **FOURTH RESEND DURATION**: Specifies the duration (in milliseconds) for the fourth OTP request.
+
 __GATEWAY SERVER__
 
 This is a use-case of the [SMSWithoutBorders-Gateway-Server](https://github.com/smswithoutborders/SMSWithoutBorders-Gateway-Server) project.
@@ -127,7 +137,8 @@ This is a use-case of the [SMSWithoutBorders-customplatform-Telegram](https://gi
 
 Acquire KEY from [Google reCAPTCHA](https://developers.google.com/recaptcha)
 
-1. **SECRET KEY**: Your Google reCAPTCHA Secret key
+1. **ENABLE RECAPTCHA**: Specifies the boolean value for switching on/off recaptcha.
+2. **SECRET KEY**: Your Google reCAPTCHA Secret key
 
 ## How to use
 ### Start Backend User management API
