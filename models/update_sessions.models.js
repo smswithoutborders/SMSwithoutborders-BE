@@ -16,7 +16,7 @@ const maxAge = SERVER_CFG.api.session_maxAge;
 
 var Session = db.sessions;
 
-module.exports = async (sid, unique_identifier, status) => {
+module.exports = async (sid, unique_identifier, status, type, svid) => {
     const hour = eval(maxAge) || 2 * 60 * 60 * 1000;
     const data = {
         maxAge: hour,
@@ -32,7 +32,8 @@ module.exports = async (sid, unique_identifier, status) => {
     let session = await Session.findAll({
         where: {
             sid: sid,
-            unique_identifier: unique_identifier
+            unique_identifier: unique_identifier,
+            type: type
         }
     }).catch(error => {
         logger.error("ERROR FINDING SESSION");
@@ -53,6 +54,7 @@ module.exports = async (sid, unique_identifier, status) => {
 
     await session[0].update({
         status: status,
+        svid: svid,
         expires: new Date(Date.now() + hour),
         data: JSON.stringify(data)
     })
@@ -61,6 +63,8 @@ module.exports = async (sid, unique_identifier, status) => {
     return {
         sid: session[0].sid,
         uid: session[0].unique_identifier,
+        svid: session[0].svid,
+        type: session[0].type,
         data: data
     };
 }

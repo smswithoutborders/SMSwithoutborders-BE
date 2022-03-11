@@ -8,12 +8,10 @@ const {
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
-const KEY = SERVER_CFG.api.KEY;
 
 let logger = require("../../logger");
 
 const fs = require('fs')
-const Security = require("../../models/security.models");
 const ERRORS = require("../../error.js");
 const FIND_USERS = require("../../models/find_users.models");
 const FIND_PLATFORMS = require("../../models/find_platforms.models");
@@ -34,9 +32,10 @@ const MODIFY_PASSWORDS = require("../../models/modify_password.models");
 const VERIFY_PHONE_NUMBER = require("../../models/verify_phone_number.models");
 const PURGE_GRANTS = require("../../models/purge_grants.models");
 const VERIFY_PLATFORMS = require("../../models/verify_platforms.models");
-const VERIFY_RECOVERY = require("../../models/verify_recovery.models");
+const VERIFY_SESSION = require("../../models/verify_session.models");
 const DELETE_ACCOUNTS = require("../../models/delete_account.models");
 const RECAPTCHA = require("../../models/recaptcha.models");
+const SVRETRY = require("../../models/SV_retries.models");
 
 const VALIDATOR = require("../../models/validator.models");
 
@@ -55,7 +54,7 @@ router.post("/signup",
     VALIDATOR.phoneNumber,
     VALIDATOR.countryCode,
     VALIDATOR.password,
-    VALIDATOR.captchaToken,
+    // VALIDATOR.captchaToken,
     // VALIDATOR.name,
     async (req, res) => {
         try {
@@ -72,24 +71,31 @@ router.post("/signup",
             const COUNTRY_CODE = req.body.country_code;
             const NAME = req.body.name ? req.body.name : "";
             const PHONE_NUMBER = req.body.phone_number;
-            const FULL_PHONE_NUMBER = req.body.country_code + req.body.phone_number;
             const PASSWORD = req.body.password;
             const CAPTCHATOKEN = req.body.captcha_token;
             const remoteIp = req.ip;
+            let authRecaptcha = "";
+            const TYPE = "signup";
+            const USER_AGENT = req.get("user-agent");
 
-            let authRecaptcha = await RECAPTCHA(CAPTCHATOKEN, remoteIp);
+            authRecaptcha = await RECAPTCHA(CAPTCHATOKEN, remoteIp);
 
             if (authRecaptcha) {
                 let userInfo = await FIND_USERSINFO(COUNTRY_CODE, PHONE_NUMBER);
 
                 if (!userInfo) {
                     let userId = await STORE_USERS(COUNTRY_CODE, PHONE_NUMBER, PASSWORD, NAME);
-                    let init_2fa = await INIT_2FA(userId, FULL_PHONE_NUMBER);
+                    let session = await STORE_SESSION(COUNTRY_CODE + PHONE_NUMBER, USER_AGENT, null, null, TYPE);
+
+                    res.cookie("SWOB", {
+                        sid: session.sid,
+                        type: TYPE,
+                        cookie: session.data
+                    }, session.data)
 
                     return res.status(200).json({
-                        session_id: init_2fa.session_id,
-                        svid: init_2fa.svid
-                    })
+                        uid: userId
+                    });
                 } else {
                     logger.error("USER ALREADY HAS A RECORD IN USERINFO TABLE");
                     throw new ERRORS.Conflict();
@@ -121,48 +127,52 @@ router.post("/signup",
     });
 
 router.put("/signup",
-    VALIDATOR.code,
-    VALIDATOR.sessionId,
-    VALIDATOR.svid,
+    VALIDATOR.cookies,
+    VALIDATOR.userAgent,
     async (req, res) => {
         try {
             // Finds the validation errors in this request and wraps them in an object with handy functions
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
                 errors.array().map(err => {
+                    if (err.param == "SWOB") {
+                        logger.error(`${err.param}: ${err.msg}`);
+                        throw new ERRORS.Unauthorized();
+                    }
                     logger.error(`${err.param}: ${err.msg}`);
                 });
                 throw new ERRORS.BadRequest();
             }
             // =============================================================
 
-            const CODE = req.body.code;
-            const SESSION_ID = req.body.session_id;
-            const SVID = req.body.svid;
+            const SVID = req.cookies.SWOB.svid;
+            const SID = req.cookies.SWOB.sid;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const USER_AGENT = req.get("user-agent");
+            const TYPE = req.cookies.SWOB.type;
+
+            const {
+                unique_identifier,
+                session_id
+            } = await VERIFY_SESSION(SID, SVID, USER_AGENT, "success", COOKIE, TYPE);
+
+            const PHONE_NUMBER = unique_identifier;
+            const SESSION_ID = session_id;
 
             let {
                 usersInfo,
-                user
             } = await VERIFY_SV(SESSION_ID, SVID);
-            let verify_2fa = await VERIFY_2FA(usersInfo.full_phone_number, CODE, SESSION_ID);
 
-            if (verify_2fa) {
-                let security = new Security(KEY);
+            await usersInfo.update({
+                status: "verified"
+            }).catch(error => {
+                logger.error("ERROR UPDATING USER'S INFO AFTER SMS VERIFICATION");
+                throw new ERRORS.InternalServerError(error);
+            });
 
-                await usersInfo.update({
-                    phone_number: security.encrypt(usersInfo.phone_number).e_info,
-                    name: security.encrypt(usersInfo.name).e_info,
-                    country_code: security.encrypt(usersInfo.country_code).e_info,
-                    full_phone_number: security.hash(usersInfo.full_phone_number),
-                    status: "verified",
-                    iv: security.iv
-                }).catch(error => {
-                    logger.error("ERROR UPDATING USER'S INFO AFTER SMS VERIFICATION");
-                    throw new ERRORS.InternalServerError(error);
-                });
+            await UPDATE_SESSION(SID, PHONE_NUMBER, "verified", TYPE, SVID);
 
-                return res.status(200).json();
-            };
+            return res.status(200).json();
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
                 return res.status(400).send(err.message);
@@ -280,7 +290,7 @@ router.get("/users/:user_id/platforms",
             let user = await FIND_USERS(ID);
             const usersPlatforms = await FIND_USERS_PLATFORMS(user);
 
-            let session = await UPDATE_SESSION(SID, ID, null);
+            let session = await UPDATE_SESSION(SID, ID, null, null, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -327,7 +337,7 @@ router.post("/users/:user_id/platforms/:platform/protocols/:protocol",
 
             let platform = await FIND_PLATFORMS(PLATFORM);
 
-            let session = await UPDATE_SESSION(SID, UID, null);
+            let session = await UPDATE_SESSION(SID, UID, null, null, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -383,7 +393,7 @@ router.put("/users/:user_id/platforms/:platform/protocols/:protocol/:action?",
                 await STORE_GRANTS(user, platform, RESULT);
             }
 
-            let session = await UPDATE_SESSION(SID, UID, null);
+            let session = await UPDATE_SESSION(SID, UID, null, null, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -431,7 +441,7 @@ router.delete("/users/:user_id/platforms/:platform/protocols/:protocol",
 
             await DELETE_GRANTS(GRANT);
 
-            let session = await UPDATE_SESSION(SID, UID, null);
+            let session = await UPDATE_SESSION(SID, UID, null, null, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -504,7 +514,7 @@ router.post("/users/:user_id/password",
 
             await MODIFY_PASSWORDS(USER, NEW_PASSWORD);
 
-            let session = await UPDATE_SESSION(SID, ID, null);
+            let session = await UPDATE_SESSION(SID, ID, null, null, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -553,18 +563,19 @@ router.post("/recovery",
             const PHONE_NUMBER = req.body.phone_number;
             const USER_AGENT = req.get("user-agent");
             const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
-            let init_2fa = await INIT_2FA(USERID, PHONE_NUMBER);
-            const SVID = init_2fa.svid
-            let session = await STORE_SESSION(PHONE_NUMBER, USER_AGENT, SVID, null, "recovery");
+            const TYPE = "recovery"
+
+            let session = await STORE_SESSION(PHONE_NUMBER, USER_AGENT, null, null, TYPE);
 
             res.cookie("SWOB", {
                 sid: session.sid,
-                svid: SVID,
+                type: TYPE,
                 cookie: session.data
             }, session.data)
 
-            return res.status(200).json();
-
+            return res.status(200).json({
+                uid: USERID
+            });
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
                 return res.status(400).send(err.message);
@@ -590,7 +601,6 @@ router.post("/recovery",
 router.put("/recovery",
     VALIDATOR.userAgent,
     VALIDATOR.cookies,
-    VALIDATOR.code,
     async (req, res) => {
         try {
             // Finds the validation errors in this request and wraps them in an object with handy functions
@@ -609,34 +619,29 @@ router.put("/recovery",
 
             const SVID = req.cookies.SWOB.svid;
             const SID = req.cookies.SWOB.sid;
-            const CODE = req.body.code;
             const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
+            const TYPE = req.cookies.SWOB.type;
 
             const {
-                unique_identifier,
-                session_id
-            } = await VERIFY_RECOVERY(SID, SVID, USER_AGENT, null, COOKIE);
+                unique_identifier
+            } = await VERIFY_SESSION(SID, SVID, USER_AGENT, null, COOKIE, TYPE);
 
-            const SESSION_ID = session_id;
             const PHONE_NUMBER = unique_identifier;
 
-            let verify_2fa = await VERIFY_2FA(PHONE_NUMBER, CODE, SESSION_ID);
+            const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
+            let session = await UPDATE_SESSION(SID, PHONE_NUMBER, "success", TYPE, SVID);
 
-            if (verify_2fa) {
-                const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
-                let session = await UPDATE_SESSION(SID, PHONE_NUMBER, "success");
+            res.cookie("SWOB", {
+                sid: session.sid,
+                svid: SVID,
+                type: TYPE,
+                cookie: session.data
+            }, session.data)
 
-                res.cookie("SWOB", {
-                    sid: session.sid,
-                    svid: SVID,
-                    cookie: session.data
-                }, session.data)
-
-                return res.status(200).json({
-                    uid: USERID
-                });
-            }
+            return res.status(200).json({
+                uid: USERID
+            });
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
                 return res.status(400).send(err.message);
@@ -685,11 +690,12 @@ router.post("/users/:user_id/recovery",
             const UID = req.params.user_id;
             const COOKIE = req.cookies.SWOB.cookie;
             const USER_AGENT = req.get("user-agent");
+            const TYPE = req.cookies.SWOB.type;
             const NEW_PASSWORD = req.body.new_password;
 
             const {
                 unique_identifier,
-            } = await VERIFY_RECOVERY(SID, SVID, USER_AGENT, "success", COOKIE);
+            } = await VERIFY_SESSION(SID, SVID, USER_AGENT, "success", COOKIE, TYPE);
 
             const PHONE_NUMBER = unique_identifier;
 
@@ -705,7 +711,7 @@ router.post("/users/:user_id/recovery",
 
             await MODIFY_PASSWORDS(USER, NEW_PASSWORD);
 
-            await UPDATE_SESSION(SID, PHONE_NUMBER, "updated");
+            await UPDATE_SESSION(SID, PHONE_NUMBER, "updated", TYPE, SVID);
 
             return res.status(200).json();
         } catch (err) {
@@ -901,7 +907,7 @@ router.get("/users/:user_id/dashboard",
             let createdAt = USER.createdAt;
             let updatedAt = USER.updatedAt;
 
-            let session = await UPDATE_SESSION(SID, ID, null);
+            let session = await UPDATE_SESSION(SID, ID, null, null, null);
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -912,6 +918,156 @@ router.get("/users/:user_id/dashboard",
                 createdAt: createdAt,
                 updatedAt: updatedAt
             });
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+router.post("/users/:user_id/OTP",
+    VALIDATOR.cookies,
+    VALIDATOR.userAgent,
+    VALIDATOR.phoneNumber,
+    VALIDATOR.userId,
+    async (req, res) => {
+        try {
+            // Finds the validation errors in this request and wraps them in an object with handy functions
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                errors.array().map(err => {
+                    if (err.param == "SWOB") {
+                        logger.error(`${err.param}: ${err.msg}`);
+                        throw new ERRORS.Unauthorized();
+                    }
+                    logger.error(`${err.param}: ${err.msg}`);
+                });
+                throw new ERRORS.BadRequest();
+            }
+            // =============================================================
+
+            const PHONE_NUMBER = req.body.phone_number;
+            const USER_AGENT = req.get("user-agent");
+            const SID = req.cookies.SWOB.sid;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const TYPE = req.cookies.SWOB.type;
+            let SVID = req.cookies.SWOB.svid ? req.cookies.SWOB.svid : null;
+            const USERID = req.params.user_id;
+
+            const UNIQUEID = await FIND_SESSION(SID, PHONE_NUMBER, USER_AGENT, SVID, null, TYPE, COOKIE);
+
+            const counter = await SVRETRY.check(UNIQUEID, USERID);
+
+            let init_2fa = await INIT_2FA(USERID, UNIQUEID);
+            SVID = init_2fa.svid
+
+            let session = await UPDATE_SESSION(SID, UNIQUEID, null, TYPE, SVID);
+
+            let expires = await SVRETRY.add(counter);
+
+            res.cookie("SWOB", {
+                sid: session.sid,
+                svid: session.svid,
+                type: session.type,
+                cid: counter.id,
+                cookie: session.data
+            }, session.data)
+
+            return res.status(201).json({
+                expires: expires
+            });
+
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
+            } // 404
+            if (err instanceof ERRORS.TooManyRequests) {
+                return res.status(429).send(err.message);
+            } // 429
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+router.put("/OTP",
+    VALIDATOR.cookies,
+    VALIDATOR.userAgent,
+    VALIDATOR.code,
+    async (req, res) => {
+        try {
+            // Finds the validation errors in this request and wraps them in an object with handy functions
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                errors.array().map(err => {
+                    if (err.param == "SWOB") {
+                        logger.error(`${err.param}: ${err.msg}`);
+                        throw new ERRORS.Unauthorized();
+                    }
+                    logger.error(`${err.param}: ${err.msg}`);
+                });
+                throw new ERRORS.BadRequest();
+            }
+            // =============================================================
+            const SVID = req.cookies.SWOB.svid;
+            const SID = req.cookies.SWOB.sid;
+            const CODE = req.body.code;
+            const COOKIE = req.cookies.SWOB.cookie;
+            const TYPE = req.cookies.SWOB.type;
+            const CID = req.cookies.SWOB.cid;
+            const USER_AGENT = req.get("user-agent");
+
+            const {
+                unique_identifier,
+                session_id
+            } = await VERIFY_SESSION(SID, SVID, USER_AGENT, null, COOKIE, TYPE);
+
+            const SESSION_ID = session_id;
+            const PHONE_NUMBER = unique_identifier;
+
+            let verify_2fa = await VERIFY_2FA(PHONE_NUMBER, CODE, SESSION_ID);
+
+            if (verify_2fa) {
+                let session = await UPDATE_SESSION(SID, PHONE_NUMBER, "success", TYPE, SVID);
+
+                await SVRETRY.remove(CID);
+
+                res.cookie("SWOB", {
+                    sid: session.sid,
+                    svid: session.svid,
+                    type: session.type,
+                    cookie: session.data
+                }, session.data)
+
+                return res.status(200).json();
+            }
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
                 return res.status(400).send(err.message);

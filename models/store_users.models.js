@@ -2,14 +2,18 @@
 
 const ERRORS = require("../error.js");
 const db = require("../schemas");
+const config = require('config');
 const Security = require("./security.models.js");
+const SERVER_CFG = config.get("SERVER");
+const KEY = SERVER_CFG.api.KEY;
+
 let logger = require("../logger");
 
 const User = db.users;
 const UserInfo = db.usersInfo;
 
 module.exports = async (country_code, phone_number, password, name) => {
-    let security = new Security();
+    let security = new Security(KEY);
 
     logger.debug(`Creating User ${name} ...`);
 
@@ -30,11 +34,12 @@ module.exports = async (country_code, phone_number, password, name) => {
     logger.debug(`Storing ${name}'s Info ...`);
 
     await UserInfo.create({
-        phone_number: phone_number,
-        name: name,
-        country_code: country_code,
-        full_phone_number: country_code + phone_number,
-        userId: newUser.id
+        phone_number: security.encrypt(phone_number).e_info,
+        name: security.encrypt(name).e_info,
+        country_code: security.encrypt(country_code).e_info,
+        full_phone_number: security.hash(country_code + phone_number),
+        userId: newUser.id,
+        iv: security.iv
     }).catch(error => {
         logger.error("ERROR CREATING USERINFO");
         if (error.name == "SequelizeUniqueConstraintError") {

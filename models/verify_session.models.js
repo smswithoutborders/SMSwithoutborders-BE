@@ -7,7 +7,7 @@ let logger = require("../logger");
 const Session = db.sessions;
 const SmsVerification = db.smsVerification;
 
-module.exports = async (sid, svid, user_agent, status, cookie) => {
+module.exports = async (sid, svid, user_agent, status, cookie, type) => {
     logger.debug(`Finding User's session ${sid} ...`);
 
     let session = await Session.findAll({
@@ -15,7 +15,7 @@ module.exports = async (sid, svid, user_agent, status, cookie) => {
             sid: sid,
             user_agent: user_agent,
             status: status,
-            type: "recovery",
+            type: type,
             svid: svid
         }
     }).catch(error => {
@@ -25,7 +25,7 @@ module.exports = async (sid, svid, user_agent, status, cookie) => {
 
     if (session.length < 1) {
         logger.error("NO SESSION FOUND");
-        throw new ERRORS.Forbidden();
+        throw new ERRORS.Unauthorized();
     };
 
     // IF MORE THAN ONE SESSION EXIST IN DATABASE
@@ -72,7 +72,7 @@ module.exports = async (sid, svid, user_agent, status, cookie) => {
         throw new ERRORS.Conflict();
     };
 
-    logger.info("RECOVERY VERIFICATION SUCCESSFUL");
+    logger.info("SESSION VERIFICATION SUCCESSFUL");
     return {
         unique_identifier: session[0].unique_identifier,
         session_id: SV[0].session_id

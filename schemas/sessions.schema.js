@@ -10,11 +10,11 @@ module.exports = (sequelize, Sequelize) => {
         expires: Sequelize.DATE,
         data: Sequelize.TEXT,
         status: {
-            type: Sequelize.ENUM(['success', 'updated']),
+            type: Sequelize.ENUM(['success', 'updated', 'verified']),
             allowNull: true
         },
         type: {
-            type: Sequelize.ENUM(['recovery']),
+            type: Sequelize.ENUM(['recovery', 'signup']),
             allowNull: true
         }
     });
