@@ -5,7 +5,7 @@
 1. [Introduction](#introduction)
 2. [Create an account](#1-create-an-account)
     1. [Provide registration details](#1-provide-registration-details)
-    2. [Validate OTP and verify new account](#2-validate-otp-and-verify-new-account)
+    2. [Validate registration details and verify new account](#2-validate-registration-details-and-verify-new-account)
 3. [Authenticate an account](#2-authenticate-an-account)
     1. [With phone number](#1-with-phone-number)
     2. [With user's ID](#2-with-users-id)
@@ -22,6 +22,7 @@
 8. [Delete SMS without Borders account](#7-delete-SMS-without-Borders-account)
 9. [Destroy session cookie](#8-destroy-session-cookie)
 10. [Dashboard](#9-dashboard)
+11. [OTP](#10-otp)
 
 ## Introduction
 SMS without Borders provides a RESTful cloud API and User management services. It is directly configurable with MySQL databases for managing users. Also provides out of the box integrations of Google OAuth-2.0, Twitter OAuth, and Telegram end-points and Account authentication. Here are a list of features made available by thsi tool. 
@@ -53,24 +54,21 @@ curl --location --request POST 'http://localhost:9000/v2/signup' \
 }'
 ```
 
-If successful an [OTP](https://en.wikipedia.org/wiki/One-time_password) is sent to the user's phone number, the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
-- session_id
-- svid
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
+- uid
 
 ```bash
 {
-    "session_id": "xxxxxxxxxxxxxx",
-    "svid": "xxxxx-xxxx-xxxxx-xxxx-xxxxxxx"
+    "uid": "xxxxxxxxxxxxxx"
 }
 ```
 
-### 2. Validate [OTP](https://en.wikipedia.org/wiki/One-time_password) and verify new account
-The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
-- Session Id
-- SVID
-- code: The [OTP](https://en.wikipedia.org/wiki/One-time_password) got from [Provide registration details](#Provide-registration-details)
+### 2. Validate [registration details](#1-Provide-registration-details) and verify new account
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent.
 
-see [Provide registration details](#1-Provide-registration-details) to get all the values mentioned above
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
 - [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
@@ -80,11 +78,8 @@ Here is an example. Running User management API locally on port 9000
 ```bash
 curl --location --request PUT 'http://localhost:9000/v2/signup' \
 --header 'Content-Type: application/json' \
---data-raw '{
-    "session_id": "xxxxxxxxxxxxxx",
-    "svid": "xxxxx-xxxx-xxxxx-xxxx-xxxxxxx",
-    "code": "xxxxxx"
-}'
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw ''
 ```
 If successful, the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain an empty object
 
@@ -689,6 +684,8 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
     "updatedAt": "yyyy-mm-ddTxx:xx:xx.xxxZ"
 }
 ```
+## 10. OTP
+
 
 
 
