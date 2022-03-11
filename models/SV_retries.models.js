@@ -11,10 +11,11 @@ let QueryTypes = db.sequelize.QueryTypes;
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
-const TIME1 = 2 * 60 * 1000;
-const TIME2 = 5 * 60 * 1000;
-const TIME3 = 15 * 60 * 1000;
-const TIME4 = 24 * 60 * 60 * 1000;
+const OTP_CFG = SERVER_CFG.otp;
+const TIME1 = eval(OTP_CFG.first_resend_duration);
+const TIME2 = eval(OTP_CFG.second_resend_duration);
+const TIME3 = eval(OTP_CFG.third_resend_duration);
+const TIME4 = eval(OTP_CFG.fourth_resend_duration);
 
 let check = async (uniqueId, userId) => {
     const UNIQUE_ID = uniqueId;
@@ -107,7 +108,7 @@ let add = async (counter) => {
             uppercase: true
         });
 
-        let query = `CREATE EVENT IF NOT EXISTS ${code} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1440 MINUTE DO UPDATE svretries SET count = ?, expires = ? WHERE uniqueId = ?, userId = ?;`
+        let query = `CREATE EVENT IF NOT EXISTS ${code} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL ${TIME4/60000} MINUTE DO UPDATE svretries SET count = ?, expires = ? WHERE uniqueId = ?, userId = ?;`
         await MySQL.query(query, {
             replacements: [0, null, UNIQUE_ID, USERID],
             type: QueryTypes.UPDATE

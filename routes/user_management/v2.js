@@ -8,6 +8,8 @@ const {
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
+const OTP_CFG = SERVER_CFG.otp;
+const ENABLE_OTP_BLOCKING = OTP_CFG.enable_otp_blocking;
 
 let logger = require("../../logger");
 
@@ -74,11 +76,10 @@ router.post("/signup",
             const PASSWORD = req.body.password;
             const CAPTCHATOKEN = req.body.captcha_token;
             const remoteIp = req.ip;
-            let authRecaptcha = "";
             const TYPE = "signup";
             const USER_AGENT = req.get("user-agent");
 
-            authRecaptcha = await RECAPTCHA(CAPTCHATOKEN, remoteIp);
+            let authRecaptcha = await RECAPTCHA(CAPTCHATOKEN, remoteIp);
 
             if (authRecaptcha) {
                 let userInfo = await FIND_USERSINFO(COUNTRY_CODE, PHONE_NUMBER);
@@ -968,17 +969,23 @@ router.post("/users/:user_id/OTP",
             const TYPE = req.cookies.SWOB.type;
             let SVID = req.cookies.SWOB.svid ? req.cookies.SWOB.svid : null;
             const USERID = req.params.user_id;
+            let counter = "";
+            let expires = "";
 
             const UNIQUEID = await FIND_SESSION(SID, PHONE_NUMBER, USER_AGENT, SVID, null, TYPE, COOKIE);
 
-            const counter = await SVRETRY.check(UNIQUEID, USERID);
+            if (ENABLE_OTP_BLOCKING) {
+                counter = await SVRETRY.check(UNIQUEID, USERID);
+            };
 
             let init_2fa = await INIT_2FA(USERID, UNIQUEID);
             SVID = init_2fa.svid
 
             let session = await UPDATE_SESSION(SID, UNIQUEID, null, TYPE, SVID);
 
-            let expires = await SVRETRY.add(counter);
+            if (ENABLE_OTP_BLOCKING) {
+                expires = await SVRETRY.add(counter);
+            }
 
             res.cookie("SWOB", {
                 sid: session.sid,
@@ -1057,7 +1064,9 @@ router.put("/OTP",
             if (verify_2fa) {
                 let session = await UPDATE_SESSION(SID, PHONE_NUMBER, "success", TYPE, SVID);
 
-                await SVRETRY.remove(CID);
+                if (ENABLE_OTP_BLOCKING) {
+                    await SVRETRY.remove(CID);
+                }
 
                 res.cookie("SWOB", {
                     sid: session.sid,
