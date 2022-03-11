@@ -108,7 +108,7 @@ let add = async (counter) => {
             uppercase: true
         });
 
-        let query = `CREATE EVENT IF NOT EXISTS ${code} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL ${TIME4/60000} MINUTE DO UPDATE svretries SET count = ?, expires = ? WHERE uniqueId = ?, userId = ?;`
+        let query = `CREATE EVENT IF NOT EXISTS ${code} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL ${TIME4/60000} MINUTE DO UPDATE svretries SET count = ?, expires = ? WHERE uniqueId = ? AND userId = ?;`
         await MySQL.query(query, {
             replacements: [0, null, UNIQUE_ID, USERID],
             type: QueryTypes.UPDATE

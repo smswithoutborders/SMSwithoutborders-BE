@@ -970,7 +970,7 @@ router.post("/users/:user_id/OTP",
             let SVID = req.cookies.SWOB.svid ? req.cookies.SWOB.svid : null;
             const USERID = req.params.user_id;
             let counter = "";
-            let expires = "";
+            let expires = 0;
 
             const UNIQUEID = await FIND_SESSION(SID, PHONE_NUMBER, USER_AGENT, SVID, null, TYPE, COOKIE);
 
@@ -996,7 +996,7 @@ router.post("/users/:user_id/OTP",
             }, session.data)
 
             return res.status(201).json({
-                expires: expires
+                expires: expires.getTime()
             });
 
         } catch (err) {
