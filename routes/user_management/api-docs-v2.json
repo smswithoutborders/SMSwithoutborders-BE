@@ -8,21 +8,26 @@
     "url": "http://localhost:9000/v2"
   }],
   "tags": [{
-    "name": "Wallets",
-    "description": "Manage all user wallets"
-  }, {
-    "name": "Register on platforms",
-    "description": "Create an account on a third party platform"
-  }, {
-    "name": "Authentication",
-    "description": "Login and Signup"
-  }, {
-    "name": "Platforms",
-    "description": "Handling platforms"
-  }, {
-    "name": "Users",
-    "description": "Manage a user's account"
-  }],
+      "name": "Wallets",
+      "description": "Manage all user wallets"
+    }, {
+      "name": "Register on platforms",
+      "description": "Create an account on a third party platform"
+    }, {
+      "name": "Authentication",
+      "description": "Login and Signup"
+    }, {
+      "name": "Platforms",
+      "description": "Handling platforms"
+    }, {
+      "name": "Users",
+      "description": "Manage a user's account"
+    },
+    {
+      "name": "OTP",
+      "description": "Manage a OTP"
+    }
+  ],
   "paths": {
     "/signup": {
       "post": {
@@ -65,10 +70,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "session_id": {
-                      "type": "string"
-                    },
-                    "svid": {
+                    "uid": {
                       "type": "string"
                     }
                   }
@@ -128,18 +130,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "session_id": {
-                    "type": "string"
-                  },
-                  "svid": {
-                    "type": "string"
-                  },
-                  "code": {
-                    "type": "string"
-                  }
-                }
+                "type": "object"
               }
             }
           }
@@ -1240,7 +1231,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "uid": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
@@ -1611,6 +1607,200 @@
                       "type": "string"
                     },
                     "updatedAt": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g missing required fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (e.g session invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (e.g User not found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users, Platforms found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{user_id}/OTP": {
+      "post": {
+        "tags": [
+          "OTP"
+        ],
+        "summary": "Trigger OTP code",
+        "parameters": [{
+          "in": "path",
+          "name": "user_id",
+          "schema": {
+            "type": "string"
+          },
+          "required": true,
+          "description": "User's Id"
+        }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone_number": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OTP triggered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "expires": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g missing required fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (e.g session invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (e.g User not found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (e.g Duplicate Users, Platforms found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/OTP": {
+      "put": {
+        "tags": [
+          "OTP"
+        ],
+        "summary": "Verify OTP code",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP successfully verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "expires": {
                       "type": "string"
                     }
                   }
