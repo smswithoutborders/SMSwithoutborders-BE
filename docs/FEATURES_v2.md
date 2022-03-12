@@ -5,7 +5,8 @@
 1. [Introduction](#introduction)
 2. [Create an account](#1-create-an-account)
     1. [Provide registration details](#1-provide-registration-details)
-    2. [Validate registration details and verify new account](#2-validate-registration-details-and-verify-new-account)
+    2. [Complete a signup OTP verification](#2-complete-a-signup-otp-verification)
+    3. [Validate registration details and verify new account](#3-validate-registration-details-and-verify-new-account)
 3. [Authenticate an account](#2-authenticate-an-account)
     1. [With phone number](#1-with-phone-number)
     2. [With user's ID](#2-with-users-id)
@@ -28,7 +29,7 @@
 SMS without Borders provides a RESTful cloud API and User management services. It is directly configurable with MySQL databases for managing users. Also provides out of the box integrations of Google OAuth-2.0, Twitter OAuth, and Telegram end-points and Account authentication. Here are a list of features made available by thsi tool. 
 
 ## 1. Create an account
-Using the REST User management API, a new user can be added to the SMS without Borders database. There are two processes involved in adding a new user:
+Using the REST User management API, a new user can be added to the SMS without Borders database. There are three processes involved in adding a new user:
 ### 1. Provide registration details
 The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
 - Phone Number (without country code) 
@@ -63,15 +64,17 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
 }
 ```
 
-### 2. Validate [registration details](#1-Provide-registration-details) and verify new account
-The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent.
+### 2. Complete a signup [OTP](https://en.wikipedia.org/wiki/One-time_password) verification
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during the [submission of registration details](#1-Provide-registration-details).
+
+The remaining steps can be found at the [OTP section](#10-otp) ...
+
+### 3. Validate [registration details](#1-Provide-registration-details) and verify new account
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [OTP validation](#2-validate-otp)
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
 - [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
 - [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
-
-The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
-- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
 
 Here is an example. Running User management API locally on port 9000 
 
@@ -88,7 +91,7 @@ If successful, the [response](https://developer.mozilla.org/en-US/docs/Web/API/R
 ```
 
 ## 2. Authenticate an account
-Authentication is the process whereby a user provides their credentials for identification to obtain adequate resources. The user has 5 failed authentication attempts which when exceeded, the user is unauthorized for 15 minutes. If the user accumulates a sum of 3 subsequent unauthorized sessions (45 failed authentication attempts) they'll be unauthorized for the next 24 hours.
+Authentication is the process whereby a user provides their credentials for identification to obtain adequate resources. The user has 5 failed authentication attempts which when exceeded, the user is unauthorized for 15 minutes with a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```429```. If the user accumulates a sum of 3 subsequent unauthorized sessions (45 failed authentication attempts) they'll be unauthorized for the next 24 hours with a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```429```.
 
 ### 1. With phone number
 The user has to provide the following in the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body):
@@ -529,7 +532,7 @@ If successful an [OTP](https://en.wikipedia.org/wiki/One-time_password) is sent 
 {}
 ```
 
-### 2. Validate OTP
+### 2. Complete a recovery OTP verification
 The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Phone number verification](#1-verify-phone-number) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
 - code (The [OTP](https://en.wikipedia.org/wiki/One-time_password) got from [Phone number verification](#1-verify-phone-number))
 
@@ -684,8 +687,60 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
     "updatedAt": "yyyy-mm-ddTxx:xx:xx.xxxZ"
 }
 ```
-## 10. OTP
+## 10. [OTP](https://en.wikipedia.org/wiki/One-time_password)
+This is an extra layer of security used to make sure that the user trying to use a mobile phone number with SMS without borders has the right access to that mobile phone number. [OTP](https://en.wikipedia.org/wiki/One-time_password) verification can be completed in two steps:
 
+### 1. Submit a mobile phone number
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during a previous process.
 
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request POST 'http://localhost:9000/v2/users/{uid}/OTP' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw '{
+    "phone_number":"xxx-xxx-xxx"
+}'
+```
+
+If successful an [OTP](https://en.wikipedia.org/wiki/One-time_password) is sent to the provided mobile phone number, a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```201``` and the body should contain
+
+- expires
+
+```bash
+{
+    "expires": "xxxxxxxxxx"
+}
+```
+
+### 2. Validate [OTP](https://en.wikipedia.org/wiki/One-time_password)
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during the [submission of a mobile phone number](#1-submit-a-mobile-phone-number) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+- code (The [OTP](https://en.wikipedia.org/wiki/One-time_password) got from [Mobile Phone number submission](#1-submit-a-mobile-phone-number))
+
+The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
+- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
+- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
+
+Here is an example. Running User management API locally on port 9000 
+
+```bash
+curl --location --request PUT 'http://localhost:9000/v2/recovery' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
+--data-raw '{
+    "code":"xxxx"
+}'
+```
+
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain an empty object
+
+```bash
+{}
+```
 
 
