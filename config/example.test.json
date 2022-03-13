@@ -54,5 +54,13 @@
     "RECAPTCHA": {
         "ENABLE_RECAPTCHA": false,
         "SECRET_KEY": ""
+    },
+    "DEVELOPER": {
+        "database": {
+            "MYSQL_HOST": "localhost",
+            "MYSQL_USER": "root",
+            "MYSQL_PASSWORD": "",
+            "MYSQL_DATABASE": "SWOBDevApi"
+        }
     }
 }
