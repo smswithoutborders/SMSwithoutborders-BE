@@ -14,7 +14,7 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: true
         },
         type: {
-            type: Sequelize.ENUM(['recovery', 'signup']),
+            type: Sequelize.ENUM(['recovery', 'signup', 'publisher']),
             allowNull: true
         }
     });

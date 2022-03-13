@@ -200,7 +200,7 @@ router.post("/login",
     VALIDATOR.phoneNumber,
     VALIDATOR.password,
     VALIDATOR.userAgent,
-    VALIDATOR.captchaToken,
+    // VALIDATOR.captchaToken,
     async (req, res) => {
         try {
             // Finds the validation errors in this request and wraps them in an object with handy functions

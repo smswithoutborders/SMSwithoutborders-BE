@@ -104,6 +104,16 @@ let cookies = () => {
     ]
 };
 
+let DeveloperCookies = () => {
+    return [
+        cookie('SWOBDev')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO DEVELOPER COOKIE")
+    ]
+};
+
 let userId = () => {
     return [
         param('user_id')
@@ -138,6 +148,16 @@ let captchaToken = () => {
     ]
 };
 
+let platform = () => {
+    return [
+        body('platform')
+        .exists({
+            checkFalsy: true
+        })
+        .withMessage("NO PLTFORM")
+    ]
+};
+
 module.exports = {
     phoneNumber: phoneNumber(),
     password: password(),
@@ -150,5 +170,7 @@ module.exports = {
     cookies: cookies(),
     userId: userId(),
     newPassword: newPassword(),
-    captchaToken: captchaToken()
+    captchaToken: captchaToken(),
+    platform: platform(),
+    developerCookies: DeveloperCookies()
 }

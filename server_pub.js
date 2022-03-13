@@ -6,6 +6,8 @@ const ORIGIN = SERVER_CFG.origin;
 
 const express = require("express");
 const morgan = require("morgan");
+let cookieParser = require('cookie-parser');
+
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
@@ -14,6 +16,8 @@ let logger = require("./logger");
 var app = express();
 
 app.use(cors());
+
+app.use(cookieParser());
 
 app.use(express.json());
 app.use(express.urlencoded({
@@ -49,8 +53,8 @@ app.use([morgan('combined', {
 app.use(morgan('dev'));
 
 // ROUTES
-// let v2 = require("./routes/publisher/v2");
-// app.use("/v2", v2);
+let v2 = require("./routes/publisher/v2");
+app.use("/v2", v2);
 
 app.listen(SERVER_CFG.api.Publisher_API_PORT, "127.0.0.1", 511, () => {
     logger.info(`Publisher server is running on port ${SERVER_CFG.api.Publisher_API_PORT}`)
