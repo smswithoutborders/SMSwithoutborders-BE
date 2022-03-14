@@ -24,6 +24,8 @@
 9. [Destroy session cookie](#8-destroy-session-cookie)
 10. [Dashboard](#9-dashboard)
 11. [OTP](#10-otp)
+    1. [Submit a mobile phone number](#1-submit-a-mobile-phone-number)
+    2. [Validate OTP](#2-validate-otp)
 
 ## Introduction
 SMS without Borders provides a RESTful cloud API and User management services. It is directly configurable with MySQL databases for managing users. Also provides out of the box integrations of Google OAuth-2.0, Twitter OAuth, and Telegram end-points and Account authentication. Here are a list of features made available by thsi tool. 
