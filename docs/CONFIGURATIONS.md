@@ -11,6 +11,7 @@
         1. [Server](#sever)
         2. [Credentials](#credentials)
         3. [Recaptcha](#recaptcha)
+        4. [Developer](#developer)
 4. [How to use](#how-to-use)
     1. [Start Backend User management API](#Start-Backend-User-management-API)
         1. [Development Environment](#User-management-Development-Environment)
