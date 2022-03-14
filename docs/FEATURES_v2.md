@@ -17,7 +17,7 @@
 5. [Get saved and unsaved platforms](#4-get-saved-and-unsaved-platforms)
 6. [Recover password](#5-recover-password)
     1. [Verify phone number](#1-verify-phone-number)
-    2. [Validate OTP](#2-validate-OTP)
+    2. [Complete a recovery OTP verification](#2-complete-a-recovery-OTP-verification)
     3. [Provide new password](#3-provide-new-password)
 7. [Change Password](#6-change-password)
 8. [Delete SMS without Borders account](#7-delete-SMS-without-Borders-account)
@@ -506,7 +506,7 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
 There are three stages involved in recovering a forgotten password:
 
 - Verify phone number
-- Validate OTP
+- Complete a recovery OTP verification
 - Provide new password
 
 ### 1. Verify phone number
@@ -526,43 +526,23 @@ curl --location --request POST 'http://localhost:9000/v2/recovery' \
 }'
 ```
 
-If successful an [OTP](https://en.wikipedia.org/wiki/One-time_password) is sent to the user's phone number, a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain an empty object. 
-
-```bash
-{}
-```
-
-### 2. Complete a recovery OTP verification
-The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Phone number verification](#1-verify-phone-number) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
-- code (The [OTP](https://en.wikipedia.org/wiki/One-time_password) got from [Phone number verification](#1-verify-phone-number))
-
-The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
-- [Content-Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) = application/json
-- [Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) = Cookie mentioned aboved
-
-Here is an example. Running User management API locally on port 9000 
-
-```bash
-curl --location --request PUT 'http://localhost:9000/v2/recovery' \
---header 'Content-Type: application/json' \
---header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
---data-raw '{
-    "code":"xxxx"
-}'
-```
-
-If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain
+If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) is set on the user's agent valid for two hours. The cookie is used to track the user's seesion. Also the [response](https://developer.mozilla.org/en-US/docs/Web/API/Response/body) should have a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```200``` and the body should contain 
 
 - uid
 
 ```bash
 {
-    uid: "xxx-xxxx-xxxxx-xxxx"
+    "uid": "xxxxxxxxxxxxxx"
 }
 ```
+### 2. Complete a recovery OTP verification
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Phone number verification](#1-verify-phone-number).
+
+The remaining steps can be found at the [OTP section](#10-otp) ...
 
 ### 3. Provide new password
-The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [Phone number verification](#1-verify-phone-number) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during [OTP validation](#2-validate-otp) and also, the [request body](https://developer.mozilla.org/en-US/docs/Web/API/Request/body) should contain:
+
 - new password
 
 The user also must configure their [header](https://developer.mozilla.org/en-US/docs/Glossary/Representation_header) to:
@@ -572,7 +552,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000 
 
 ```bash
-curl --location --request POST 'http://localhost:9000/v2/users/{uid}/recovery' \
+curl --location --request PUT 'http://localhost:9000/v2/users/{uid}/recovery' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
