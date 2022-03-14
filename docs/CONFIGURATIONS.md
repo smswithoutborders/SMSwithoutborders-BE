@@ -140,6 +140,16 @@ Acquire KEY from [Google reCAPTCHA](https://developers.google.com/recaptcha)
 1. **ENABLE RECAPTCHA**: Specifies the boolean value for switching on/off recaptcha.
 2. **SECRET KEY**: Your Google reCAPTCHA Secret key
 
+#### DEVELOPER
+Manages access to the SMS without borders developers resources.
+
+__Database__
+
+1. **HOST**: The hostname of the database you are connecting to. (Default: localhost)
+2. **USER**: The MySQL user to authenticate as. (Default: root)
+3. **PASSWORD**: The password of that MySQL user.
+4. **DATABASE**: Name of the database to use for this connection (Default: SWOBDevApi)
+
 ## How to use
 ### Start Backend User management API
 #### User management Development Environment
