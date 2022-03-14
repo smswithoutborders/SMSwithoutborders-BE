@@ -737,7 +737,6 @@ router.delete("/users/:user_id",
 router.post("/users/:user_id/verify",
     VALIDATOR.userId,
     VALIDATOR.userAgent,
-    VALIDATOR.cookies,
     VALIDATOR.password,
     async (req, res) => {
         try {
@@ -745,10 +744,6 @@ router.post("/users/:user_id/verify",
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
                 errors.array().map(err => {
-                    if (err.param == "SWOB") {
-                        logger.error(`${err.param}: ${err.msg}`);
-                        throw new ERRORS.Unauthorized();
-                    }
                     logger.error(`${err.param}: ${err.msg}`);
                 });
                 throw new ERRORS.BadRequest();
