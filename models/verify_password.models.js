@@ -18,13 +18,13 @@ module.exports = async (id, password) => {
             password: security.hash(password)
         }
     }).catch(error => {
-        logger.error("ERROR FINDING USER");
+        logger.error("ERROR VERIFYING PASSWORD");
         throw new ERRORS.InternalServerError(error);
     })
 
     // RTURN = [], IF USER IS NOT FOUND
     if (user.length < 1) {
-        logger.error("NO USER FOUND");
+        logger.error("INVALID PASSWORD");
         throw new ERRORS.Forbidden();
     }
 
