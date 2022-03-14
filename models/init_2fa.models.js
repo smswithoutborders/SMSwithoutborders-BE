@@ -14,6 +14,7 @@ module.exports = async (userId, phone_number) => {
 
     if (_2fa.state == "success") {
         logger.debug(`Creating an SMS verification record for ${phone_number} ...`);
+        logger.debug(`GATEWAY SERVER session ID: ${_2fa.data.service_sid} ...`);
 
         let SV = await SmsVerification.create({
             userId: userId,

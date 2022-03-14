@@ -6,6 +6,7 @@ let logger = require("../logger");
 
 module.exports = async (phone_number, code, session_id) => {
     logger.debug(`initialising OTP code verification for ${phone_number} ...`);
+    logger.debug(`GATEWAY SERVER session ID: ${session_id}...`);
 
     let _2fa = await _2FA.verify(phone_number, session_id, code);
 
