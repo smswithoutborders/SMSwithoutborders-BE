@@ -599,73 +599,7 @@ router.post("/recovery",
         }
     });
 
-router.put("/recovery",
-    VALIDATOR.userAgent,
-    VALIDATOR.cookies,
-    async (req, res) => {
-        try {
-            // Finds the validation errors in this request and wraps them in an object with handy functions
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                errors.array().map(err => {
-                    if (err.param == "SWOB") {
-                        logger.error(`${err.param}: ${err.msg}`);
-                        throw new ERRORS.Unauthorized();
-                    }
-                    logger.error(`${err.param}: ${err.msg}`);
-                });
-                throw new ERRORS.BadRequest();
-            }
-            // =============================================================
-
-            const SVID = req.cookies.SWOB.svid;
-            const SID = req.cookies.SWOB.sid;
-            const COOKIE = req.cookies.SWOB.cookie;
-            const USER_AGENT = req.get("user-agent");
-            const TYPE = req.cookies.SWOB.type;
-
-            const {
-                unique_identifier
-            } = await VERIFY_SESSION(SID, SVID, USER_AGENT, null, COOKIE, TYPE);
-
-            const PHONE_NUMBER = unique_identifier;
-
-            const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
-            let session = await UPDATE_SESSION(SID, PHONE_NUMBER, "success", TYPE, SVID);
-
-            res.cookie("SWOB", {
-                sid: session.sid,
-                svid: SVID,
-                type: TYPE,
-                cookie: session.data
-            }, session.data)
-
-            return res.status(200).json({
-                uid: USERID
-            });
-        } catch (err) {
-            if (err instanceof ERRORS.BadRequest) {
-                return res.status(400).send(err.message);
-            } // 400
-            if (err instanceof ERRORS.Forbidden) {
-                return res.status(403).send(err.message);
-            } // 403
-            if (err instanceof ERRORS.Unauthorized) {
-                return res.status(401).send(err.message);
-            } // 401
-            if (err instanceof ERRORS.Conflict) {
-                return res.status(409).send(err.message);
-            } // 409
-            if (err instanceof ERRORS.NotFound) {
-                return res.status(404).send(err.message);
-            } // 404
-
-            logger.error(err);
-            return res.status(500).send("internal server error");
-        }
-    });
-
-router.post("/users/:user_id/recovery",
+router.put("/users/:user_id/recovery",
     VALIDATOR.userId,
     VALIDATOR.userAgent,
     VALIDATOR.cookies,
@@ -984,7 +918,8 @@ router.post("/users/:user_id/OTP",
             let session = await UPDATE_SESSION(SID, UNIQUEID, null, TYPE, SVID);
 
             if (ENABLE_OTP_BLOCKING) {
-                expires = await SVRETRY.add(counter);
+                let expires_date = await SVRETRY.add(counter);
+                expires = new Date(expires_date).getTime();
             }
 
             res.cookie("SWOB", {
@@ -996,7 +931,7 @@ router.post("/users/:user_id/OTP",
             }, session.data)
 
             return res.status(201).json({
-                expires: expires.getTime()
+                expires: expires
             });
 
         } catch (err) {
