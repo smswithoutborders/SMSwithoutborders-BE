@@ -668,7 +668,7 @@ If successful a [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Heade
 }
 ```
 ## 10. [OTP](https://en.wikipedia.org/wiki/One-time_password)
-This is an extra layer of security used to make sure that the user trying to use a mobile phone number with SMS without borders has the right access to that mobile phone number. [OTP](https://en.wikipedia.org/wiki/One-time_password) verification can be completed in two steps:
+This is an extra layer of security used to make sure that the user trying to use a mobile phone number with SMS without borders has suitable access to that mobile phone number. The user has four slots to request for a different [OTP](https://en.wikipedia.org/wiki/One-time_password) daily. For each slot, there is a time duration before making another request. If the user requests a different [OTP](https://en.wikipedia.org/wiki/One-time_password) before the time duration elapses, the user will be unauthorized with a [status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of ```429``` until the time duration elapses. [OTP](https://en.wikipedia.org/wiki/One-time_password) verification can be completed in two steps:
 
 ### 1. Submit a mobile phone number
 The user has to provide the [cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie) set on their user agent during a previous process.
