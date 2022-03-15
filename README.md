@@ -7,10 +7,12 @@ This is a cloud API and User management service. It is directly configurable wit
 ## Documentation
 1. [Configurations](docs/CONFIGURATIONS.md)
 2. [Features](docs/API_VERSIONS.md)
-3. [Licensing](LICENSE)
 
 ## Contribution
 We are thrilled to have you contribute to this project 
 
 Please take a moment to read our [contributing guide](docs/CONTRIBUTING.md) to learn about our development process.
 Open an [issue](https://github.com/smswithoutborders/SMSwithoutborders-BE/issues) first to discuss potential changes/additions.
+
+## Licensing
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
