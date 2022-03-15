@@ -1618,7 +1618,7 @@
                   "type": "object",
                   "properties": {
                     "expires": {
-                      "type": "string"
+                      "type": "number"
                     }
                   }
                 }
