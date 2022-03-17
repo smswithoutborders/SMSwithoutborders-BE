@@ -563,7 +563,18 @@ router.post("/recovery",
 
             const PHONE_NUMBER = req.body.phone_number;
             const USER_AGENT = req.get("user-agent");
-            const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
+            const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER).catch(async (err) => {
+                if (err instanceof ERRORS.Forbidden) {
+                    throw new ERRORS.Unauthorized(); //401
+                };
+
+                if (err instanceof ERRORS.Conflict) {
+                    throw new ERRORS.Conflict();
+                } // 409
+
+                throw new ERRORS.InternalServerError(err);
+            });
+
             const TYPE = "recovery"
 
             let session = await STORE_SESSION(PHONE_NUMBER, USER_AGENT, null, null, TYPE);
