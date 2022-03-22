@@ -8,7 +8,7 @@ const mysql = require('mysql2/promise');
 
 let logger = require("../logger");
 
-module.exports = async (sid, unique_identifier, user_agent, cookie) => {
+module.exports = async (sid, unique_identifier, user_agent, cookie, ext) => {
     logger.debug("connecting to SWOB Dev ...");
     // create the connection
     const connection = await mysql.createConnection({
@@ -45,7 +45,20 @@ module.exports = async (sid, unique_identifier, user_agent, cookie) => {
         throw new ERRORS.Unauthorized();
     }
 
-    if (rows[0].data !== JSON.stringify(cookie)) {
+    let str_cookie = ""
+    if (ext == "py") {
+        str_cookie = JSON.stringify(cookie).replaceAll(":\"False\"", ":False");
+        str_cookie = str_cookie.replaceAll(":\"True\"", ":True");
+        str_cookie = str_cookie.replaceAll(":", ": ");
+        str_cookie = str_cookie.replaceAll(",", ", ");
+        str_cookie = str_cookie.replaceAll("\"", "'");
+    } else {
+        str_cookie = JSON.stringify(cookie)
+    }
+
+    console.log(rows[0].data)
+    console.log(str_cookie)
+    if (rows[0].data !== str_cookie) {
         logger.error("INVALID COOKIE");
         throw new ERRORS.Unauthorized();
     }
