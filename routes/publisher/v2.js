@@ -99,7 +99,7 @@ router.post("/decrypt",
                 return res.status(409).send(err.message);
             } // 409
             if (err instanceof ERRORS.NotFound) {
-                return res.status(404).send(err.message);
+                return res.status(200).send([]);
             } // 404
 
             logger.error(err);
