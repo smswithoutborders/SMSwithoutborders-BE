@@ -53,10 +53,9 @@ router.post("/decrypt",
             let EXT = "";
 
             if (typeof (DEV_COOKIE_CHECK) == "string") {
-                let string_cookie = DEV_COOKIE_CHECK.replaceAll("'", "\"");
+                let string_cookie = DEV_COOKIE_CHECK
                 string_cookie = string_cookie.replaceAll("\\054", ",");
-                string_cookie = string_cookie.replaceAll(": False", ": \"False\"");
-                string_cookie = string_cookie.replaceAll(": True", ": \"True\"");
+                string_cookie = string_cookie.replaceAll("\\", "");
                 let json_cookie = JSON.parse(string_cookie)
                 DEV_SID = json_cookie.sid;
                 DEV_COOKIE = json_cookie.cookie;
@@ -82,7 +81,9 @@ router.post("/decrypt",
             await STORE_SESSION(USERID, USER_AGENT, null, null, "publisher");
 
             res.status(200).json({
-                DECRYPTED_GRANT
+                username: DECRYPTED_GRANT.username,
+                token: DECRYPTED_GRANT.token,
+                uniqueId: DECRYPTED_GRANT.uniqueId
             });
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {

@@ -47,8 +47,8 @@ module.exports = async (sid, unique_identifier, user_agent, cookie, ext) => {
 
     let str_cookie = ""
     if (ext == "py") {
-        str_cookie = JSON.stringify(cookie).replaceAll(":\"False\"", ":False");
-        str_cookie = str_cookie.replaceAll(":\"True\"", ":True");
+        str_cookie = JSON.stringify(cookie).replaceAll("false", "False");
+        str_cookie = str_cookie.replaceAll("true", "True");
         str_cookie = str_cookie.replaceAll(":", ": ");
         str_cookie = str_cookie.replaceAll(",", ", ");
         str_cookie = str_cookie.replaceAll("\"", "'");
