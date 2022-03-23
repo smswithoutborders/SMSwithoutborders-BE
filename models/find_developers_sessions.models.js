@@ -56,10 +56,10 @@ module.exports = async (sid, unique_identifier, user_agent, cookie, ext) => {
         str_cookie = JSON.stringify(cookie)
     }
 
-    console.log(rows[0].data)
-    console.log(str_cookie)
     if (rows[0].data !== str_cookie) {
         logger.error("INVALID COOKIE");
+        logger.error(`original cookie: ${rows[0].data}`)
+        logger.error(`invalid cookie: ${str_cookie}`)
         throw new ERRORS.Unauthorized();
     }
 
