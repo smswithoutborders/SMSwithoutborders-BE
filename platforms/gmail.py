@@ -3,7 +3,6 @@ logger = logging.getLogger(__name__)
 
 import os
 import requests
-import sqlite3
 import json
 
 from error import InternalServerError
@@ -13,12 +12,6 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-credentials_file = os.path.abspath("credentials.json")
-
-if not os.path.exists(credentials_file):
-    logger.error(f"Gmail credentials file not found at {credentials_file}")
-    raise InternalServerError()
-
 class OAuth2:
     def __init__(self, credentials, scopes):
         self.credentials = credentials
@@ -27,7 +20,7 @@ class OAuth2:
     def init(self, originalUrl):
         try:
             flow = Flow.from_client_secrets_file(
-                credentials_file,
+                self.credentials,
                 scopes = self.scopes,
                 redirect_uri = f'{originalUrl}/platforms/gmail/protocols/oauth2/redirect_codes/'
             )
@@ -44,7 +37,7 @@ class OAuth2:
     def validate(self, originalUrl, code):
         try:
             flow = Flow.from_client_secrets_file(
-                credentials_file,
+                self.credentials,
                 scopes = self.scopes,
                 redirect_uri = f'{originalUrl}/platforms/gmail/protocols/oauth2/redirect_codes/'
             )

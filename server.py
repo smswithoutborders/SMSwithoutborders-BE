@@ -1,3 +1,8 @@
+import logging
+server_logger = logging.getLogger(__name__)
+from logger import logger
+logger()
+
 from flask import Flask
 
 from routes.v2 import v2

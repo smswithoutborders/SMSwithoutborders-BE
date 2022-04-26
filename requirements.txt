@@ -2,6 +2,7 @@ cachetools==5.0.0
 certifi==2021.10.8
 charset-normalizer==2.0.12
 click==8.1.2
+coloredlogs==15.0.1
 Flask==2.1.1
 google-api-core==2.7.2
 google-api-python-client==2.45.0
@@ -10,6 +11,7 @@ google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.5.1
 googleapis-common-protos==1.56.0
 httplib2==0.20.4
+humanfriendly==10.0
 idna==3.3
 importlib-metadata==4.11.3
 itsdangerous==2.1.2
