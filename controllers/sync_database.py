@@ -9,9 +9,9 @@ from schemas.baseModel import db
 from contextlib import closing
 from mysql.connector import connect, Error
 
-from schemas.wallets import Wallets
-from schemas.platforms import Platforms
-from schemas.users import Users
+from schemas import Wallets
+from schemas import Platforms
+from schemas import Users
 
 config = configuration()
 database = config["DATABASE"]
