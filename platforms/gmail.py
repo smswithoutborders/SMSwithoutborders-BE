@@ -22,7 +22,7 @@ class OAuth2:
             flow = Flow.from_client_secrets_file(
                 self.credentials,
                 scopes = self.scopes,
-                redirect_uri = f'{originalUrl}/platforms/gmail/protocols/oauth2/redirect_codes/'
+                redirect_uri = f'{originalUrl}platforms/gmail/protocols/oauth2/redirect_codes/'
             )
 
             auth_uri = flow.authorization_url()
@@ -39,7 +39,7 @@ class OAuth2:
             flow = Flow.from_client_secrets_file(
                 self.credentials,
                 scopes = self.scopes,
-                redirect_uri = f'{originalUrl}/platforms/gmail/protocols/oauth2/redirect_codes/'
+                redirect_uri = f'{originalUrl}platforms/gmail/protocols/oauth2/redirect_codes/'
             )
 
             flow.fetch_token(code=code)
