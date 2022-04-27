@@ -3,11 +3,8 @@
 const db = require("../schemas");
 const ERRORS = require("../error.js");
 let logger = require("../logger");
-let generator = require('generate-password');
 
-let MySQL = db.sequelize;
 let Retry = db.retries;
-let QueryTypes = db.sequelize.QueryTypes;
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
