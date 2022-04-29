@@ -231,8 +231,12 @@ module.exports = async (req, res, next) => {
                     const TOKEN = DECRYPTED_GRANT.token
 
                     await platformObj.revoke(TOKEN).catch(err => {
-                        if (err.statusCode == 401) {
-                            logger.error(err.data)
+                        if (err.code == 401) {
+                            logger.error(`Error revoking ${platform} grant`);
+                            logger.error(err.data.error_description)
+                        } else if (err.code == 400) {
+                            logger.error(`Error revoking ${platform} grant`);
+                            logger.error(err.data.error_description)
                         } else {
                             logger.error(`Error revoking ${platform} grant`);
                             throw new ERRORS.InternalServerError(err);
