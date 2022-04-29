@@ -11,6 +11,13 @@ const gmail_token_scopes = [
     'https://www.googleapis.com/auth/userinfo.email'
 ];
 
+const twitter_token_scopes = [
+    "tweet.write",
+    "users.read",
+    "tweet.read",
+    "offline.access"
+];
+
 const GMAIL = require("../libs/platforms/GMAIL");
 const TWITTER = require("../libs/platforms/TWITTER");
 const TELEGRAM = require("../libs/platforms/TELEGRAM");
@@ -44,13 +51,13 @@ module.exports = async (ORIGINALURL, PLATFORM, GRANT, USER) => {
 
     if (platform == "twitter") {
 
-        let platformObj = new TWITTER.OAuth(credentials);
+        let platformObj = new TWITTER.OAuth2(credentials, twitter_token_scopes);
 
         const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
         const TOKEN = DECRYPTED_GRANT.token
 
         logger.debug(`Revoking ${platform} grant ...`);
-        await platformObj.revoke(originalURL, TOKEN).catch(err => {
+        await platformObj.revoke(TOKEN).catch(err => {
             if (err.statusCode == 401) {
                 logger.error(err.data)
             } else {
