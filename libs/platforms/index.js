@@ -11,6 +11,13 @@ const gmail_token_scopes = [
     'https://www.googleapis.com/auth/userinfo.email'
 ];
 
+const twitter_token_scopes = [
+    "tweet.write",
+    "users.read",
+    "tweet.read",
+    "offline.access"
+];
+
 const GMAIL = require("./GMAIL");
 const TWITTER = require("./TWITTER");
 const TELEGRAM = require("./TELEGRAM");
@@ -145,8 +152,8 @@ module.exports = async (req, res, next) => {
 
         if (platform == "twitter") {
 
-            if (protocol == "oauth") {
-                let platformObj = new TWITTER.OAuth(credentials);
+            if (protocol == "oauth2") {
+                let platformObj = new TWITTER.OAuth2(credentials, twitter_token_scopes);
 
                 if (req.method.toLowerCase() == "post") {
                     const SID = req.cookies.SWOB.sid;
@@ -156,27 +163,26 @@ module.exports = async (req, res, next) => {
 
                     await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
-                    let url = await platformObj.init(originalURL).catch(err => {
+                    let {
+                        url,
+                        codeVerifier
+                    } = await platformObj.init(originalURL).catch(err => {
                         logger.error(`Error initialising ${platform} grant`);
                         logger.error(err.data)
                         throw new ERRORS.InternalServerError(err);
                     });
 
                     req.platformRes = {
-                        url: url.url
+                        url: url,
+                        codeVerifier: codeVerifier
                     }
                     return next();
                 }
 
                 if (req.method.toLowerCase() == "put") {
                     // ==================== REQUEST BODY CHECKS ====================
-                    if (!req.body.oauth_token) {
-                        logger.error("NO OAUTH TOKEN");
-                        throw new ERRORS.BadRequest();
-                    };
-
-                    if (!req.body.oauth_verifier) {
-                        logger.error("NO OAUTH VERIFIER");
+                    if (!req.body.code) {
+                        logger.error("NO CODE");
                         throw new ERRORS.BadRequest();
                     };
                     // =============================================================
@@ -188,10 +194,10 @@ module.exports = async (req, res, next) => {
 
                     await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
-                    const AUTH_TOKEN = req.body.oauth_token;
-                    const AUTH_VERIFIER = req.body.oauth_verifier;
+                    const AUTH_CODE = req.body.code;
+                    const CODE_VERIFIER = req.cookies.SWOB.codeVerifier;
 
-                    let result = await platformObj.validate(originalURL, AUTH_TOKEN, AUTH_VERIFIER).catch(err => {
+                    let result = await platformObj.validate(originalURL, AUTH_CODE, CODE_VERIFIER).catch(err => {
                         logger.error(`Error validating ${platform} grant`);
                         logger.error(err.data)
                         throw new ERRORS.InternalServerError(err);
@@ -224,7 +230,7 @@ module.exports = async (req, res, next) => {
                     const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
                     const TOKEN = DECRYPTED_GRANT.token
 
-                    await platformObj.revoke(originalURL, TOKEN).catch(err => {
+                    await platformObj.revoke(TOKEN).catch(err => {
                         if (err.statusCode == 401) {
                             logger.error(err.data)
                         } else {

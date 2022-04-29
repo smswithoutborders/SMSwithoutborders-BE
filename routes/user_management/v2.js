@@ -335,6 +335,7 @@ router.post("/users/:user_id/platforms/:platform/protocols/:protocol",
 
             const URL = req.platformRes.url ? req.platformRes.url : "";
             const BODY = req.platformRes.body ? req.platformRes.body : "";
+            const codeVerifier = req.platformRes.codeVerifier ? req.platformRes.codeVerifier : "";
 
             let platform = await FIND_PLATFORMS(PLATFORM);
 
@@ -342,7 +343,8 @@ router.post("/users/:user_id/platforms/:platform/protocols/:protocol",
 
             res.cookie("SWOB", {
                 sid: session.sid,
-                cookie: session.data
+                cookie: session.data,
+                codeVerifier: codeVerifier
             }, session.data)
 
             return res.status(200).json({
