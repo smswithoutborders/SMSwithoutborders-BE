@@ -848,7 +848,7 @@ router.get("/users/:user_id/dashboard",
 
             let USER = await FIND_USERS(ID);
             let createdAt = USER.createdAt;
-            let updatedAt = USER.updatedAt;
+            let updatedAt = USER.last_login;
 
             let session = await UPDATE_SESSION(SID, ID, null, null, null);
 
@@ -859,7 +859,7 @@ router.get("/users/:user_id/dashboard",
 
             return res.status(200).json({
                 createdAt: createdAt,
-                updatedAt: updatedAt
+                updatedAt: updatedAt ? updatedAt : Date.now()
             });
         } catch (err) {
             if (err instanceof ERRORS.BadRequest) {
