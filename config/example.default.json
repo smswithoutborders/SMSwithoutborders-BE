@@ -1,7 +1,7 @@
 {
     "SERVER": {
         "database": {
-            "MYSQL_HOST": "localhost",
+            "MYSQL_HOST": "127.0.0.1",
             "MYSQL_USER": "root",
             "MYSQL_PASSWORD": "",
             "MYSQL_DATABASE": "smswithoutborders"
@@ -30,7 +30,7 @@
             "url": "",
             "port": ""
         },
-        "origin": ["http://localhost:18000"],
+        "origin": ["http://127.0.0.1:18000"],
         "ssl_api": {
             "API_PORT": "",
             "CERTIFICATE": "",
@@ -57,7 +57,7 @@
     },
     "DEVELOPER": {
         "database": {
-            "MYSQL_HOST": "localhost",
+            "MYSQL_HOST": "127.0.0.1",
             "MYSQL_USER": "root",
             "MYSQL_PASSWORD": "",
             "MYSQL_DATABASE": "SWOBDevApi"
