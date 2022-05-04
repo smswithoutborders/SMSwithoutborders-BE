@@ -72,7 +72,7 @@ class OAuth2 {
                     clientSecret: this.credentials.twitter.TWITTER_CLIENT_SECRET
                 });
 
-                let Token = this.refresh(token);
+                let Token = await this.refresh(token);
                 await this.oauthClientToken.revokeOAuth2Token(Token.accessToken, "access_token")
 
                 resolve(true);
