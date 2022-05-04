@@ -1,5 +1,9 @@
 "use strict";
 
+const config = require('config');
+const SERVER_CFG = config.get("SERVER");
+const KEY = SERVER_CFG.api.KEY;
+
 const express = require('express');
 const router = express.Router();
 const {
@@ -9,6 +13,7 @@ const {
 let logger = require("../../logger");
 
 const ERRORS = require("../../error.js");
+const Security = require("../../models/security.models.js");
 
 const STORE_SESSION = require("../../models/store_sessions.models");
 const FIND_USERS = require("../../models/find_users.models");
@@ -17,6 +22,7 @@ const FIND_DEV_SESSION = require("../../models/find_developers_sessions.models")
 const FIND_GRANTS = require("../../models/find_grant.models");
 const DECRYPT_GRANTS = require("../../models/decrypt_grant.models");
 const FIND_PLATFORMS = require("../../models/find_platforms.models");
+const REFRESH_TOKENS = require("../../models/refresh_token.models");
 
 const VALIDATOR = require("../../models/validator.models");
 
@@ -77,12 +83,24 @@ router.post("/decrypt",
             let platform = await FIND_PLATFORMS(PLATFORM);
             const GRANT = await FIND_GRANTS(USER, platform);
             const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
+            const refreshed_token = await REFRESH_TOKENS(DECRYPTED_GRANT.token, platform)
+
+            if (refreshed_token) {
+                let security = new Security(KEY);
+
+                await GRANT.update({
+                    username: security.encrypt(JSON.stringify(DECRYPTED_GRANT.username)).e_info,
+                    uniqueId: security.encrypt(JSON.stringify(DECRYPTED_GRANT.uniqueId)).e_info,
+                    token: security.encrypt(JSON.stringify(refreshed_token)).e_info,
+                    iv: security.iv
+                })
+            }
 
             await STORE_SESSION(USERID, USER_AGENT, null, null, "publisher");
 
             res.status(200).json({
                 username: DECRYPTED_GRANT.username,
-                token: DECRYPTED_GRANT.token,
+                token: refreshed_token ? refreshed_token : DECRYPTED_GRANT.token,
                 uniqueId: DECRYPTED_GRANT.uniqueId
             });
         } catch (err) {

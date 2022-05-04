@@ -72,10 +72,27 @@ class OAuth2 {
                     clientSecret: this.credentials.twitter.TWITTER_CLIENT_SECRET
                 });
 
-                let Token = await this.oauthClientToken.refreshOAuth2Token(token.refreshToken);
+                let Token = this.refresh(token);
                 await this.oauthClientToken.revokeOAuth2Token(Token.accessToken, "access_token")
 
                 resolve(true);
+            } catch (error) {
+                reject(error)
+            }
+        });
+    }
+
+    refresh(token) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                this.oauthClientToken = new TwitterApi({
+                    clientId: this.credentials.twitter.TWITTER_CLIENT_ID,
+                    clientSecret: this.credentials.twitter.TWITTER_CLIENT_SECRET
+                });
+
+                let refreshed_token = await this.oauthClientToken.refreshOAuth2Token(token.refreshToken);
+
+                resolve(refreshed_token);
             } catch (error) {
                 reject(error)
             }

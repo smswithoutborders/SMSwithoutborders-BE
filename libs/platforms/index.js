@@ -168,7 +168,7 @@ module.exports = async (req, res, next) => {
                         codeVerifier
                     } = await platformObj.init(originalURL).catch(err => {
                         logger.error(`Error initialising ${platform} grant`);
-                        logger.error(err.data)
+                        logger.error(err.data.error_description)
                         throw new ERRORS.InternalServerError(err);
                     });
 
@@ -199,7 +199,7 @@ module.exports = async (req, res, next) => {
 
                     let result = await platformObj.validate(originalURL, AUTH_CODE, CODE_VERIFIER).catch(err => {
                         logger.error(`Error validating ${platform} grant`);
-                        logger.error(err.data)
+                        logger.error(err.data.error_description)
                         throw new ERRORS.InternalServerError(err);
                     });
 
