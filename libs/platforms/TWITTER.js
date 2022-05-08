@@ -1,37 +1,32 @@
-const twitter = require('oauth');
+const {
+    TwitterApi
+} = require('twitter-api-v2');
 
-class OAuth {
-    constructor(credentials) {
+class OAuth2 {
+    constructor(credentials, token_scopes) {
         this.credentials = credentials;
         this.oauthClientToken = {};
-        this.requestTokenSecret = '';
+        this.token_scopes = token_scopes;
     }
 
     init(originalURL) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             try {
-                this.oauthClientToken = new twitter.OAuth(
-                    'https://api.twitter.com/oauth/request_token',
-                    'https://api.twitter.com/oauth/access_token',
-                    this.credentials.twitter.TWITTER_API_KEY,
-                    this.credentials.twitter.TWITTER_API_KEY_SECRET,
-                    '1.0A',
-                    `${originalURL}/platforms/twitter/protocols/oauth/redirect_codes/`,
-                    'HMAC-SHA1'
-                );
+                this.oauthClientToken = new TwitterApi({
+                    clientId: this.credentials.twitter.TWITTER_CLIENT_ID,
+                    clientSecret: this.credentials.twitter.TWITTER_CLIENT_SECRET
+                });
 
-                this.oauthClientToken.getOAuthRequestToken((error, reqToken, reqTokenSecret) => {
-                    if (error) {
-                        reject(error)
-                    };
+                const {
+                    url,
+                    codeVerifier
+                } = this.oauthClientToken.generateOAuth2AuthLink(`${originalURL}/platforms/twitter/protocols/oauth2/redirect_codes/`, {
+                    scope: this.token_scopes
+                });
 
-                    this.requestTokenSecret = reqTokenSecret;
-
-                    const token_url = `https://twitter.com/oauth/authorize?oauth_token=${reqToken}`;
-
-                    resolve({
-                        url: token_url
-                    })
+                resolve({
+                    codeVerifier,
+                    url
                 });
             } catch (error) {
                 reject(error)
@@ -40,62 +35,64 @@ class OAuth {
     };
 
     validate(originalURL, ...args) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             try {
-                const oauth_token = args[0];
-                const oauth_verifier = args[1];
+                const code = args[0];
+                const codeVerifier = args[1]
 
-                this.oauthClientToken = new twitter.OAuth(
-                    'https://api.twitter.com/oauth/request_token',
-                    'https://api.twitter.com/oauth/access_token',
-                    this.credentials.twitter.TWITTER_API_KEY,
-                    this.credentials.twitter.TWITTER_API_KEY_SECRET,
-                    '1.0A',
-                    `${originalURL}/platforms/twitter/protocols/oauth/redirect_codes/`,
-                    'HMAC-SHA1'
-                );
-
-                this.oauthClientToken.getOAuthAccessToken(oauth_token, this.requestTokenSecret, oauth_verifier, (error, accToken, accTokenSecret) => {
-                    if (error) {
-                        reject(error)
-                    };
-
-                    this.oauthClientToken.get("https://api.twitter.com/1.1/account/verify_credentials.json", accToken, accTokenSecret, (e, data, respond) => {
-                        if (e) reject(e);
-                        let profile = JSON.parse(data);
-
-                        resolve({
-                            token: {
-                                accToken,
-                                accTokenSecret
-                            },
-                            profile: profile
-                        });
-                    });
+                this.oauthClientToken = new TwitterApi({
+                    clientId: this.credentials.twitter.TWITTER_CLIENT_ID,
+                    clientSecret: this.credentials.twitter.TWITTER_CLIENT_SECRET
                 });
+
+                let tokens = await this.oauthClientToken.loginWithOAuth2({
+                    code: code,
+                    codeVerifier: codeVerifier,
+                    redirectUri: `${originalURL}/platforms/twitter/protocols/oauth2/redirect_codes/`
+                });
+
+                let partial_client = new TwitterApi(tokens.accessToken);
+                let profile = await partial_client.currentUserV2();
+
+                resolve({
+                    profile: profile,
+                    token: tokens
+                })
             } catch (error) {
                 reject(error)
             }
         });
     };
 
-    revoke(originalURL, token) {
-        return new Promise((resolve, reject) => {
+    revoke(token) {
+        return new Promise(async (resolve, reject) => {
             try {
-                this.oauthClientToken = new twitter.OAuth(
-                    'https://api.twitter.com/oauth/request_token',
-                    'https://api.twitter.com/oauth/access_token',
-                    this.credentials.twitter.TWITTER_API_KEY,
-                    this.credentials.twitter.TWITTER_API_KEY_SECRET,
-                    '1.0A',
-                    `${originalURL}/platforms/twitter/protocols/oauth/redirect_codes/`,
-                    'HMAC-SHA1'
-                );
+                this.oauthClientToken = new TwitterApi({
+                    clientId: this.credentials.twitter.TWITTER_CLIENT_ID,
+                    clientSecret: this.credentials.twitter.TWITTER_CLIENT_SECRET
+                });
 
-                this.oauthClientToken.post("https://api.twitter.com/1.1/oauth/invalidate_token", token.accToken, token.accTokenSecret, {}, "applicatoin/json", (e, data, respond) => {
-                    if (e) reject(e);
-                    resolve(true);
-                })
+                let Token = await this.refresh(token);
+                await this.oauthClientToken.revokeOAuth2Token(Token.accessToken, "access_token")
+
+                resolve(true);
+            } catch (error) {
+                reject(error)
+            }
+        });
+    }
+
+    refresh(token) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                this.oauthClientToken = new TwitterApi({
+                    clientId: this.credentials.twitter.TWITTER_CLIENT_ID,
+                    clientSecret: this.credentials.twitter.TWITTER_CLIENT_SECRET
+                });
+
+                let refreshed_token = await this.oauthClientToken.refreshOAuth2Token(token.refreshToken);
+
+                resolve(refreshed_token);
             } catch (error) {
                 reject(error)
             }
@@ -104,5 +101,5 @@ class OAuth {
 };
 
 module.exports = {
-    OAuth
+    OAuth2
 }

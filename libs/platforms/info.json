@@ -11,7 +11,7 @@
         "description": "Twitter status",
         "type": "text",
         "logo": "/public/twitter-icon.svg",
-        "protocols": ["oauth"],
+        "protocols": ["oauth2"],
         "letter": "t"
     },
     {

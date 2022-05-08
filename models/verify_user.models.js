@@ -86,6 +86,10 @@ module.exports = async (phone_number, password) => {
 
         if (removeCount.state == "success") {
             logger.info("USER SUCCESSFULLY AUTHENTICATED");
+            await user.update({
+                last_login: user.current_login,
+                current_login: Date.now()
+            });
             return user.id;
         };
     } else {

@@ -48,10 +48,10 @@ module.exports = async (user, platform, result) => {
         await Wallet.create({
             userId: user.id,
             platformId: platform.id,
-            username: security.encrypt(JSON.stringify(result.profile.name)).e_info,
+            username: security.encrypt(JSON.stringify(result.profile.data.name)).e_info,
             token: security.encrypt(JSON.stringify(result.token)).e_info,
-            uniqueId: security.encrypt(JSON.stringify(result.profile.screen_name)).e_info,
-            uniqueIdHash: security.hash(result.profile.screen_name),
+            uniqueId: security.encrypt(JSON.stringify(result.profile.data.username)).e_info,
+            uniqueIdHash: security.hash(result.profile.data.username),
             iv: security.iv
         }).catch(error => {
             logger.error("ERROR CREATING TWITTER GRANT");

@@ -3,18 +3,15 @@
 const db = require("../schemas");
 const ERRORS = require("../error.js");
 let logger = require("../logger");
-let generator = require('generate-password');
 
-let MySQL = db.sequelize;
 let Retry = db.retries;
-let QueryTypes = db.sequelize.QueryTypes;
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
 const ATTEMPTS = SERVER_CFG.api.short_block_attempts;
 const BLOCKS = SERVER_CFG.api.long_block_attempts;
-const ATTEMPTS_TIME = SERVER_CFG.api.short_block_duration;
-const BLOCKS_TIME = SERVER_CFG.api.long_block_duration;
+const ATTEMPTS_TIME = SERVER_CFG.api.short_block_duration * 60000;
+const BLOCKS_TIME = SERVER_CFG.api.long_block_duration * 60000;
 
 let check = async (uniqueId) => {
     const UNIQUE_ID = uniqueId;
@@ -48,14 +45,33 @@ let check = async (uniqueId) => {
 
     logger.debug(`Checking retry count for ${UNIQUE_ID} ...`);
 
-    if (counter[0].count >= ATTEMPTS) {
+    let expires = counter[0].expires;
+    let age = expires - Date.now();
+
+    if (counter[0].count >= ATTEMPTS && age >= 0) {
         logger.error("TOO MANY REQUESTS");
         throw new ERRORS.TooManyRequests();
-    };
-    if (counter[0].block >= BLOCKS) {
+    } else if (counter[0].count >= ATTEMPTS && age < 0) {
+        logger.debug(`Resetting retry count for ${UNIQUE_ID} ...`)
+
+        let resetCount = await counter[0].update({
+            count: 0
+        });
+
+        logger.info(`SUCCESSFULLY RESET COUNT. ${ATTEMPTS - resetCount.count} ATTEMPTS LEFT. ${BLOCKS - resetCount.block} BLOCKS LEFT`);
+    }
+    if (counter[0].block >= BLOCKS && age >= 0) {
         logger.error("TOO MANY REQUESTS");
         throw new ERRORS.TooManyRequests();
-    };
+    } else if (counter[0].block >= BLOCKS && age < 0) {
+        logger.debug(`Resetting retry count for ${UNIQUE_ID} ...`)
+
+        let resetCount = await counter[0].update({
+            block: 0
+        });
+
+        logger.info(`SUCCESSFULLY RESET BLOCK. ${ATTEMPTS - resetCount.count} ATTEMPTS LEFT. ${BLOCKS - resetCount.block} BLOCKS LEFT`);
+    }
 
     logger.info(`FOUND RETRY RECORD`);
     return counter[0];
@@ -66,55 +82,29 @@ let add = async (counter) => {
 
     logger.debug(`Adding retry count for ${UNIQUE_ID} ...`)
 
-    let addedCount = await counter.update({
-        count: counter.count + 1
-    });
-
-    if (addedCount.block + 1 == BLOCKS && addedCount.count == ATTEMPTS) {
-        logger.debug("Generating block event code ...");
-        let code = generator.generate({
-            length: 5,
-            numbers: true,
-            symbols: false,
-            lowercase: true,
-            uppercase: true
+    if (counter.count + 1 == ATTEMPTS && counter.block + 1 == BLOCKS) {
+        let addedCount = await counter.update({
+            count: counter.count + 1,
+            block: counter.block + 1,
+            expires: new Date(Date.now() + BLOCKS_TIME)
         });
 
-        addedCount = await counter.update({
-            block: counter.block + 1
+        logger.info(`SUCCESSFULLY ADDED RETRY COUNT. ${ATTEMPTS - addedCount.count} ATTEMPTS LEFT. ${BLOCKS - addedCount.block} BLOCKS LEFT`);
+    } else if (counter.count + 1 == ATTEMPTS && counter.block < BLOCKS) {
+        let addedCount = await counter.update({
+            count: counter.count + 1,
+            block: counter.block + 1,
+            expires: new Date(Date.now() + ATTEMPTS_TIME)
         });
 
-        let query = `CREATE EVENT IF NOT EXISTS ${code} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL ${BLOCKS_TIME} MINUTE DO UPDATE retries SET count = ?, block = ? WHERE uniqueId = ?;`
-        await MySQL.query(query, {
-            replacements: [0, 0, UNIQUE_ID],
-            type: QueryTypes.UPDATE
-        }).catch(error => {
-            throw new ERRORS.InternalServerError(error);
+        logger.info(`SUCCESSFULLY ADDED RETRY COUNT. ${ATTEMPTS - addedCount.count} ATTEMPTS LEFT. ${BLOCKS - addedCount.block} BLOCKS LEFT`);
+    } else if (counter.count + 1 < ATTEMPTS && counter.block < BLOCKS) {
+        let addedCount = await counter.update({
+            count: counter.count + 1
         });
 
-        logger.info(`SUCCESSFULLY CREATED BLOCK EVENT FOR ${BLOCKS_TIME} MINS`);
-    } else if (addedCount.count == ATTEMPTS) {
-        logger.debug("Generating retry event code ...");
-        let code = generator.generate({
-            length: 5,
-            numbers: true,
-            symbols: false,
-            lowercase: true,
-            uppercase: true
-        });
-
-        let query = `CREATE EVENT IF NOT EXISTS ${code} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL ${ATTEMPTS_TIME} MINUTE DO UPDATE retries SET count = ?, block = ? WHERE uniqueId = ?;`
-        await MySQL.query(query, {
-            replacements: [0, addedCount.block + 1, UNIQUE_ID],
-            type: QueryTypes.UPDATE
-        }).catch(error => {
-            throw new ERRORS.InternalServerError(error);
-        });
-
-        logger.info(`SUCCESSFULLY CREATED RETRY EVENT FOR ${ATTEMPTS_TIME} MINS`);
-    };
-
-    logger.info(`SUCCESSFULLY ADDED RETRY COUNT. ${ATTEMPTS - addedCount.count} ATTEMPTS LEFT. ${BLOCKS - addedCount.block} BLOCKS LEFT`);
+        logger.info(`SUCCESSFULLY ADDED RETRY COUNT. ${ATTEMPTS - addedCount.count} ATTEMPTS LEFT. ${BLOCKS - addedCount.block} BLOCKS LEFT`);
+    }
 
     return {
         state: "success"

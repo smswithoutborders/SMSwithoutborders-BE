@@ -5,7 +5,9 @@ module.exports = (sequelize, Sequelize) => {
             defaultValue: Sequelize.UUIDV1,
             primaryKey: true
         },
-        password: Sequelize.STRING
+        password: Sequelize.STRING,
+        current_login: Sequelize.DATE,
+        last_login: Sequelize.DATE
     });
 
     return Users;

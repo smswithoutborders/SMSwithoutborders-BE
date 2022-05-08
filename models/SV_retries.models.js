@@ -3,11 +3,8 @@
 const db = require("../schemas");
 const ERRORS = require("../error.js");
 let logger = require("../logger");
-let generator = require('generate-password');
 
-let MySQL = db.sequelize;
 let SVRetry = db.svretries;
-let QueryTypes = db.sequelize.QueryTypes;
 
 const config = require('config');
 const SERVER_CFG = config.get("SERVER");
@@ -61,7 +58,15 @@ let check = async (uniqueId, userId) => {
     if (age >= 0) {
         logger.error("TOO MANY REQUESTS");
         throw new ERRORS.TooManyRequests();
-    };
+    } else if (counter[0].count == 4 && age < 0) {
+        logger.debug(`Resetting count ...`)
+
+        await counter[0].update({
+            count: 0
+        });
+
+        logger.info("SUCCESSFULLY RESET SMS RESEND COUNT")
+    }
 
     logger.info(`FOUND SMS RESEND RECORD`);
     return counter[0];
@@ -99,23 +104,6 @@ let add = async (counter) => {
         logger.info("SUCCESSFULLY ADDED SMS RESEND COUNT")
         return addedCount.expires;
     } else if (COUNT + 1 == 4) {
-        logger.debug("Generating sms resend event code ...");
-        let code = generator.generate({
-            length: 5,
-            numbers: true,
-            symbols: false,
-            lowercase: true,
-            uppercase: true
-        });
-
-        let query = `CREATE EVENT IF NOT EXISTS ${code} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL ${TIME4/60000} MINUTE DO UPDATE svretries SET count = ?, expires = ? WHERE uniqueId = ? AND userId = ?;`
-        await MySQL.query(query, {
-            replacements: [0, null, UNIQUE_ID, USERID],
-            type: QueryTypes.UPDATE
-        }).catch(error => {
-            throw new ERRORS.InternalServerError(error);
-        });
-
         let addedCount = await counter.update({
             count: COUNT + 1,
             expires: new Date(Date.now() + TIME4)
