@@ -878,6 +878,7 @@ Here is an example. Running Publisher API locally on port 11000
 ```bash
 curl --location --request POST 'http://localhost:11000/v2/decrypt' \
 --header 'Content-Type: application/json' \
+--header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
     "platform":"",
     "phone_number": ""
