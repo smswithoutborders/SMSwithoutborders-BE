@@ -52,31 +52,15 @@ router.post("/decrypt",
             const PLATFORM = req.body.platform;
             const USER_AGENT = req.get("user-agent");
             let DEV_COOKIE_CHECK = req.cookies.SWOBDev;
-            let DEV_SID = "";
-            let DEV_COOKIE = "";
-            let DEV_USER_AGENT = "";
-            let DEV_UID = "";
-            let EXT = "";
+            let dev_cookie_buff = Buffer.from(DEV_COOKIE_CHECK, "base64")
+            let dev_cookie_str = dev_cookie_buff.toString('utf-8');
+            let dev_cookie = JSON.parse(dev_cookie_str)
+            let DEV_COOKIE = dev_cookie.cookie;
+            let DEV_USER_AGENT = dev_cookie.userAgent;
+            let DEV_UID = dev_cookie.uid;
+            let veri_path = dev_cookie.verification_path
 
-            if (typeof (DEV_COOKIE_CHECK) == "string") {
-                let string_cookie = DEV_COOKIE_CHECK
-                string_cookie = string_cookie.replaceAll("\\054", ",");
-                string_cookie = string_cookie.replaceAll("\\", "");
-                let json_cookie = JSON.parse(string_cookie)
-                DEV_SID = json_cookie.sid;
-                DEV_COOKIE = json_cookie.cookie;
-                DEV_USER_AGENT = json_cookie.userAgent;
-                DEV_UID = json_cookie.uid;
-                EXT = "py"
-            } else {
-                DEV_SID = req.cookies.SWOBDev.sid;
-                DEV_COOKIE = req.cookies.SWOBDev.cookie;
-                DEV_USER_AGENT = req.cookies.SWOBDev.userAgent;
-                DEV_UID = req.cookies.SWOBDev.uid;
-                EXT = "js"
-            }
-
-            await FIND_DEV_SESSION(DEV_SID, DEV_UID, DEV_USER_AGENT, DEV_COOKIE, EXT);
+            await FIND_DEV_SESSION(DEV_UID, DEV_USER_AGENT, DEV_COOKIE, veri_path);
 
             const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
             const USER = await FIND_USERS(USERID);
