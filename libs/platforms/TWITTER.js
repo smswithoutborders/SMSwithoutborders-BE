@@ -56,7 +56,13 @@ class OAuth2 {
 
                 resolve({
                     profile: profile,
-                    token: tokens
+                    token: {
+                        token_type: "bearer",
+                        expires_in: tokens.expiresIn,
+                        access_token: tokens.accessToken,
+                        scope: tokens.scope,
+                        refresh_token: tokens.refreshToken,
+                    }
                 })
             } catch (error) {
                 reject(error)
@@ -73,7 +79,7 @@ class OAuth2 {
                 });
 
                 let Token = await this.refresh(token);
-                await this.oauthClientToken.revokeOAuth2Token(Token.accessToken, "access_token")
+                await this.oauthClientToken.revokeOAuth2Token(Token.access_token, "access_token")
 
                 resolve(true);
             } catch (error) {
@@ -90,9 +96,15 @@ class OAuth2 {
                     clientSecret: this.credentials.twitter.TWITTER_CLIENT_SECRET
                 });
 
-                let refreshed_token = await this.oauthClientToken.refreshOAuth2Token(token.refreshToken);
+                let refreshed_token = await this.oauthClientToken.refreshOAuth2Token(token.refresh_token);
 
-                resolve(refreshed_token);
+                resolve({
+                    token_type: "bearer",
+                    expires_in: refreshed_token.expiresIn,
+                    access_token: refreshed_token.accessToken,
+                    scope: refreshed_token.scope,
+                    refresh_token: refreshed_token.refreshToken,
+                });
             } catch (error) {
                 reject(error)
             }
