@@ -109,6 +109,68 @@ router.post("/decrypt",
         }
     });
 
+router.post("/whoami",
+    VALIDATOR.phoneNumber,
+    VALIDATOR.developerCookies,
+    VALIDATOR.userAgent,
+    async (req, res) => {
+        try {
+            // Finds the validation errors in this request and wraps them in an object with handy functions
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                errors.array().map(err => {
+                    if (err.param == "SWOBDev") {
+                        logger.error(`${err.param}: ${err.msg}`);
+                        throw new ERRORS.Unauthorized();
+                    }
+                    logger.error(`${err.param}: ${err.msg}`);
+                });
+                throw new ERRORS.BadRequest();
+            }
+            // =============================================================
+
+            const PHONE_NUMBER = req.body.phone_number;
+            const USER_AGENT = req.get("user-agent");
+            let DEV_COOKIE_CHECK = req.cookies.SWOBDev;
+            let dev_cookie_buff = Buffer.from(DEV_COOKIE_CHECK, "base64")
+            let dev_cookie_str = dev_cookie_buff.toString('utf-8');
+            let dev_cookie = JSON.parse(dev_cookie_str)
+            let DEV_COOKIE = dev_cookie.cookie;
+            let DEV_USER_AGENT = dev_cookie.userAgent;
+            let DEV_UID = dev_cookie.uid;
+            let veri_path = dev_cookie.verification_path
+
+            await FIND_DEV_SESSION(DEV_UID, DEV_USER_AGENT, DEV_COOKIE, veri_path);
+
+            const USERID = await VERIFY_PHONE_NUMBER(PHONE_NUMBER);
+
+            let session = await STORE_SESSION(USERID, USER_AGENT, null, null, "publisher");
+
+            res.status(200).json({
+                user_id: session.uid
+            });
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(200).send([]);
+            } // 404
+
+            logger.error(err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
 // =============================================================
 
 module.exports = router;
