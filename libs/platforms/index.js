@@ -325,10 +325,10 @@ module.exports = async (req, res, next) => {
                         let status = result.status;
 
                         if (status == 200) {
-                            const MD5_HASH = result.md5_hash;
+                            const phonenumber = result.phonenumber;
 
                             req.platformRes = {
-                                result: MD5_HASH
+                                result: phonenumber
                             };
 
                             return next();
@@ -361,10 +361,10 @@ module.exports = async (req, res, next) => {
                     let status = result.status;
 
                     if (status == 200) {
-                        const MD5_HASH = result.md5_hash;
+                        const phonenumber = result.phonenumber;
 
                         req.platformRes = {
-                            result: MD5_HASH
+                            result: phonenumber
                         };
 
                         return next();

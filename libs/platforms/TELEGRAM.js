@@ -45,7 +45,7 @@ class twoFactor {
                     .then(res => {
                         if (res.status == 200) {
                             resolve({
-                                md5_hash: res.data,
+                                phonenumber: res.data,
                                 status: res.status
                             });
                         };
@@ -84,7 +84,7 @@ class twoFactor {
                     .then(res => {
                         if (res.status == 200) {
                             resolve({
-                                md5_hash: res.data,
+                                phonenumber: res.data,
                                 status: res.status
                             });
                         };
@@ -97,14 +97,14 @@ class twoFactor {
         });
     }
 
-    revoke(phonenumber_hashed) {
+    revoke(phoneNumber) {
         return new Promise((resolve, reject) => {
             try {
                 const HOST = this.credentials.telegram.TELEGRAM_REQUEST_HOST;
 
                 axios.delete(`${HOST}/users`, {
                         data: {
-                            phonenumber_hash: `${phonenumber_hashed}`
+                            phonenumber: phoneNumber
                         }
                     })
                     .then(res => {
