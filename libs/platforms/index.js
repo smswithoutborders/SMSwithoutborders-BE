@@ -127,12 +127,8 @@ module.exports = async (req, res, next) => {
 
                     logger.debug(`Revoking ${platform} grant ...`);
                     await platformObj.revoke(originalURL, TOKEN).catch(err => {
-                        if (err.message == "invalid_token") {
-                            logger.error(err)
-                        } else {
-                            logger.error(`Error revoking ${platform} grant`);
-                            throw new ERRORS.InternalServerError(err);
-                        };
+                        logger.error(`Error revoking ${platform} grant -->`);
+                        logger.error(err)
                     });
 
                     logger.info(`SUCCESFULLY REVOKED ${platform} GRANT`)
@@ -231,16 +227,8 @@ module.exports = async (req, res, next) => {
                     const TOKEN = DECRYPTED_GRANT.token
 
                     await platformObj.revoke(TOKEN).catch(err => {
-                        if (err.code == 401) {
-                            logger.error(`Error revoking ${platform} grant`);
-                            logger.error(err.data.error_description)
-                        } else if (err.code == 400) {
-                            logger.error(`Error revoking ${platform} grant`);
-                            logger.error(err.data.error_description)
-                        } else {
-                            logger.error(`Error revoking ${platform} grant`);
-                            throw new ERRORS.InternalServerError(err);
-                        };
+                        logger.error(`Error revoking ${platform} grant -->`);
+                        logger.error(err.data.error_description)
                     });
 
                     req.platformRes = {
