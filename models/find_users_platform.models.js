@@ -37,7 +37,7 @@ module.exports = async (user) => {
                 logo: unsaved_platforms[i].logo,
                 initialization_url: `/platforms/${name}/protocols/${protocol[0]}`,
                 type: unsaved_platforms[i].type.toLowerCase(),
-                letter: unsaved_platforms[i].name.toLowerCase()[0]
+                letter: unsaved_platforms[i].letter
             });
         };
     };
@@ -59,7 +59,7 @@ module.exports = async (user) => {
                     logo: saved_platforms.logo,
                     initialization_url: `/platforms/${name}/protocols/${protocol[0]}`,
                     type: saved_platforms.type.toLowerCase(),
-                    letter: saved_platforms.name.toLowerCase()[0]
+                    letter: saved_platforms.letter
                 });
             };
         };
