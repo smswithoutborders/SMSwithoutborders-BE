@@ -70,10 +70,15 @@ module.exports = async (req, res, next) => {
 
                     await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
-                    let url = await platformObj.init(originalURL);
+                    let url = await platformObj.init(originalURL).catch(err => {
+                        logger.error(`Failed to initialize ${platform} grant`);
+                        throw new ERRORS.InternalServerError(err);
+                    });
+
                     req.platformRes = {
                         url: url
                     }
+
                     return next();
                 }
 
@@ -97,7 +102,11 @@ module.exports = async (req, res, next) => {
                     // TODO Try checking double attempt to store tokens from the diff in auth_code
                     const AUTH_CODE = decodeURIComponent(req.body.code);
 
-                    let result = await platformObj.validate(originalURL, AUTH_CODE);
+                    let result = await platformObj.validate(originalURL, AUTH_CODE).catch(err => {
+                        logger.error(`Failed to validate ${platform} grant`);
+                        throw new ERRORS.InternalServerError(err);
+                    });
+
                     req.platformRes = {
                         result: result
                     };
@@ -127,11 +136,12 @@ module.exports = async (req, res, next) => {
 
                     logger.debug(`Revoking ${platform} grant ...`);
                     await platformObj.revoke(originalURL, TOKEN).catch(err => {
-                        logger.error(`Error revoking ${platform} grant -->`);
-                        logger.error(err)
+                        logger.error(`Failed to revoke ${platform} grant`);
+                        logger.error(err.stack || err)
                     });
 
-                    logger.info(`SUCCESFULLY REVOKED ${platform} GRANT`)
+                    logger.info(`${platform} REVOKE COMPLETE`)
+
                     req.platformRes = {
                         grant: GRANT
                     };
@@ -163,8 +173,7 @@ module.exports = async (req, res, next) => {
                         url,
                         codeVerifier
                     } = await platformObj.init(originalURL).catch(err => {
-                        logger.error(`Error initialising ${platform} grant`);
-                        logger.error(err.data.error_description)
+                        logger.error(`Failed to initialize ${platform} grant`);
                         throw new ERRORS.InternalServerError(err);
                     });
 
@@ -194,8 +203,7 @@ module.exports = async (req, res, next) => {
                     const CODE_VERIFIER = req.body.code_verifier;
 
                     let result = await platformObj.validate(originalURL, AUTH_CODE, CODE_VERIFIER).catch(err => {
-                        logger.error(`Error validating ${platform} grant`);
-                        logger.error(err.data.error_description)
+                        logger.error(`Failed to validate ${platform} grant`);
                         throw new ERRORS.InternalServerError(err);
                     });
 
@@ -227,9 +235,11 @@ module.exports = async (req, res, next) => {
                     const TOKEN = DECRYPTED_GRANT.token
 
                     await platformObj.revoke(TOKEN).catch(err => {
-                        logger.error(`Error revoking ${platform} grant -->`);
-                        logger.error(err.data.error_description)
+                        logger.error(`Failed to revoke ${platform} grant`);
+                        logger.error(err.stack || err)
                     });
+
+                    logger.info(`${platform} REVOKE COMPLETE`)
 
                     req.platformRes = {
                         grant: GRANT
@@ -266,12 +276,12 @@ module.exports = async (req, res, next) => {
 
                     let phoneNumber = req.body.phone_number;
 
-                    let result = await platformObj.init(phoneNumber);
-                    let code = result.status;
+                    let result = await platformObj.init(phoneNumber).catch(err => {
+                        logger.error(`Failed to initialize ${platform} grant`);
+                        throw new ERRORS.InternalServerError(err);
+                    });
 
-                    // if (code == 200) {
-                    //     throw new ERRORS.Conflict();
-                    // };
+                    let code = result.status;
 
                     req.platformRes = {
                         body: code
@@ -309,7 +319,11 @@ module.exports = async (req, res, next) => {
                         let firstName = req.body.first_name;
                         let lastName = req.body.last_name;
 
-                        let result = await platformObj.register(phoneNumber, firstName, lastName);
+                        let result = await platformObj.register(phoneNumber, firstName, lastName).catch(err => {
+                            logger.error(`Failed to registering ${platform} grant`);
+                            throw new ERRORS.InternalServerError(err);
+                        });
+
                         let status = result.status;
 
                         if (status == 200) {
@@ -345,7 +359,11 @@ module.exports = async (req, res, next) => {
                     const PHONE_NUMBER = req.body.phone_number;
                     const AUTH_CODE = req.body.code;
 
-                    let result = await platformObj.validate(PHONE_NUMBER, AUTH_CODE);
+                    let result = await platformObj.validate(PHONE_NUMBER, AUTH_CODE).catch(err => {
+                        logger.error(`Failed to validate ${platform} grant`);
+                        throw new ERRORS.InternalServerError(err);
+                    });
+
                     let status = result.status;
 
                     if (status == 200) {
@@ -395,10 +413,16 @@ module.exports = async (req, res, next) => {
                     const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
                     const TOKEN = DECRYPTED_GRANT.token
 
-                    let result = await platformObj.revoke(TOKEN);
+                    let result = await platformObj.revoke(TOKEN).catch(err => {
+                        logger.error(`Failed to revoke ${platform} grant`);
+                        logger.error(err.stack || err)
+                    });
+
                     let status = result.status;
 
                     if (status == 200) {
+                        logger.info(`${platform} REVOKE COMPLETE`)
+
                         req.platformRes = {
                             grant: GRANT
                         };
@@ -437,7 +461,7 @@ module.exports = async (req, res, next) => {
             return res.status(409).send(err.message);
         } // 409
 
-        logger.error(err);
+        logger.error(err.stack || err);
         return res.status(500).send("internal server error");
     };
 }
