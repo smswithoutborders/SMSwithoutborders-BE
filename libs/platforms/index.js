@@ -191,7 +191,7 @@ module.exports = async (req, res, next) => {
                     await FIND_SESSION(SID, UID, USER_AGENT, null, null, null, COOKIE);
 
                     const AUTH_CODE = req.body.code;
-                    const CODE_VERIFIER = req.cookies.SWOB.codeVerifier;
+                    const CODE_VERIFIER = req.body.code_verifier;
 
                     let result = await platformObj.validate(originalURL, AUTH_CODE, CODE_VERIFIER).catch(err => {
                         logger.error(`Error validating ${platform} grant`);

@@ -343,13 +343,13 @@ router.post("/users/:user_id/platforms/:platform/protocols/:protocol",
 
             res.cookie("SWOB", {
                 sid: session.sid,
-                cookie: session.data,
-                codeVerifier: codeVerifier
+                cookie: session.data
             }, session.data)
 
             return res.status(200).json({
                 url: URL,
                 body: BODY,
+                code_verifier: codeVerifier,
                 platform: platform.name.toLowerCase()
             });
 
