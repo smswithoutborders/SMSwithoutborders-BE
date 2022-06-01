@@ -122,7 +122,7 @@ router.post("/signup",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -191,7 +191,7 @@ router.put("/signup",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -257,7 +257,7 @@ router.post("/login",
                 return res.status(429).send(err.message);
             } // 429
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -317,7 +317,7 @@ router.get("/users/:user_id/platforms",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -370,7 +370,7 @@ router.post("/users/:user_id/platforms/:platform/protocols/:protocol",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -425,7 +425,7 @@ router.put("/users/:user_id/platforms/:platform/protocols/:protocol/:action?",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -470,7 +470,7 @@ router.delete("/users/:user_id/platforms/:platform/protocols/:protocol",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -543,7 +543,7 @@ router.post("/users/:user_id/password",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -607,7 +607,7 @@ router.post("/recovery",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -679,7 +679,7 @@ router.put("/users/:user_id/recovery",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -742,7 +742,7 @@ router.delete("/users/:user_id",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -814,7 +814,7 @@ router.post("/users/:user_id/verify",
                 return res.status(429).send(err.message);
             } // 429
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -878,7 +878,7 @@ router.get("/users/:user_id/dashboard",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -962,7 +962,7 @@ router.post("/users/:user_id/OTP",
                 return res.status(429).send(err.message);
             } // 429
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -1037,7 +1037,7 @@ router.put("/OTP",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -1091,7 +1091,7 @@ router.post("/users/:user_id/logout",
                 return res.status(404).send(err.message);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });

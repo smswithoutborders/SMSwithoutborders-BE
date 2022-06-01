@@ -22,8 +22,7 @@ module.exports = async (token, platform) => {
         logger.debug(`Refreshing ${platform.name} token ...`);
 
         let refreshed_token = await platformObj.refresh(token).catch(err => {
-            logger.error(`Error refreshing ${platform.name} token`);
-            logger.error(err.data.error_description)
+            logger.error(`Failed refreshing ${platform.name} token`);
             throw new ERRORS.InternalServerError(err);
         });
 
