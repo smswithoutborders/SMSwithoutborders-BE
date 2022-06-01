@@ -104,7 +104,7 @@ router.post("/decrypt",
                 return res.status(200).send([]);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
@@ -166,7 +166,7 @@ router.post("/whoami",
                 return res.status(200).send([]);
             } // 404
 
-            logger.error(err);
+            logger.error(err.stack || err);
             return res.status(500).send("internal server error");
         }
     });
