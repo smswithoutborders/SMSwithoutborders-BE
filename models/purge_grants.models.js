@@ -37,12 +37,8 @@ module.exports = async (ORIGINALURL, PLATFORM, GRANT, USER) => {
 
         logger.debug(`Revoking ${platform} grant ...`);
         await platformObj.revoke(originalURL, TOKEN).catch(err => {
-            if (err.message == "invalid_token") {
-                logger.error(err)
-            } else {
-                logger.error(`Error revoking ${platform} grant`);
-                throw new ERRORS.InternalServerError(err);
-            };
+            logger.error(`Failed to revoke ${platform} grant`);
+            logger.error(err.stack || err)
         });
 
         logger.info(`SUCCESFULLY REVOKED ${platform} GRANT`)
@@ -58,16 +54,8 @@ module.exports = async (ORIGINALURL, PLATFORM, GRANT, USER) => {
 
         logger.debug(`Revoking ${platform} grant ...`);
         await platformObj.revoke(TOKEN).catch(err => {
-            if (err.code == 401) {
-                logger.error(`Error revoking ${platform} grant`);
-                logger.error(err.data.error_description)
-            } else if (err.code == 400) {
-                logger.error(`Error revoking ${platform} grant`);
-                logger.error(err.data.error_description)
-            } else {
-                logger.error(`Error revoking ${platform} grant`);
-                throw new ERRORS.InternalServerError(err);
-            };
+            logger.error(`Failed to revoke ${platform} grant`);
+            logger.error(err.stack || err)
         });
 
         logger.info(`SUCCESFULLY REVOKED ${platform} GRANT`)
@@ -81,14 +69,18 @@ module.exports = async (ORIGINALURL, PLATFORM, GRANT, USER) => {
         const DECRYPTED_GRANT = await DECRYPT_GRANTS(GRANT, USER);
         const TOKEN = DECRYPTED_GRANT.token
 
-        // logger.debug(`Revoking ${platform} grant ...`);
-        // await platformObj.revoke(originalURL, TOKEN).catch(err => {
-        //     logger.error(`Error revoking ${platform} grant`);
-        //     throw new ERRORS.InternalServerError(err);
-        // });
+        logger.debug(`Revoking ${platform} grant ...`);
+        let result = await platformObj.revoke(TOKEN).catch(err => {
+            logger.error(`Failed to revoke ${platform} grant`);
+            logger.error(err.stack || err)
+        });
 
-        logger.info(`SUCCESFULLY REVOKED ${platform} GRANT`)
-        return GRANT;
+        let status = result.status;
+
+        if (status == 200) {
+            logger.info(`SUCCESFULLY REVOKED ${platform} GRANT`)
+            return GRANT;
+        }
     };
 
     logger.error("INVALID PLATFORM")
