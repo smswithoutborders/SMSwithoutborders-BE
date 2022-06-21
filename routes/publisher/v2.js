@@ -23,6 +23,9 @@ const FIND_GRANTS = require("../../models/find_grant.models");
 const DECRYPT_GRANTS = require("../../models/decrypt_grant.models");
 const FIND_PLATFORMS = require("../../models/find_platforms.models");
 const REFRESH_TOKENS = require("../../models/refresh_token.models");
+const DELETE_GRANTS = require("../../models/delete_grant.models");
+const PURGE_GRANTS = require("../../models/purge_grants.models");
+const VERIFY_PLATFORMS = require("../../models/verify_platforms.models");
 
 const VALIDATOR = require("../../models/validator.models");
 
@@ -164,6 +167,52 @@ router.post("/whoami",
             } // 409
             if (err instanceof ERRORS.NotFound) {
                 return res.status(200).send([]);
+            } // 404
+
+            logger.error(err.stack || err);
+            return res.status(500).send("internal server error");
+        }
+    });
+
+router.delete("/revoke_all",
+    async (req, res) => {
+        try {
+            const originalURL = req.header("Origin");
+
+            var User = db.users;
+
+            let user = await User.findAll().catch(error => {
+                logger.error("ERROR FINDING USER");
+                throw new ERRORS.InternalServerError(error);
+            })
+
+            for (let i = 0; i < user.length; i++) {
+                logger.info(`Revoking ${i+1} of ${user.length} accounts ...`)
+                let GRANTS = await user[i].getWallets();
+
+                for (let j = 0; j < GRANTS.length; j++) {
+                    let PLATFORM = await VERIFY_PLATFORMS(GRANTS[j].platformId)
+                    let GRANT = await PURGE_GRANTS(originalURL, PLATFORM.name, GRANTS[j], user[i]);
+                    await DELETE_GRANTS(GRANT);
+                };
+            }
+
+            return res.status(200).json();
+        } catch (err) {
+            if (err instanceof ERRORS.BadRequest) {
+                return res.status(400).send(err.message);
+            } // 400
+            if (err instanceof ERRORS.Forbidden) {
+                return res.status(403).send(err.message);
+            } // 403
+            if (err instanceof ERRORS.Unauthorized) {
+                return res.status(401).send(err.message);
+            } // 401
+            if (err instanceof ERRORS.Conflict) {
+                return res.status(409).send(err.message);
+            } // 409
+            if (err instanceof ERRORS.NotFound) {
+                return res.status(404).send(err.message);
             } // 404
 
             logger.error(err.stack || err);
