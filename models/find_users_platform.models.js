@@ -33,7 +33,10 @@ module.exports = async (user) => {
 
             PLATFORMS.unsaved_platforms.push({
                 name: unsaved_platforms[i].name.toLowerCase(),
-                description: unsaved_platforms[i].description.toLowerCase(),
+                description: {
+                    en: unsaved_platforms[i].description_en,
+                    fr: unsaved_platforms[i].description_fr
+                },
                 logo: unsaved_platforms[i].logo,
                 initialization_url: `/platforms/${name}/protocols/${protocol[0]}`,
                 type: unsaved_platforms[i].type.toLowerCase(),
@@ -55,7 +58,10 @@ module.exports = async (user) => {
 
                 PLATFORMS.saved_platforms.push({
                     name: saved_platforms.name.toLowerCase(),
-                    description: saved_platforms.description.toLowerCase(),
+                    description: {
+                        en: saved_platforms.description_en,
+                        fr: saved_platforms.description_fr,
+                    },
                     logo: saved_platforms.logo,
                     initialization_url: `/platforms/${name}/protocols/${protocol[0]}`,
                     type: saved_platforms.type.toLowerCase(),
