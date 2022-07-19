@@ -1,59 +1,68 @@
 import logging
-from unittest import result
 logger = logging.getLogger(__name__)
 
-import os
+from Configs import configuration
+config = configuration()
+platforms = config["PLATFORMS"]
+gmail_path = platforms["GMAIL"]
 
-from error import BadRequest, InternalServerError
-from platforms import gmail
+import importlib.util       
 
-gmail_credentials_file = os.path.abspath("credentials.json")
+from werkzeug.exceptions import BadRequest
 
-if not os.path.exists(gmail_credentials_file):
-    error = f"Gmail credentials file not found at {gmail_credentials_file}"
-    raise InternalServerError(error)
+PlatformData=()
 
-gmail_scopes = [
-    'openid',
-    'https://www.googleapis.com/auth/gmail.send',
-    'https://www.googleapis.com/auth/userinfo.profile',
-    'https://www.googleapis.com/auth/userinfo.email'
-]
-
-def platform_switch(originalUrl, platform_name, protocol, method, code=None, token=None):
+def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, token:str=None) -> PlatformData:
+    """
+    """
     if platform_name == "gmail":
 
         if protocol == "oauth2":
-            logger.debug(f"initializing {platform_name} {protocol} client ...")
-            gmailClient = gmail.OAuth2(gmail_credentials_file, gmail_scopes)
+            logger.debug("initializing %s %s client ..." % (platform_name, protocol))
 
-            logger.info(f"successfully initialized {platform_name} {protocol} client")
+            spec = importlib.util.spec_from_file_location("gmail_app", gmail_path)   
+            gmail = importlib.util.module_from_spec(spec)       
+            spec.loader.exec_module(gmail)
+
+            gmailClient = gmail.Gmail()
+
+            logger.info("- Successfully initialized %s %s client" % (platform_name, protocol))
+
             if method.lower() == "post":
-                logger.debug(f"starting {platform_name} init method ...")
+                logger.debug("starting %s init method ..." % platform_name)
+
                 url = gmailClient.init(originalUrl)
 
-                logger.info(f"successfully fetched {platform_name} init url")
-                return {
-                    "url": url
-                }
+                logger.info("- Successfully fetched %s init url" % platform_name)
+
+                return {"url": url}
+                
             elif method.lower() == "put":
-                logger.debug(f"starting {platform_name} validate method ...")
+                logger.debug("starting %s validate method ..." % platform_name)
+
                 result = gmailClient.validate(originalUrl, code)
 
-                logger.info(f"successfully fetched {platform_name} user_info")
+                logger.info("- Successfully fetched %s user_info and tokens" % platform_name)
+
                 return result
+
             elif method.lower() == "delete":
-                logger.debug(f"starting {platform_name} revoke method ...")
+                logger.debug("starting %s revoke method ..." % platform_name)
+
                 result = gmailClient.revoke(token)
                 
-                logger.info(f"successfully revoked {platform_name} token")
+                logger.info("- Successfully revoked %s token" % platform_name)
+
                 return result
+
             else:
-                logger.error(f"invalid method {method}")
+                logger.error("invalid method: %s" % method)
                 raise BadRequest()
+
         else:
-            logger.error(f"invalid protocol {protocol}")
+            logger.error("invalid protocol: %s" % protocol)
             raise BadRequest()
+
     else:
-        logger.error(f"invalid platform name {platform_name}")
+        logger.error("invalid platform name: %s" % platform_name)
         raise BadRequest()

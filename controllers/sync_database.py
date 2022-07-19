@@ -1,20 +1,22 @@
 import logging
 logger = logging.getLogger(__name__)
 
+from Configs import configuration
+config = configuration()
+database = config["DATABASE"]
+
 import os
 import json
-from error import InternalServerError
-from Configs import configuration
+
 from schemas.baseModel import db
 from contextlib import closing
 from mysql.connector import connect, Error
 
-from schemas import Wallets
-from schemas import Platforms
-from schemas import Users
+from schemas.wallets import Wallets
+from schemas.platforms import Platforms
+from schemas.users import Users
 
-config = configuration()
-database = config["DATABASE"]
+from werkzeug.exceptions import InternalServerError
 
 def create_database():
     try:

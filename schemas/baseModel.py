@@ -1,21 +1,25 @@
-from error import InternalServerError
 from Configs import configuration
-import peewee as pw
+
+from peewee import MySQLDatabase
+from peewee import Model
+from peewee import DatabaseError
+
+from werkzeug.exceptions import InternalServerError
 
 config = configuration()
 database = config["DATABASE"]
 
 try:
-    db = pw.MySQLDatabase(
+    db = MySQLDatabase(
         database["MYSQL_DATABASE"],
         user=database["MYSQL_USER"],
         password=database["MYSQL_PASSWORD"],
         host=database["MYSQL_HOST"],
     )
 
-    class BaseModel(pw.Model):
-        class Meta:
-            database = db
-
-except pw.DatabaseError as error:
+except DatabaseError as error:
     raise InternalServerError(error)
+
+class BaseModel(Model):
+    class Meta:
+        database = db
