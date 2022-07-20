@@ -35,7 +35,7 @@ def platform_switch(originalUrl: str, platform_name: str, protocol: str, method:
 
                 logger.info("- Successfully fetched %s init url" % platform_name)
 
-                return {"url": url}
+                return url
                 
             elif method.lower() == "put":
                 logger.debug("starting %s validate method ..." % platform_name)
