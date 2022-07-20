@@ -38,7 +38,8 @@ mysql.createConnection({
                     if (db_platforms.length < 1) {
                         await Platform.create({
                             name: platforms[i].name.toLowerCase(),
-                            description: platforms[i].description.toLowerCase(),
+                            description_en: platforms[i].description.en.toLowerCase(),
+                            description_fr: platforms[i].description.fr.toLowerCase(),
                             logo: platforms[i].logo,
                             protocols: JSON.stringify(platforms[i].protocols),
                             type: platforms[i].type.toLowerCase(),
@@ -46,6 +47,11 @@ mysql.createConnection({
                         }).catch(error => {
                             console.error(error);
                         });
+                    } else {
+                        await db_platforms[0].update({
+                            description_en: platforms[i].description.en.toLowerCase(),
+                            description_fr: platforms[i].description.fr.toLowerCase()
+                        })
                     };
 
                     console.log(chalk.blue(`----> ${platforms[i].name.toLowerCase()}`));
