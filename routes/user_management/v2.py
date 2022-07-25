@@ -23,8 +23,9 @@ def initialize_grant(user_id, platform, protocol) -> dict:
 
         elif method.lower() == "put":
             code = request.json["code"]
+            code_verifier = None if not request.json["code_verifier"] else request.json["code_verifier"]
                                 
-            result = platform_switch(originalUrl, platform, protocol, method, code=code)
+            result = platform_switch(originalUrl=originalUrl, platform_name=platform, protocol=protocol, method=method, code=code, code_verifier=code_verifier)
 
         elif method.lower() == "delete":
             result = platform_switch(originalUrl, platform, protocol, method)

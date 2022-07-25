@@ -5,6 +5,7 @@ from Configs import configuration
 config = configuration()
 platforms = config["PLATFORMS"]
 gmail_path = platforms["GMAIL"]
+twitter_path = platforms["TWITTER"]
 
 import importlib.util       
 
@@ -12,7 +13,7 @@ from werkzeug.exceptions import BadRequest
 
 PlatformData=()
 
-def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, token:str=None) -> PlatformData:
+def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, code_verifier:str = None, token:str=None) -> PlatformData:
     """
     """
     if platform_name == "gmail":
@@ -50,6 +51,54 @@ def platform_switch(originalUrl: str, platform_name: str, protocol: str, method:
                 logger.debug("starting %s revoke method ..." % platform_name)
 
                 result = gmailClient.revoke(token)
+                
+                logger.info("- Successfully revoked %s token" % platform_name)
+
+                return result
+
+            else:
+                logger.error("invalid method: %s" % method)
+                raise BadRequest()
+
+        else:
+            logger.error("invalid protocol: %s" % protocol)
+            raise BadRequest()
+
+    elif platform_name == "twitter":
+
+        if protocol == "oauth2":
+            logger.debug("initializing %s %s client ..." % (platform_name, protocol))
+
+            spec = importlib.util.spec_from_file_location("twitter_app", twitter_path)   
+            twitter = importlib.util.module_from_spec(spec)       
+            spec.loader.exec_module(twitter)
+
+            twitterClient = twitter.Twitter(originalUrl=originalUrl)
+
+            logger.info("- Successfully initialized %s %s client" % (platform_name, protocol))
+
+            if method.lower() == "post":
+                logger.debug("starting %s init method ..." % platform_name)
+
+                url = twitterClient.init()
+
+                logger.info("- Successfully fetched %s init url" % platform_name)
+
+                return url
+                
+            elif method.lower() == "put":
+                logger.debug("starting %s validate method ..." % platform_name)
+
+                result = twitterClient.validate(code=code, code_verifier=code_verifier)
+
+                logger.info("- Successfully fetched %s user_info and tokens" % platform_name)
+
+                return result
+
+            elif method.lower() == "delete":
+                logger.debug("starting %s revoke method ..." % platform_name)
+
+                result = twitterClient.revoke(token=token)
                 
                 logger.info("- Successfully revoked %s token" % platform_name)
 
