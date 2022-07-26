@@ -10,27 +10,38 @@ from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import InternalServerError
 
 @v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>", methods=["POST", "PUT", "DELETE"])
-def initialize_grant(user_id, platform, protocol) -> dict:
+async def manage_grant(user_id, platform, protocol) -> dict:
     """
     """
     try:
         originalUrl = request.host_url
         method = request.method
 
+        if not "code" in request.json or not request.json["code"]:
+            code = None
+        else:
+            code = request.json["code"]
+        
+        if not "phone_number" in request.json or not request.json["phone_number"]:
+            phone_number = None
+        else:
+            phone_number = request.json["phone_number"]
+
+        if not "code_verifier" in request.json or not request.json["code_verifier"]:
+            code_verifier = None
+        else:
+            code_verifier = request.json["code_verifier"]
 
         if method.lower() == "post":
-            result = platform_switch(originalUrl, platform, protocol, method)
+            result = await platform_switch(originalUrl=originalUrl, platform_name=platform, protocol=protocol, method=method, phoneNumber=phone_number)
 
-        elif method.lower() == "put":
-            code = request.json["code"]
-            code_verifier = None if not request.json["code_verifier"] else request.json["code_verifier"]
-                                
-            result = platform_switch(originalUrl=originalUrl, platform_name=platform, protocol=protocol, method=method, code=code, code_verifier=code_verifier)
+        elif method.lower() == "put":                     
+            result = await platform_switch(originalUrl=originalUrl, platform_name=platform, protocol=protocol, method=method, code=code, code_verifier=code_verifier, phoneNumber=phone_number)
 
         elif method.lower() == "delete":
-            result = platform_switch(originalUrl, platform, protocol, method)
+            result = await platform_switch(originalUrl=originalUrl, platform_name=platform, protocol=protocol, method=method, phoneNumber=phone_number)
         
-        return result
+        return result, 200
 
     except BadRequest as error:
         return str(error), 400
