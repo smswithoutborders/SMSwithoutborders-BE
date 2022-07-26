@@ -14,7 +14,7 @@ from werkzeug.exceptions import BadRequest
 
 PlatformData=()
 
-async def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, code_verifier:str = None, token:str=None, phoneNumber:str = None) -> PlatformData:
+async def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, code_verifier:str = None, token:str=None, phoneNumber:str = None, action:str = None, first_name:str = None, last_name:str = None) -> PlatformData:
     """
     """
     # ======================== #
@@ -150,16 +150,23 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
                     }
                 
             elif method.lower() == "put":
-                try:      
-                    logger.debug("starting %s validate method ..." % platform_name)
+                if action == "register":
+                    logger.debug("starting %s registration method ..." % platform_name)
 
-                    result = await telegramApp.validation(code=code)
+                    result = await telegramApp.register(first_name=first_name, last_name=last_name)
 
-                    return result
-                except telegram.RegisterAccount:
-                    return {
-                        "body": 202
-                    }
+                    return result['phone_number']
+                else:
+                    try:      
+                        logger.debug("starting %s validate method ..." % platform_name)
+
+                        result = await telegramApp.validation(code=code)
+
+                        return result['phone_number']
+                    except telegram.RegisterAccount:
+                        return {
+                            "body": 202
+                        }
 
             elif method.lower() == "delete":
                 logger.debug("starting %s revoke method ..." % platform_name)

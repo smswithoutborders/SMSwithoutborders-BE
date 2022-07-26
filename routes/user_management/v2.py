@@ -9,8 +9,9 @@ v2 = Blueprint("v2", __name__)
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import InternalServerError
 
-@v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>", methods=["POST", "PUT", "DELETE"])
-async def manage_grant(user_id, platform, protocol) -> dict:
+@v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/", defaults={"action": None}, methods=["POST", "PUT", "DELETE"])
+@v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/<string:action>", methods=["PUT"])
+async def manage_grant(user_id, platform, protocol, action) -> dict:
     """
     """
     try:
@@ -32,14 +33,47 @@ async def manage_grant(user_id, platform, protocol) -> dict:
         else:
             code_verifier = request.json["code_verifier"]
 
+        if not "first_name" in request.json or not request.json["first_name"]:
+            first_name = None
+        else:
+            first_name = request.json["first_name"]
+        
+        if not "last_name" in request.json or not request.json["last_name"]:
+            last_name = None
+        else:
+            last_name = request.json["last_name"]
+
         if method.lower() == "post":
-            result = await platform_switch(originalUrl=originalUrl, platform_name=platform, protocol=protocol, method=method, phoneNumber=phone_number)
+            result = await platform_switch(
+                originalUrl=originalUrl,
+                platform_name=platform,
+                protocol=protocol,
+                method=method,
+                phoneNumber=phone_number
+            )
 
         elif method.lower() == "put":                     
-            result = await platform_switch(originalUrl=originalUrl, platform_name=platform, protocol=protocol, method=method, code=code, code_verifier=code_verifier, phoneNumber=phone_number)
+            result = await platform_switch(
+                originalUrl=originalUrl,
+                platform_name=platform,
+                protocol=protocol,
+                method=method,
+                code=code,
+                code_verifier=code_verifier,
+                phoneNumber=phone_number,
+                action=action,
+                first_name=first_name,
+                last_name=last_name
+            )
 
         elif method.lower() == "delete":
-            result = await platform_switch(originalUrl=originalUrl, platform_name=platform, protocol=protocol, method=method, phoneNumber=phone_number)
+            result = await platform_switch(
+                originalUrl=originalUrl,
+                platform_name=platform,
+                protocol=protocol,
+                method=method,
+                phoneNumber=phone_number
+            )
         
         return result, 200
 
