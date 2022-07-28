@@ -2,9 +2,9 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
 
-from Configs import configuration
+from Configs import baseConfig
 
-config = configuration()
+config = baseConfig()
 api = config["API"]
 
 log_level = "INFO"

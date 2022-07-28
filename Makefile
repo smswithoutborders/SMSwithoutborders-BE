@@ -4,11 +4,12 @@ platforms_dir=platforms
 
 pip=pip3
 
-create_templates:
+all: install start
+
+install:
 	@echo "[!] Starting installation ..."
 
-install: create_templates
-	@$(python) -m venv $(venv_path)
+	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	@( \
 		. $(venv_path)/bin/activate; \
 		$(pip) install -r requirements.txt; \
@@ -23,4 +24,14 @@ install: create_templates
 		rm -rf $(platforms_dir)/telegram; \
 	)
 	@echo "[*] python requirements installation completed successfully"
+
+start:
+	@echo "[!] Activating venv ..."
+	@test -d $(venv_path) || $(python) -m venv $(venv_path)
+	
+	@echo "[!] Starting server ..."
+	@. $(venv_path)/bin/activate && (\
+		$(python) server.py; \
+	)
+
 

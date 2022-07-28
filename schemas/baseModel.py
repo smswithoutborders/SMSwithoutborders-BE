@@ -1,12 +1,10 @@
-from Configs import configuration
+from Configs import baseConfig
 
 from peewee import MySQLDatabase
 from peewee import Model
 from peewee import DatabaseError
 
-from werkzeug.exceptions import InternalServerError
-
-config = configuration()
+config = baseConfig()
 database = config["DATABASE"]
 
 try:
@@ -18,7 +16,7 @@ try:
     )
 
 except DatabaseError as error:
-    raise InternalServerError(error)
+    raise error
 
 class BaseModel(Model):
     class Meta:

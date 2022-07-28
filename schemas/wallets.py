@@ -18,7 +18,7 @@ class Wallets(BaseModel):
     iv = CharField(null=True)
     user = ForeignKeyField(Users)
     platform = ForeignKeyField(Platforms)
-    createdAt = DateTimeField(null=True, default=datetime.now())
+    createdAt = DateTimeField(null=True, default=datetime.now)
 
     class Meta:
         indexes = ((('user_id', 'platform_id'), True),)

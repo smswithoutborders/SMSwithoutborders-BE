@@ -1,8 +1,15 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from flask import Blueprint, request
+from flask import Blueprint
+from flask import request
+from flask import Response
+from flask import jsonify
+
 from platforms import platform_switch
+
+from models.grants import Grant_Model
+from models.platforms import Platform_Model
 
 v2 = Blueprint("v2", __name__)
 
@@ -43,6 +50,9 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
         else:
             last_name = request.json["last_name"]
 
+        Platform = Platform_Model()
+        Grant = Grant_Model()
+
         if method.lower() == "post":
             result = await platform_switch(
                 originalUrl=originalUrl,
@@ -51,6 +61,28 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
                 method=method,
                 phoneNumber=phone_number
             )
+
+            if not "url" in result or not result["url"]:
+                url = ""
+            else:
+                url = result["url"]
+
+            if not "code_verifier" in result or not result["code_verifier"]:
+                code_verifier = ""
+            else:
+                code_verifier = result["code_verifier"]
+
+            if not "body" in result or not result["body"]:
+                body = ""
+            else:
+                body = result["body"]
+
+            res = jsonify({
+                "url": url,
+                "code_verifier": code_verifier,
+                "body": body,
+                "platform": platform.lower()
+            })
 
         elif method.lower() == "put":                     
             result = await platform_switch(
@@ -66,6 +98,30 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
                 last_name=last_name
             )
 
+            platform_result = Platform.find(platform_name=platform)
+
+            Grant.store_grant(
+                user_id=user_id,
+                platform_id=platform_result.id,
+                platform_name=platform_result.name,
+                grant=result
+            )
+
+            if not "body" in result or not result["body"]:
+                body = ""
+            else:
+                body = result["body"]
+
+            if not "initialization_url" in result or not result["initialization_url"]:
+                initialization_url = ""
+            else:
+                initialization_url = result["initialization_url"]
+          
+            res = jsonify({
+                "body": body,
+                "initialization_url": initialization_url
+            })
+
         elif method.lower() == "delete":
             result = await platform_switch(
                 originalUrl=originalUrl,
@@ -75,7 +131,7 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
                 phoneNumber=phone_number
             )
         
-        return result, 200
+        return res, 200
 
     except BadRequest as error:
         return str(error), 400

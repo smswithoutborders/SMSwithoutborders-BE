@@ -1,8 +1,8 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from Configs import configuration
-config = configuration()
+from Configs import baseConfig
+config = baseConfig()
 platforms = config["PLATFORMS"]
 gmail_path = platforms["GMAIL"]
 twitter_path = platforms["TWITTER"]
@@ -29,14 +29,14 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
             gmail = importlib.util.module_from_spec(spec)       
             spec.loader.exec_module(gmail)
 
-            gmailClient = gmail.Gmail()
+            gmailClient = gmail.Gmail(originalUrl=originalUrl)
 
             logger.info("- Successfully initialized %s %s client" % (platform_name, protocol))
 
             if method.lower() == "post":
                 logger.debug("starting %s init method ..." % platform_name)
 
-                url = gmailClient.init(originalUrl)
+                url = gmailClient.init()
 
                 logger.info("- Successfully fetched %s init url" % platform_name)
 
@@ -45,7 +45,7 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
             elif method.lower() == "put":
                 logger.debug("starting %s validate method ..." % platform_name)
 
-                result = gmailClient.validate(originalUrl, code)
+                result = gmailClient.validate(code=code)
 
                 logger.info("- Successfully fetched %s user_info and tokens" % platform_name)
 
@@ -54,7 +54,7 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
             elif method.lower() == "delete":
                 logger.debug("starting %s revoke method ..." % platform_name)
 
-                result = gmailClient.revoke(token)
+                result = gmailClient.revoke(token=token)
                 
                 logger.info("- Successfully revoked %s token" % platform_name)
 
