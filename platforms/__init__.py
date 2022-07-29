@@ -36,11 +36,13 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
             if method.lower() == "post":
                 logger.debug("starting %s init method ..." % platform_name)
 
-                url = gmailClient.init()
+                result = gmailClient.init()
 
                 logger.info("- Successfully fetched %s init url" % platform_name)
 
-                return url
+                return {
+                    "url": result["url"]
+                }
                 
             elif method.lower() == "put":
                 logger.debug("starting %s validate method ..." % platform_name)
@@ -49,17 +51,20 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
 
                 logger.info("- Successfully fetched %s user_info and tokens" % platform_name)
 
-                return result
+                return {
+                    "grant": result
+                }
 
             elif method.lower() == "delete":
-                logger.debug("starting %s revoke method ..." % platform_name)
+                try:
+                    logger.debug("starting %s revoke method ..." % platform_name)
 
-                result = gmailClient.revoke(token=token)
-                
-                logger.info("- Successfully revoked %s token" % platform_name)
-
-                return result
-
+                    gmailClient.revoke(token=token)
+                    
+                    logger.info("- Successfully revoked %s token" % platform_name)
+                except Exception as error:
+                    logger.exception(error)
+                    
             else:
                 logger.error("invalid method: %s" % method)
                 raise BadRequest()
@@ -87,11 +92,14 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
             if method.lower() == "post":
                 logger.debug("starting %s init method ..." % platform_name)
 
-                url = twitterClient.init()
+                result = twitterClient.init()
 
                 logger.info("- Successfully fetched %s init url" % platform_name)
 
-                return url
+                return {
+                    "url": result["url"],
+                    "code_verifier": result["code_verifier"]
+                }
                 
             elif method.lower() == "put":
                 logger.debug("starting %s validate method ..." % platform_name)
@@ -100,7 +108,9 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
 
                 logger.info("- Successfully fetched %s user_info and tokens" % platform_name)
 
-                return result
+                return {
+                    "grant": result
+                }
 
             elif method.lower() == "delete":
                 logger.debug("starting %s revoke method ..." % platform_name)
@@ -155,17 +165,22 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
 
                     result = await telegramApp.register(first_name=first_name, last_name=last_name)
 
-                    return result['phone_number']
+                    return {
+                        "grant": result
+                    }
                 else:
                     try:      
                         logger.debug("starting %s validate method ..." % platform_name)
 
                         result = await telegramApp.validation(code=code)
 
-                        return result['phone_number']
+                        return {
+                            "grant": result
+                        }
                     except telegram.RegisterAccount:
                         return {
-                            "body": 202
+                            "body": 202,
+                            "initialization_url": f"/platforms/{platform_name}/protocols/{protocol}/register"
                         }
 
             elif method.lower() == "delete":

@@ -14,6 +14,7 @@ from models.platforms import Platform_Model
 v2 = Blueprint("v2", __name__)
 
 from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import Conflict
 from werkzeug.exceptions import InternalServerError
 
 @v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/", defaults={"action": None}, methods=["POST", "PUT", "DELETE"])
@@ -98,15 +99,6 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
                 last_name=last_name
             )
 
-            platform_result = Platform.find(platform_name=platform)
-
-            Grant.store_grant(
-                user_id=user_id,
-                platform_id=platform_result.id,
-                platform_name=platform_result.name,
-                grant=result
-            )
-
             if not "body" in result or not result["body"]:
                 body = ""
             else:
@@ -116,6 +108,21 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
                 initialization_url = ""
             else:
                 initialization_url = result["initialization_url"]
+
+            if not "grant" in result or not result["grant"]:
+                grant = None
+            else:
+                grant = result["grant"]
+
+            platform_result = Platform.find(platform_name=platform)
+
+            if grant:
+                Grant.store(
+                    user_id=user_id,
+                    platform_id=platform_result.id,
+                    platform_name=platform_result.name,
+                    grant=grant
+                )
           
             res = jsonify({
                 "body": body,
@@ -123,18 +130,29 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
             })
 
         elif method.lower() == "delete":
+            platform_result = Platform.find(platform_name=platform)
+            grant = Grant.find(user_id=user_id, platform_id=platform_result.id)
+
             result = await platform_switch(
                 originalUrl=originalUrl,
                 platform_name=platform,
                 protocol=protocol,
                 method=method,
-                phoneNumber=phone_number
+                phoneNumber=phone_number,
+                token=grant.token
             )
+
+            Grant.delete(grant=grant)
+
+            res = Response()
         
         return res, 200
 
     except BadRequest as error:
         return str(error), 400
+
+    except Conflict as error:
+        return str(error), 409
 
     except InternalServerError as error:
         logger.exception(error)
