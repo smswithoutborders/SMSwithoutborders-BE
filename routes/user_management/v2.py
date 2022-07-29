@@ -138,7 +138,7 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
                 platform_name=platform,
                 protocol=protocol,
                 method=method,
-                phoneNumber=phone_number,
+                phoneNumber=grant.token,
                 token=grant.token
             )
 

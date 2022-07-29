@@ -116,7 +116,7 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
                 try:
                     logger.debug("starting %s revoke method ..." % platform_name)
 
-                    result = twitterClient.revoke(token=token)
+                    twitterClient.revoke(token=token)
                     
                     logger.info("- Successfully revoked %s token" % platform_name)
                 except Exception as error:
@@ -185,11 +185,14 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
                         }
 
             elif method.lower() == "delete":
-                logger.debug("starting %s revoke method ..." % platform_name)
+                try:
+                    logger.debug("starting %s revoke method ..." % platform_name)
 
-                await telegramApp.revoke()
-                
-                return True
+                    await telegramApp.revoke()
+                    
+                    logger.info("- Successfully revoked %s token" % platform_name)
+                except Exception as error:
+                    logger.exception(error)
 
             else:
                 logger.error("invalid method: %s" % method)
