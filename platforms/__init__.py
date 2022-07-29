@@ -202,6 +202,10 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
             logger.error("invalid protocol: %s" % protocol)
             raise BadRequest()
 
+    # ======================== #
+    # == Add more platforms == #
+    # ======================== #
+
     else:
         logger.error("invalid platform name: %s" % platform_name)
         raise BadRequest()
