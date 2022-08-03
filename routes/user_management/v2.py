@@ -10,12 +10,63 @@ from platforms import platform_switch
 
 from models.grants import Grant_Model
 from models.platforms import Platform_Model
+from models.users import User_Model
 
 v2 = Blueprint("v2", __name__)
 
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Conflict
+from werkzeug.exceptions import Unauthorized
 from werkzeug.exceptions import InternalServerError
+
+@v2.route("/signup", methods=["POST", "PUT"])
+def signup():
+    """
+    """
+    try:
+        method = request.method
+
+        Users = User_Model()
+
+        if method.lower() == "post":
+            if not "phone_number" in request.json or not request.json["phone_number"]:
+                logger.error("no phone_number")
+                raise BadRequest()
+            elif not "name" in request.json or not request.json["name"]:
+                logger.error("no name")
+                raise BadRequest()
+            elif not "country_code" in request.json or not request.json["country_code"]:
+                logger.error("no country_code")
+                raise BadRequest()
+            elif not "password" in request.json or not request.json["password"]:
+                logger.error("no password")
+                raise BadRequest()
+
+            phone_number = request.json["phone_number"]
+            name = request.json["name"]
+            country_code = request.json["country_code"]
+            password = request.json["password"]
+
+            user_id = Users.create(phone_number=phone_number, name=name, country_code=country_code, password=password)
+
+            return jsonify(user_id), 200
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except Unauthorized as err:
+        return str(err), 401
+
+    except Conflict as err:
+        return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
 
 @v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/", defaults={"action": None}, methods=["POST", "PUT", "DELETE"])
 @v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/<string:action>", methods=["PUT"])

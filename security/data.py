@@ -9,9 +9,8 @@ e_key = api["KEY"]
 
 import hashlib
 import hmac
-from base64 import b64encode, b64decode
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
+from Crypto.Util.Padding import pad
 from Crypto import Random
 
 from werkzeug.exceptions import InternalServerError
@@ -37,9 +36,8 @@ class Data:
         self.key_bytes = 32
         self.key = e_key.encode("utf8")[:self.key_bytes] if not key else key.encode("utf8")[:self.key_bytes]
         self.salt = salt.encode("utf-8")
-        self.iv_bytes = Random.new().read(AES.block_size)
-        self.iv = b64encode(self.iv_bytes).decode('utf-8')
-
+        self.iv = Random.new().read(AES.block_size).hex()[:16].encode("utf-8")
+        
         if not len(self.key) == self.key_bytes:
             raise InternalServerError("Invalid encryption key length. Key >= %d bytes" % self.key_bytes)
     
@@ -55,7 +53,6 @@ class Data:
             dict
         """
         logger.debug("starting data encryption ...")
-        cipher = AES.new(self.key, AES.MODE_CBC, self.iv_bytes if not iv else iv)
 
         if not data:
             result = {'e_data':None}
@@ -63,10 +60,13 @@ class Data:
             logger.info("- Nothing to encrypt")
             return result        
         else:
-            data_bytes = data.encode()
-            ct_bytes = cipher.encrypt(pad(data_bytes, AES.block_size))
-            ct_iv = b64encode(cipher.iv).decode('utf-8')
-            ct = b64encode(ct_bytes).decode('utf-8')
+            data_bytes = data.encode("utf-8")
+            iv_bytes = None if not iv else iv.encode("utf-8")
+            cipher = AES.new(self.key, AES.MODE_CBC, self.iv if not iv_bytes else iv_bytes)
+            ct_bytes = cipher.encrypt(pad(data_bytes, 16))
+            ct_iv = cipher.iv.decode("utf-8")
+            ct = ct_bytes.hex()
+
             result = {'iv':ct_iv, 'e_data':ct}
 
             logger.info("- Successfully encryted data")
@@ -89,13 +89,13 @@ class Data:
                 logger.info("- Nothing to decrypt")
                 return None    
             else:
-                iv_bytes = b64decode(iv)
-                ct = b64decode(data)
+                str_data = bytes.fromhex(data)
+                iv_bytes = iv.encode("utf8")
                 cipher = AES.new(self.key, AES.MODE_CBC, iv_bytes)
-                pt = unpad(cipher.decrypt(ct), AES.block_size).decode("utf-8")
+                ciphertext = cipher.decrypt(str_data).decode("utf-8")
 
-                logger.info("- Successfully decryted data")
-                return pt
+                return ciphertext.strip()
+        
         except (ValueError, KeyError) as error:
             logger.exception(error)
             raise Unauthorized()

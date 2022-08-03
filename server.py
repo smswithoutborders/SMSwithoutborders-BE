@@ -37,10 +37,17 @@ from controllers.sync_database import create_database
 from controllers.sync_database import create_tables
 from controllers.sync_database import sync_platforms
 
+from schemas.migration import migrate_platforms
+from schemas.migration import migrate_usersinfo
+
 app = Flask(__name__)
 
 create_database()
 create_tables()
+
+migrate_platforms()
+migrate_usersinfo()
+
 sync_platforms()
 
 app.register_blueprint(v2, url_prefix="/v2")

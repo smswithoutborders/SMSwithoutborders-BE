@@ -17,6 +17,8 @@ from mysql.connector import Error
 from schemas.wallets import Wallets
 from schemas.platforms import Platforms
 from schemas.users import Users
+from schemas.sessions import Sessions
+from schemas.usersinfo import UsersInfos
 
 def create_database() -> None:
     """
@@ -51,7 +53,13 @@ def create_tables() -> None:
     try:
         logger.debug("Syncing database %s ..." % database['MYSQL_DATABASE'])
 
-        db.create_tables([Wallets, Platforms, Users])
+        db.create_tables([
+            Wallets,
+            Platforms,
+            Users,
+            UsersInfos,
+            Sessions
+        ])
 
         logger.info("- Successfully Sync database %s" % database['MYSQL_DATABASE'])
 
@@ -79,16 +87,16 @@ def sync_platforms() -> None:
                     Platforms.create(
                         name=platform["name"],
                         logo=platform["logo"],
-                        descriptions=platform["descriptions"],
-                        protocol=platform["protocol"],
+                        description=json.dumps(platform["descriptions"]),
+                        protocols=platform["protocol"],
                         type=platform["type"],
                         letter=platform["letter"],
                     )
                 else:
                     upd_plarforms = Platforms.update(
                         logo=platform["logo"],
-                        descriptions=platform["descriptions"],
-                        protocol=platform["protocol"],
+                        description=json.dumps(platform["descriptions"]),
+                        protocols=platform["protocol"],
                         type=platform["type"],
                         letter=platform["letter"],
                     ).where(
