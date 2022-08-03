@@ -1,6 +1,12 @@
 import logging
 logger = logging.getLogger(__name__)
 
+# configurations
+from Configs import baseConfig
+config = baseConfig()
+api = config["API"]
+cookie_name = api['COOKIE_NAME']
+
 from flask import Blueprint
 from flask import request
 from flask import Response
@@ -8,9 +14,16 @@ from flask import jsonify
 
 from platforms import platform_switch
 
+from security.cookie import Cookie
+from security.data import Data
+
+import json
+from datetime import timedelta
+
 from models.grants import Grant_Model
 from models.platforms import Platform_Model
 from models.users import User_Model
+from models.sessions import Session_Model
 
 v2 = Blueprint("v2", __name__)
 
@@ -42,14 +55,54 @@ def signup():
                 logger.error("no password")
                 raise BadRequest()
 
+            user_agent = request.headers.get("User-Agent")
+
             phone_number = request.json["phone_number"]
             name = request.json["name"]
             country_code = request.json["country_code"]
             password = request.json["password"]
 
-            user_id = Users.create(phone_number=phone_number, name=name, country_code=country_code, password=password)
+            user_id = Users.create(
+                phone_number=phone_number,
+                name=name,
+                country_code=country_code,
+                password=password
+            )
 
-            return jsonify(user_id), 200
+            res = jsonify({
+                "uid": user_id
+            })
+
+            Session = Session_Model()
+
+            data = Data()
+
+            session = Session.create(
+                unique_identifier=data.hash(country_code+phone_number),
+                user_agent=user_agent,
+                type="signup",
+            )
+
+            cookie = Cookie()
+
+            cookie_data = json.dumps({
+                "sid": session["sid"],
+                "cookie": session["data"]
+            })
+            e_cookie = cookie.encrypt(cookie_data)
+
+            session_data = json.loads(session["data"])
+
+            res.set_cookie(
+                cookie_name,
+                e_cookie,
+                max_age=timedelta(milliseconds=session_data["maxAge"]),
+                secure=session_data["secure"],
+                httponly=session_data["httpOnly"],
+                samesite=session_data["sameSite"]
+            )
+
+            return res, 200
                 
     except BadRequest as err:
         return str(err), 400

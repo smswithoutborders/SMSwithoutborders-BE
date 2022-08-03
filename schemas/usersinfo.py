@@ -11,7 +11,6 @@ class UsersInfos(BaseModel):
     name = CharField(null=True)
     country_code = CharField(null=True)
     full_phone_number = CharField(null=True)
-    phone_number = CharField(null=True)
     status = CharField(default="unverified")
     userId = ForeignKeyField(Users, column_name="userId")
     iv = CharField(null=True)

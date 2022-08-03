@@ -11,7 +11,8 @@ from peewee import DatabaseError
 
 from schemas.sessions import Sessions
 
-from uuid import uuid4
+import json
+
 from datetime import datetime, timedelta
 
 from werkzeug.exceptions import InternalServerError
@@ -24,13 +25,15 @@ class Session_Model:
         """
         self.Sessions = Sessions
 
-    def create(self, unique_identifier: str, user_agent: str) -> dict:
+    def create(self, unique_identifier: str, user_agent: str, status: str = None, type: str = None) -> dict:
         """
         Create session in database.
 
         Arguments:
             unique_identifier: str,
-            user_agent: str
+            user_agent: str,
+            status: str,
+            type: str
 
         Returns:
             dict
@@ -50,23 +53,23 @@ class Session_Model:
 
             logger.debug("creating session for %s ..." % unique_identifier)
             session = self.Sessions.create(
-                sid=uuid4(),
                 unique_identifier=unique_identifier,
                 user_agent=user_agent,
                 expires=expires,
-                data=str(data),
-                createdAt=datetime.now(),
+                data=json.dumps(data),
+                status=status,
+                type=type
             )
             logger.info(
                 "- SUCCESSFULLY CREATED SESSION %s FOR %s" % (str(session), unique_identifier) 
             )
-            return {"sid": str(session), "uid": unique_identifier, "data": data}
+            return {"sid": str(session.sid), "uid": session.unique_identifier, "data": session.data}
 
         except DatabaseError as err:
             logger.error("FAILED TO CREATE SESSION FOR %s CHECK LOGS" % unique_identifier)
             raise InternalServerError(err) from None
 
-    def find(self, sid: str, unique_identifier: str, user_agent: str, cookie: dict) -> int:
+    def find(self, sid: str, unique_identifier: str, user_agent: str, cookie: str, status: str = None, type: str = None) -> str:
         """
         """
         try:
@@ -80,6 +83,8 @@ class Session_Model:
                     self.Sessions.sid == sid,
                     self.Sessions.unique_identifier == unique_identifier,
                     self.Sessions.user_agent == user_agent,
+                    self.Sessions.status == status,
+                    self.Sessions.type == type,
                 )
                 .dicts()
             )
@@ -104,18 +109,14 @@ class Session_Model:
                 logger.error("Expired session %s" % sid)
                 raise Unauthorized()
 
-            str_cookie = str(cookie)
-            str_cookie = str_cookie.replace(": 'False'", ": False")
-            str_cookie = str_cookie.replace(": 'True'", ": True")
-
-            if result[0]["data"] != str_cookie:
+            if result[0]["data"] != cookie:
                 logger.error("Invalid cookie data")
                 logger.error('Original cokkie: %s' % result[0]["data"])
-                logger.error("Invalid cokkie: %s" % str_cookie)
+                logger.error("Invalid cokkie: %s" % cookie)
                 raise Unauthorized()
 
             logger.info("SESSION %s FOUND" % sid)
-            return int(result[0]["unique_identifier"])
+            return str(result[0]["unique_identifier"])
 
         except DatabaseError as err:
             logger.error("FAILED FINDING SESSION %s CHECK LOGS" % sid)
