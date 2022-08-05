@@ -7,7 +7,7 @@ from Configs import baseConfig
 config = baseConfig()
 api = config["API"]
 
-log_level = "INFO"
+log_level = "DEBUG"
 numeric_level = getattr(logging, log_level, None)
 
 if not isinstance(numeric_level, int):

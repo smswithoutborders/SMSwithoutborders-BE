@@ -9,7 +9,7 @@ from schemas.usersinfo import UsersInfos
 
 from security.data import Data
 
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import Unauthorized
 from werkzeug.exceptions import Conflict
 from werkzeug.exceptions import InternalServerError
 
@@ -81,4 +81,29 @@ class User_Model:
 
         except DatabaseError as err:
             logger.error("Failed finding user check logs")
+            raise InternalServerError(err)
+    
+    def update(self, id: str, status: str = None) -> None:
+        """
+        """
+        try:
+            if status:
+                try:
+                    userinfo = self.UsersInfos.get(self.UsersInfos.userId == id)
+                except self.UsersInfos.DoesNotExist:
+                    logger.error("user '%s' not found" % id)
+                    raise Unauthorized()
+                else:
+                    logger.debug("updating user status '%s' ..." % id)
+
+                    upd_userinfo = userinfo.update(
+                        status = status
+                    )
+
+                    upd_userinfo.execute()
+
+                    logger.info("- User status '%s' successfully updated" % id)
+
+        except DatabaseError as err:
+            logger.error("updating user '%s' failed check logs" % id)
             raise InternalServerError(err)

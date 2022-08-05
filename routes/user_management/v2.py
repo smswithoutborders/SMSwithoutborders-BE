@@ -24,12 +24,14 @@ from models.grants import Grant_Model
 from models.platforms import Platform_Model
 from models.users import User_Model
 from models.sessions import Session_Model
+from models._2FA import OTP_Model
 
 v2 = Blueprint("v2", __name__)
 
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Conflict
 from werkzeug.exceptions import Unauthorized
+from werkzeug.exceptions import Forbidden
 from werkzeug.exceptions import InternalServerError
 
 @v2.route("/signup", methods=["POST", "PUT"])
@@ -39,7 +41,10 @@ def signup():
     try:
         method = request.method
 
-        Users = User_Model()
+        User = User_Model()
+        Session = Session_Model()
+        data = Data()
+        cookie = Cookie()
 
         if method.lower() == "post":
             if not "phone_number" in request.json or not request.json["phone_number"]:
@@ -62,7 +67,7 @@ def signup():
             country_code = request.json["country_code"]
             password = request.json["password"]
 
-            user_id = Users.create(
+            user_id = User.create(
                 phone_number=phone_number,
                 name=name,
                 country_code=country_code,
@@ -73,21 +78,16 @@ def signup():
                 "uid": user_id
             })
 
-            Session = Session_Model()
-
-            data = Data()
-
             session = Session.create(
                 unique_identifier=data.hash(country_code+phone_number),
                 user_agent=user_agent,
                 type="signup",
             )
 
-            cookie = Cookie()
-
             cookie_data = json.dumps({
                 "sid": session["sid"],
-                "cookie": session["data"]
+                "cookie": session["data"],
+                "type":session["type"]
             })
             e_cookie = cookie.encrypt(cookie_data)
 
@@ -102,7 +102,50 @@ def signup():
                 samesite=session_data["sameSite"]
             )
 
-            return res, 200
+        elif method.lower() == "put":
+            if not request.cookies.get(cookie_name):
+                logger.error("no cookie")
+                raise Unauthorized()
+            elif not request.headers.get("User-Agent"):
+                logger.error("no user agent")
+                raise BadRequest()
+
+            e_cookie = request.cookies.get(cookie_name)
+            d_cookie = cookie.decrypt(e_cookie)
+            json_cookie = json.loads(d_cookie)
+
+            sid = json_cookie["sid"]
+            uid = json_cookie["uid"]
+            unique_identifier = json_cookie["unique_identifier"]
+            user_cookie = json_cookie["cookie"]
+            type = json_cookie["type"]
+            status = json_cookie["status"]
+            user_agent = request.headers.get("User-Agent")
+
+            Session.find(
+                sid=sid,
+                unique_identifier=unique_identifier,
+                user_agent=user_agent,
+                cookie=user_cookie,
+                type=type,
+                status=status
+            )
+
+            User.update(
+                id=uid,
+                status="verified"
+            )
+
+            Session.update(
+                sid=sid,
+                unique_identifier=uid,
+                status="verified",
+                type=type
+            )
+
+            res = Response()
+
+        return res, 200
                 
     except BadRequest as err:
         return str(err), 400
@@ -112,6 +155,212 @@ def signup():
 
     except Conflict as err:
         return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+@v2.route("/users/<string:user_id>/OTP", methods=["POST"])
+def OTP(user_id):
+    """
+    """
+    try:
+        if not request.cookies.get(cookie_name):
+            logger.error("no cookie")
+            raise Unauthorized()
+        elif not request.headers.get("User-Agent"):
+            logger.error("no user agent")
+            raise BadRequest()
+        elif not "phone_number" in request.json or not request.json["phone_number"]:
+            logger.error("no phone_number")
+            raise BadRequest()
+
+        User = User_Model()
+        Session = Session_Model()
+        data = Data()
+        cookie = Cookie()
+
+        e_cookie = request.cookies.get(cookie_name)
+        d_cookie = cookie.decrypt(e_cookie)
+        json_cookie = json.loads(d_cookie)
+
+        sid = json_cookie["sid"]
+        user_cookie = json_cookie["cookie"]
+        type = json_cookie["type"]
+        user_agent = request.headers.get("User-Agent")
+
+        phone_number = request.json["phone_number"]
+
+        phone_number_hash = data.hash(phone_number)
+    
+        Session.find(
+            sid=sid,
+            unique_identifier=phone_number_hash,
+            user_agent=user_agent,
+            cookie=user_cookie,
+            type=type
+        )
+
+        otp = OTP_Model(phone_number=phone_number)
+
+        otp_res = otp.verification()
+
+        if otp_res.status == "pending":
+            res = jsonify({
+                "expires": ""
+            })
+        else:
+            logger.error("OTP FAILED with status '%s'" % otp_res.status)
+            raise InternalServerError(otp_res)
+
+        session = Session.update(
+            sid=sid,
+            unique_identifier=phone_number_hash,
+            type=type
+        )
+
+        cookie_data = json.dumps({
+            "sid": session["sid"],
+            "uid": user_id,
+            "cookie": session["data"],
+            "type": session["type"],
+            "phone_number": phone_number
+        })
+
+        e_cookie = cookie.encrypt(cookie_data)
+
+        session_data = json.loads(session["data"])
+
+        res.set_cookie(
+            cookie_name,
+            e_cookie,
+            max_age=timedelta(milliseconds=session_data["maxAge"]),
+            secure=session_data["secure"],
+            httponly=session_data["httpOnly"],
+            samesite=session_data["sameSite"]
+        )
+
+        return res, 201
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except Unauthorized as err:
+        return str(err), 401
+
+    except Conflict as err:
+        return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+@v2.route("/OTP", methods=["PUT"])
+def OTP_check():
+    """
+    """
+    try:
+        if not request.cookies.get(cookie_name):
+            logger.error("no cookie")
+            raise Unauthorized()
+        elif not request.headers.get("User-Agent"):
+            logger.error("no user agent")
+            raise BadRequest()
+        elif not "code" in request.json or not request.json["code"]:
+            logger.error("no code")
+            raise BadRequest()
+
+        User = User_Model()
+        Session = Session_Model()
+        data = Data()
+        cookie = Cookie()
+
+        e_cookie = request.cookies.get(cookie_name)
+        d_cookie = cookie.decrypt(e_cookie)
+        json_cookie = json.loads(d_cookie)
+
+        sid = json_cookie["sid"]
+        uid = json_cookie["uid"]
+        user_cookie = json_cookie["cookie"]
+        type = json_cookie["type"]
+        phone_number = json_cookie["phone_number"]
+        user_agent = request.headers.get("User-Agent")
+
+        code = request.json["code"]
+
+        phone_number_hash = data.hash(phone_number)
+    
+        Session.find(
+            sid=sid,
+            unique_identifier=phone_number_hash,
+            user_agent=user_agent,
+            cookie=user_cookie,
+            type=type
+        )
+
+        otp = OTP_Model(phone_number=phone_number)
+
+        otp_res = otp.verification_check(code=code)
+
+        if otp_res.status == "approved":
+            res = Response()
+        elif otp_res.status == "pending":
+            logger.error("Invalid OTP code. OTP_check status = %s" % otp_res.status)
+            raise Forbidden()
+        else:
+            logger.error("OTP_check FAILED with status '%s'" % otp_res.status)
+            raise InternalServerError(otp_res)
+
+        session = Session.update(
+            sid=sid,
+            unique_identifier=phone_number_hash,
+            status="success",
+            type=type
+        )
+
+        cookie_data = json.dumps({
+            "sid": session["sid"],
+            "unique_identifier": session["uid"],
+            "uid": uid,
+            "cookie": session["data"],
+            "status": "success",
+            "type": type
+        })
+
+        e_cookie = cookie.encrypt(cookie_data)
+
+        session_data = json.loads(session["data"])
+
+        res.set_cookie(
+            cookie_name,
+            e_cookie,
+            max_age=timedelta(milliseconds=session_data["maxAge"]),
+            secure=session_data["secure"],
+            httponly=session_data["httpOnly"],
+            samesite=session_data["sameSite"]
+        )
+
+        return res, 200
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except Unauthorized as err:
+        return str(err), 401
+
+    except Conflict as err:
+        return str(err), 409
+
+    except Forbidden as err:
+        return str(err), 403
 
     except InternalServerError as err:
         logger.exception(err)
