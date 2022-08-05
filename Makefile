@@ -40,5 +40,5 @@ start_dev:
 	
 	@echo "[!] Starting server ..."
 	@. $(venv_path)/bin/activate && (\
-		FLASK_ENV=development $(python) server.py; \
+		FLASK_ENV=development $(python) server.py --logs=debug; \
 	)

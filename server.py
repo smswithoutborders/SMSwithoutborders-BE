@@ -1,14 +1,19 @@
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
+import argparse
 
 from Configs import baseConfig
 
 config = baseConfig()
 api = config["API"]
 
-log_level = "DEBUG"
-numeric_level = getattr(logging, log_level, None)
+parser = argparse.ArgumentParser()
+parser.add_argument("--logs", help="Set log level")
+args = parser.parse_args()
+
+log_level = args.logs or "info"
+numeric_level = getattr(logging, log_level.upper(), None)
 
 if not isinstance(numeric_level, int):
     raise ValueError("Invalid log level: %s" % log_level)
