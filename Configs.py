@@ -17,5 +17,6 @@ def baseConfig():
         "SSL_API": config["SSL_API"],
         "PLATFORMS": config["PLATFORMS"],
         "PLATFORMS_PATH": os.path.join(os.path.dirname(__file__), 'platforms'),
-        "TWILIO": config["TWILIO"]
+        "TWILIO": config["TWILIO"],
+        "OTP": config["OTP"]
     }

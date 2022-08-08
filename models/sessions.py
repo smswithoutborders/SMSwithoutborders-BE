@@ -142,6 +142,33 @@ class Session_Model:
             Returns:
                 dict
             """
+
+            logger.debug("finding session %s for user %s ..." % (sid, unique_identifier))
+
+            result = []
+
+            sessions = (
+                self.Sessions.select()
+                .where(
+                    self.Sessions.sid == sid,
+                    self.Sessions.unique_identifier == unique_identifier,
+                    self.Sessions.type == type
+                )
+            )
+
+            for session in sessions:
+                result.append(session)
+
+            # check for duplicates
+            if len(result) > 1:
+                logger.error("Multiple sessions %s found" % sid)
+                raise Conflict()
+
+            # check for no user
+            if len(result) < 1:
+                logger.error("No session %s found" % sid)
+                raise Unauthorized()
+
             expires = datetime.now() + timedelta(milliseconds=hour)
 
             data = {
@@ -156,14 +183,10 @@ class Session_Model:
 
             logger.debug("updating session %s for user %s ..." % (sid, unique_identifier))
 
-            upd_session = self.Sessions.update(
+            upd_session = result[0].update(
                 expires=expires,
                 data=json.dumps(data),
                 status=status
-                ).where(
-                    self.Sessions.sid == sid,
-                    self.Sessions.unique_identifier == unique_identifier,
-                    self.Sessions.type == type
                 )
                 
             upd_session.execute()

@@ -27,14 +27,17 @@ class User_Model:
         """
         """
         try:
-            try:
-                data = self.Data()
-                full_phone_number = country_code+phone_number
-                phone_number_hash = data.hash(data=full_phone_number)
+            data = self.Data()
+            full_phone_number = country_code+phone_number
+            phone_number_hash = data.hash(data=full_phone_number)
 
-                self.UsersInfos.get(self.UsersInfos.full_phone_number == phone_number_hash, self.UsersInfos.status == "verified")
-            except self.UsersInfos.DoesNotExist:
-                logger.debug("creating user '%s' ..." % phone_number)
+            userinfo = self.find(
+                table="userinfo",
+                phone_number=phone_number_hash
+            )
+
+            if not userinfo:
+                logger.debug("creating user '%s' ..." % phone_number_hash)
 
                 data = self.Data()
                 password_hash = data.hash(password)
@@ -51,50 +54,109 @@ class User_Model:
                     iv = data.iv
                 )
 
-                logger.info("- User '%s' successfully created" % full_phone_number)
+                logger.info("- User '%s' successfully created" % phone_number_hash)
                 return str(new_user.id)
             else:
-                logger.error("user '%s' already has an acount" % full_phone_number)
+                logger.error("user '%s' already has an acount" % phone_number_hash)
                 raise Conflict()
 
         except DatabaseError as err:
             logger.error("creating user '%s' failed check logs" % full_phone_number)
             raise InternalServerError(err)
 
-    def find(self, phone_number: str = None, id: str = None) -> UserObject:
+    def find(self, table: str, phone_number: str = None, user_id: str = None, id: str = None) -> UserObject:
         """
         """
         try:
-            if phone_number:
-                try:
-                    data = self.Data()
-                    phone_number_hash = data.hash(data=phone_number)
+            if table == "userinfo":
+                if phone_number:
+                    logger.debug("Finding verified userinfo: %s" % phone_number)
 
-                    user = self.UsersInfos.get(self.UsersInfos.full_phone_number == phone_number_hash, self.UsersInfos.status == "verified")
-                except self.UsersInfos.DoesNotExist:
-                    logger.error("No user with phone_number '%s' found" % phone_number)
-                    return None
-                else:
-                    logger.info("- Successfully found user with phone_number '%s'" % phone_number)
+                    result = []
 
-                    return user
+                    userinfos = (
+                        self.UsersInfos.select()
+                        .where(
+                            self.UsersInfos.full_phone_number == phone_number,
+                            self.UsersInfos.status == "verified"
+                        )
+                        .dicts()
+                    )
+
+                    for userinfo in userinfos:
+                        result.append(userinfo)
+
+                    # check for no user
+                    if len(result) < 1:
+                        return None
+
+                    # check for duplicate user
+                    if len(result) > 1:
+                        logger.error("Duplicate verified users found: %s" % phone_number)
+                        raise Conflict()
+
+                    logger.info("- Successfully found verified users: %s" % phone_number)
+                    return result[0]
+
+                elif user_id:
+                    logger.debug("Finding userinfo with user_id: %s" % user_id)
+
+                    result = []
+
+                    userinfos = (
+                        self.UsersInfos.select()
+                        .where(
+                            self.UsersInfos.userId == user_id
+                        )
+                    )
+
+                    for userinfo in userinfos:
+                        result.append(userinfo)
+
+                    # check for no user
+                    if len(result) < 1:
+                        logger.error("Userinfo with user_id '%s' not found" % user_id)
+                        raise Unauthorized()
+
+                    # check for duplicate user
+                    if len(result) > 1:
+                        logger.error("Duplicate users found with user_id: %s" % user_id)
+                        raise Conflict()
+
+                    logger.info("- Successfully found user with user_id: %s" % user_id)
+                    return result[0]
+
+            elif table == "user":
+                if phone_number:
+                    try:
+                        data = self.Data()
+                        phone_number_hash = data.hash(data=phone_number)
+
+                        user = self.UsersInfos.get(self.UsersInfos.full_phone_number == phone_number_hash, self.UsersInfos.status == "verified")
+                    except self.UsersInfos.DoesNotExist:
+                        logger.error("No user with phone_number '%s' found" % phone_number)
+                        return None
+                    else:
+                        logger.info("- Successfully found user with phone_number '%s'" % phone_number)
+
+                        return user
 
         except DatabaseError as err:
             logger.error("Failed finding user check logs")
             raise InternalServerError(err)
     
-    def update(self, id: str, status: str = None) -> None:
+    def update(self, table: str, user_id: str, status: str = None) -> None:
         """
         """
         try:
-            if status:
-                try:
-                    userinfo = self.UsersInfos.get(self.UsersInfos.userId == id)
-                except self.UsersInfos.DoesNotExist:
-                    logger.error("user '%s' not found" % id)
-                    raise Unauthorized()
-                else:
-                    logger.debug("updating user status '%s' ..." % id)
+            if table == "userinfo":
+                userinfo = self.find(
+                    table="userinfo",
+                    user_id=user_id
+                )
+
+                if status:
+                    logger.debug("updating userinfo status with user_id: '%s' ..." % user_id)
 
                     upd_userinfo = userinfo.update(
                         status = status
@@ -102,8 +164,8 @@ class User_Model:
 
                     upd_userinfo.execute()
 
-                    logger.info("- User status '%s' successfully updated" % id)
+                    logger.info("- User status '%s' successfully updated" % user_id)
 
         except DatabaseError as err:
-            logger.error("updating user '%s' failed check logs" % id)
+            logger.error("updating user '%s' failed check logs" % user_id)
             raise InternalServerError(err)

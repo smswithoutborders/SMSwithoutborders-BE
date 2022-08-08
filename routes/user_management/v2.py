@@ -6,6 +6,7 @@ from Configs import baseConfig
 config = baseConfig()
 api = config["API"]
 cookie_name = api['COOKIE_NAME']
+enable_otp_counter = eval(config["OTP"]["ENABLE"])
 
 from flask import Blueprint
 from flask import request
@@ -33,6 +34,7 @@ from werkzeug.exceptions import Conflict
 from werkzeug.exceptions import Unauthorized
 from werkzeug.exceptions import Forbidden
 from werkzeug.exceptions import InternalServerError
+from werkzeug.exceptions import TooManyRequests
 
 @v2.route("/signup", methods=["POST", "PUT"])
 def signup():
@@ -132,13 +134,14 @@ def signup():
             )
 
             User.update(
-                id=uid,
+                table="userinfo",
+                user_id=uid,
                 status="verified"
             )
 
             Session.update(
                 sid=sid,
-                unique_identifier=uid,
+                unique_identifier=unique_identifier,
                 status="verified",
                 type=type
             )
@@ -179,7 +182,6 @@ def OTP(user_id):
             logger.error("no phone_number")
             raise BadRequest()
 
-        User = User_Model()
         Session = Session_Model()
         data = Data()
         cookie = Cookie()
@@ -207,11 +209,25 @@ def OTP(user_id):
 
         otp = OTP_Model(phone_number=phone_number)
 
+        cid = None
+        expires = 0
+
+        if enable_otp_counter:
+            otp_counter = otp.check_count(
+                unique_id=phone_number_hash,
+                user_id=user_id
+            )         
+
+            cid = otp_counter.id
+
         otp_res = otp.verification()
 
         if otp_res.status == "pending":
+            if enable_otp_counter:
+                expires = otp.add_count(otp_counter)
+
             res = jsonify({
-                "expires": ""
+                "expires": expires
             })
         else:
             logger.error("OTP FAILED with status '%s'" % otp_res.status)
@@ -228,7 +244,8 @@ def OTP(user_id):
             "uid": user_id,
             "cookie": session["data"],
             "type": session["type"],
-            "phone_number": phone_number
+            "phone_number": phone_number,
+            "cid": cid
         })
 
         e_cookie = cookie.encrypt(cookie_data)
@@ -254,6 +271,9 @@ def OTP(user_id):
 
     except Conflict as err:
         return str(err), 409
+    
+    except TooManyRequests as err:
+        return str(err), 429
 
     except InternalServerError as err:
         logger.exception(err)
@@ -278,7 +298,6 @@ def OTP_check():
             logger.error("no code")
             raise BadRequest()
 
-        User = User_Model()
         Session = Session_Model()
         data = Data()
         cookie = Cookie()
@@ -292,6 +311,7 @@ def OTP_check():
         user_cookie = json_cookie["cookie"]
         type = json_cookie["type"]
         phone_number = json_cookie["phone_number"]
+        cid = json_cookie["cid"]
         user_agent = request.headers.get("User-Agent")
 
         code = request.json["code"]
@@ -311,6 +331,9 @@ def OTP_check():
         otp_res = otp.verification_check(code=code)
 
         if otp_res.status == "approved":
+            if enable_otp_counter:
+                otp.delete_count(counter_id=cid)
+                
             res = Response()
         elif otp_res.status == "pending":
             logger.error("Invalid OTP code. OTP_check status = %s" % otp_res.status)
