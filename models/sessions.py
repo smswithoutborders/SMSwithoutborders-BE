@@ -183,11 +183,18 @@ class Session_Model:
 
             logger.debug("updating session %s for user %s ..." % (sid, unique_identifier))
 
-            upd_session = result[0].update(
-                expires=expires,
-                data=json.dumps(data),
-                status=status
+            upd_session = (
+                self.Sessions.update(
+                    expires=expires,
+                    data=json.dumps(data),
+                    status=status
                 )
+                .where(
+                    self.Sessions.sid == sid,
+                    self.Sessions.unique_identifier == unique_identifier,
+                    self.Sessions.type == type
+                )
+            )
                 
             upd_session.execute()
 

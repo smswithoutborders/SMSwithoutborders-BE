@@ -31,12 +31,31 @@ class User_Model:
             full_phone_number = country_code+phone_number
             phone_number_hash = data.hash(data=full_phone_number)
 
-            userinfo = self.find(
-                table="userinfo",
-                phone_number=phone_number_hash
+            logger.debug("Finding verified userinfo: %s" % phone_number_hash)
+
+            result = []
+
+            userinfos = (
+                self.UsersInfos.select()
+                .where(
+                    self.UsersInfos.full_phone_number == phone_number_hash,
+                    self.UsersInfos.status == "verified"
+                )
+                .dicts()
             )
 
-            if not userinfo:
+            for userinfo in userinfos:
+                result.append(userinfo)
+
+            # check for duplicate user
+            if len(result) > 1:
+                logger.error("Duplicate verified users found: %s" % phone_number_hash)
+                raise Conflict()
+
+            logger.info("- Successfully found verified users: %s" % phone_number_hash)
+
+            # check for no user
+            if len(result) < 1:
                 logger.debug("creating user '%s' ..." % phone_number_hash)
 
                 data = self.Data()
@@ -145,26 +164,55 @@ class User_Model:
             logger.error("Failed finding user check logs")
             raise InternalServerError(err)
     
-    def update(self, table: str, user_id: str, status: str = None) -> None:
+    def update(self, user_id: str, status: str = None) -> None:
         """
         """
         try:
-            if table == "userinfo":
-                userinfo = self.find(
-                    table="userinfo",
-                    user_id=user_id
+            logger.debug("Finding userinfo with user_id: %s" % user_id)
+
+            print(user_id)
+
+            result = []
+
+            userinfos = (
+                self.UsersInfos.select()
+                .where(
+                    self.UsersInfos.userId == user_id
                 )
+                .dicts()
+            )
 
-                if status:
-                    logger.debug("updating userinfo status with user_id: '%s' ..." % user_id)
+            for userinfo in userinfos:
+                result.append(userinfo)
 
-                    upd_userinfo = userinfo.update(
+            # check for no user
+            if len(result) < 1:
+                logger.error("Userinfo with user_id '%s' not found" % user_id)
+                raise Unauthorized()
+
+            # check for duplicate user
+            if len(result) > 1:
+                logger.error("Duplicate users found with user_id: %s" % user_id)
+                raise Conflict()
+
+            logger.info("- Successfully found user with user_id: %s" % user_id)
+
+            if status:
+                logger.debug("updating userinfo status with user_id: '%s' ..." % user_id)
+
+                upd_userinfo = (
+                    self.UsersInfos.update(
                         status = status
                     )
+                    .where(
+                        self.UsersInfos.userId == result[0]["userId"],
+                        self.UsersInfos.id == result[0]["id"]
+                    )
+                )
 
-                    upd_userinfo.execute()
+                upd_userinfo.execute()
 
-                    logger.info("- User status '%s' successfully updated" % user_id)
+                logger.info("- User status '%s' successfully updated" % user_id)
 
         except DatabaseError as err:
             logger.error("updating user '%s' failed check logs" % user_id)

@@ -134,7 +134,6 @@ def signup():
             )
 
             User.update(
-                table="userinfo",
                 user_id=uid,
                 status="verified"
             )
