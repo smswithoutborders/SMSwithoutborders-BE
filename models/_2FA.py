@@ -86,7 +86,7 @@ class OTP_Model:
         try:
             logger.debug("Finding SMS resend record for %s using %s ..." % (user_id, unique_id))
 
-            counter = self.Svretries.get(self.Svretries.userId == user_id, self.Svretries.uniqueId)
+            counter = self.Svretries.get(self.Svretries.userId == user_id, self.Svretries.uniqueId == unique_id)
 
         except self.Svretries.DoesNotExist:
             logger.debug("Creating SMS resend record for %s using %s ..." % (user_id, unique_id))
@@ -114,8 +114,11 @@ class OTP_Model:
             elif counter.count == 4 and age < 0:
                 logger.debug("Resetting count ...")
 
-                upd_counter = counter.update(
+                upd_counter = self.Svretries.update(
                     count = 0
+                ).where(
+                    self.Svretries.uniqueId == unique_id,
+                    self.Svretries.userId == user_id
                 )
 
                 upd_counter.execute()
@@ -138,9 +141,12 @@ class OTP_Model:
         if count+1 == 1:
             expires = datetime.now() + timedelta(milliseconds=duration_1)
 
-            upd_counter = counter.update(
+            upd_counter = self.Svretries.update(
                 count = count+1,
                 expires = expires
+            ).where(
+                self.Svretries.uniqueId == unique_id,
+                self.Svretries.userId == user_id
             )
 
             upd_counter.execute()
@@ -151,9 +157,12 @@ class OTP_Model:
         elif count+1 == 2:
             expires = datetime.now() + timedelta(milliseconds=duration_2)
 
-            upd_counter = counter.update(
+            upd_counter = self.Svretries.update(
                 count = count+1,
                 expires = expires
+            ).where(
+                self.Svretries.uniqueId == unique_id,
+                self.Svretries.userId == user_id
             )
 
             upd_counter.execute()
@@ -164,9 +173,12 @@ class OTP_Model:
         elif count+1 == 3:
             expires = datetime.now() + timedelta(milliseconds=duration_3)
 
-            upd_counter = counter.update(
+            upd_counter = self.Svretries.update(
                 count = count+1,
                 expires = expires
+            ).where(
+                self.Svretries.uniqueId == unique_id,
+                self.Svretries.userId == user_id
             )
 
             upd_counter.execute()
@@ -177,9 +189,12 @@ class OTP_Model:
         elif count+1 == 4:
             expires = datetime.now() + timedelta(milliseconds=duration_4)
 
-            upd_counter = counter.update(
+            upd_counter = self.Svretries.update(
                 count = count+1,
                 expires = expires
+            ).where(
+                self.Svretries.uniqueId == unique_id,
+                self.Svretries.userId == user_id
             )
 
             upd_counter.execute()

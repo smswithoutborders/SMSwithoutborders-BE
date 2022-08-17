@@ -7,6 +7,8 @@ config = baseConfig()
 api = config["API"]
 cookie_name = api['COOKIE_NAME']
 enable_otp_counter = eval(config["OTP"]["ENABLE"])
+recaptcha = config["RECAPTCHA"]
+ENABLE_RECAPTCHA = eval(recaptcha["ENABLE_RECAPTCHA"])
 
 from flask import Blueprint
 from flask import request
@@ -181,14 +183,16 @@ def signin():
         elif not "password" in request.json or not request.json["password"]:
             logger.error("no password")
             raise BadRequest()
-        elif not "captcha_token" in request.json or not request.json["captcha_token"]:
-            logger.error("no captcha_token")
-            raise BadRequest()
 
-        captcha_token = request.json["captcha_token"]
-        remote_ip = request.remote_addr
+        if ENABLE_RECAPTCHA:
+            if not "captcha_token" in request.json or not request.json["captcha_token"]:
+                logger.error("no captcha_token")
+                raise BadRequest()
 
-        User.recaptcha(captchaToken=captcha_token, remoteIp=remote_ip)
+            captcha_token = request.json["captcha_token"]
+            remote_ip = request.remote_addr
+
+            User.recaptcha(captchaToken=captcha_token, remoteIp=remote_ip)
 
         user_agent = request.headers.get("User-Agent")
 
@@ -231,6 +235,9 @@ def signin():
                 
     except BadRequest as err:
         return str(err), 400
+
+    except TooManyRequests as err:
+        return str(err), 429
 
     except Unauthorized as err:
         return str(err), 401

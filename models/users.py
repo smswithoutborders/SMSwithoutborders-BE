@@ -4,22 +4,34 @@ logger = logging.getLogger(__name__)
 from Configs import baseConfig
 
 config = baseConfig()
+
 recaptcha = config["RECAPTCHA"]
-ENABLE_RECAPTCHA = recaptcha["ENABLE_RECAPTCHA"]
+ENABLE_RECAPTCHA = eval(recaptcha["ENABLE_RECAPTCHA"])
 SECRET_KEY = recaptcha["SECRET_KEY"]
 
+api = config["API"]
+ENABLE_BLOCKING = eval(api["ENABLE_BLOCKING"])
+ATTEMPTS = int(api["SHORT_BLOCK_ATTEMPTS"])
+BLOCKS = int(api["LONG_BLOCK_ATTEMPTS"])
+ATTEMPTS_TIME = int(api["SHORT_BLOCK_DURATION"]) * 60000
+BLOCKS_TIME = int(api["LONG_BLOCK_DURATION"]) * 60000
+
 import requests
+from datetime import datetime
+from datetime import timedelta
 
 from peewee import DatabaseError
 
 from schemas.users import Users
 from schemas.usersinfo import UsersInfos
+from schemas.retries import Retries
 
 from security.data import Data
 
 from werkzeug.exceptions import Unauthorized
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Conflict
+from werkzeug.exceptions import TooManyRequests
 from werkzeug.exceptions import InternalServerError
 
 UserObject = ()
@@ -30,6 +42,7 @@ class User_Model:
         """
         self.Users = Users
         self.UsersInfos = UsersInfos
+        self.Retries = Retries
         self.Data = Data
 
     def create(self, phone_number: str, country_code: str, name: str, password: str) -> str:
@@ -102,6 +115,9 @@ class User_Model:
             if phone_number:
                 phone_number_hash = data.hash(phone_number)
 
+                if ENABLE_BLOCKING:
+                    counter = self.check_count(unique_id=phone_number_hash)
+
                 logger.debug("Verifying user: %s" % phone_number_hash)
 
                 userinfos = (
@@ -115,7 +131,10 @@ class User_Model:
 
                 # check for no user
                 if len(userinfos) < 1:
-                    logger.error("Userinfo with Phone number '%s' not found" % phone_number_hash)
+                    if ENABLE_BLOCKING:
+                        self.add_count(counter=counter)
+                    
+                    logger.error("Invalid Phone number")
                     raise Unauthorized()
 
                 # check for duplicate user
@@ -136,6 +155,9 @@ class User_Model:
 
                 # check for no user
                 if len(users) < 1:
+                    if ENABLE_BLOCKING:
+                        self.add_count(counter=counter)
+
                     logger.error("Invalid password")
                     raise Unauthorized()
 
@@ -143,6 +165,9 @@ class User_Model:
                 if len(users) > 1:
                     logger.error("Duplicate users found: %s" % phone_number_hash)
                     raise Conflict()
+
+                if ENABLE_BLOCKING:
+                    self.delete_count(counter_id=counter.id)
 
                 logger.info("- Successfully found verified user: %s" % phone_number_hash)
                 return userinfos[0]
@@ -341,3 +366,145 @@ class User_Model:
         except Exception as error:
             logger.error("Failed verifying recaptcha check logs")
             raise InternalServerError(error)
+
+    def check_count(self, unique_id: str):
+        """
+        """
+        try:
+            logger.debug("Finding retry record for %s ..." % unique_id)
+
+            counter = self.Retries.get(self.Retries.uniqueId == unique_id)
+
+        except self.Retries.DoesNotExist:
+            logger.debug("Creating retry record for %s ..." % unique_id)
+
+            new_counter = self.Retries.create(
+                uniqueId=unique_id,
+                count=0,
+                block=0,
+                expires=None
+            )
+            
+            logger.info("- Successfully created retry record")
+
+            return new_counter
+
+        else:
+            logger.debug("Checking retry count for %s ..." % unique_id)
+
+            if not counter.expires:
+                counter_expires = 0
+                expires = counter_expires
+            else:
+                counter_expires = counter.expires
+                expires = counter_expires.timestamp()
+
+            age = expires - datetime.now().timestamp()
+
+            if counter.count >= ATTEMPTS and age >= 0:
+                logger.error("Too many requests")
+                raise TooManyRequests()
+            elif counter.count == ATTEMPTS and age < 0:
+                logger.debug("Resetting count for %s ..." % unique_id)
+
+                upd_counter = self.Retries.update(
+                    count = 0
+                ).where(
+                    self.Retries.uniqueId == unique_id
+                )
+
+                upd_counter.execute()
+
+                logger.info("- Successfully reset retry count")
+
+            if counter.block >= BLOCKS and age >= 0:
+                logger.error("Too many requests")
+                raise TooManyRequests()
+            elif counter.block == BLOCKS and age < 0:
+                logger.debug("Resetting count for %s ..." % unique_id)
+
+                upd_counter = self.Retries.update(
+                    block = 0
+                ).where(
+                    self.Retries.uniqueId == unique_id
+                )
+
+                upd_counter.execute()
+
+                logger.info("- Successfully reset retry block")
+
+            logger.info("- Found retry record")
+
+            return counter
+
+    def add_count(self, counter) -> str:
+        """
+        """
+        unique_id = counter.uniqueId
+        count = counter.count
+        block = counter.block
+
+        logger.debug("Adding retry record for %s ..." % unique_id)
+
+        if count+1 == ATTEMPTS and block+1 == BLOCKS:
+            expires = datetime.now() + timedelta(milliseconds=BLOCKS_TIME)
+
+            upd_counter = self.Retries.update(
+                count = count+1,
+                block = block+1,
+                expires = expires
+            ).where(
+                self.Retries.uniqueId == unique_id
+            )
+
+            upd_counter.execute()
+
+            logger.info("- Successfully added retry count")
+
+        elif count+1 == ATTEMPTS and block < BLOCKS:
+            expires = datetime.now() + timedelta(milliseconds=ATTEMPTS_TIME)
+
+            upd_counter = self.Retries.update(
+                count = count+1,
+                block = block+1,
+                expires = expires
+            ).where(
+                self.Retries.uniqueId == unique_id
+            )
+
+            upd_counter.execute()
+
+            logger.info("- Successfully added retry count")
+
+        elif count+1 < ATTEMPTS and block < BLOCKS:
+            upd_counter = self.Retries.update(
+                count = count+1
+            ).where(
+                self.Retries.uniqueId == unique_id
+            )
+
+            upd_counter.execute()
+
+            logger.info("- Successfully added retry count")
+
+    def delete_count(self, counter_id: int):
+        """
+        """ 
+        try:
+            logger.debug("Finding retry record %s ..." % counter_id)
+
+            counter = self.Retries.get(self.Retries.id == counter_id)
+
+        except self.Retries.DoesNotExist:
+            logger.error("No retry record %s found" % counter_id)
+
+            raise Unauthorized()
+
+        else:
+            unique_id = counter.uniqueId
+
+            logger.debug("deleting retry record for %s ..." % unique_id)
+
+            counter.delete_instance()
+
+            logger.info("- Successfully deleted retry count")

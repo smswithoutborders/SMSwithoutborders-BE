@@ -20,6 +20,7 @@ from schemas.users import Users
 from schemas.sessions import Sessions
 from schemas.usersinfo import UsersInfos
 from schemas.svretries import Svretries
+from schemas.retries import Retries
 
 def create_database() -> None:
     """
@@ -60,7 +61,8 @@ def create_tables() -> None:
             Users,
             UsersInfos,
             Sessions,
-            Svretries
+            Svretries,
+            Retries
         ])
 
         logger.info("- Successfully Sync database %s" % database['MYSQL_DATABASE'])
