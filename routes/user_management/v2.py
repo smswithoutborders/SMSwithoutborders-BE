@@ -166,6 +166,86 @@ def signup():
         logger.exception(err)
         return "internal server error", 500
 
+@v2.route("/login", methods=["POST"])
+def signin():
+    """
+    """
+    try:
+        User = User_Model()
+        Session = Session_Model()
+        cookie = Cookie()
+
+        if not "phone_number" in request.json or not request.json["phone_number"]:
+            logger.error("no phone_number")
+            raise BadRequest()
+        elif not "password" in request.json or not request.json["password"]:
+            logger.error("no password")
+            raise BadRequest()
+        elif not "captcha_token" in request.json or not request.json["captcha_token"]:
+            logger.error("no captcha_token")
+            raise BadRequest()
+
+        captcha_token = request.json["captcha_token"]
+        remote_ip = request.remote_addr
+
+        User.recaptcha(captchaToken=captcha_token, remoteIp=remote_ip)
+
+        user_agent = request.headers.get("User-Agent")
+
+        phone_number = request.json["phone_number"]
+        password = request.json["password"]
+
+        user = User.verify(
+            phone_number=phone_number,
+            password=password
+        )
+
+        res = jsonify({
+            "uid": user["userId"]
+        })
+
+        session = Session.create(
+            unique_identifier=user["userId"],
+            user_agent=user_agent
+        )
+
+        cookie_data = json.dumps({
+            "sid": session["sid"],
+            "cookie": session["data"]
+        })
+
+        e_cookie = cookie.encrypt(cookie_data)
+
+        session_data = json.loads(session["data"])
+
+        res.set_cookie(
+            cookie_name,
+            e_cookie,
+            max_age=timedelta(milliseconds=session_data["maxAge"]),
+            secure=session_data["secure"],
+            httponly=session_data["httpOnly"],
+            samesite=session_data["sameSite"]
+        )
+
+        return res, 200
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except Unauthorized as err:
+        return str(err), 401
+
+    except Conflict as err:
+        return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
+
 @v2.route("/users/<string:user_id>/OTP", methods=["POST"])
 def OTP(user_id):
     """

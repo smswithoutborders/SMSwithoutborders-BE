@@ -35,6 +35,7 @@ rotatory_handler.setFormatter(formatter)
 logger.addHandler(rotatory_handler)
 
 from flask import Flask
+from flask_cors import CORS
 
 from routes.user_management.v2 import v2
 
@@ -46,6 +47,12 @@ from schemas.migration import migrate_platforms
 from schemas.migration import migrate_usersinfo
 
 app = Flask(__name__)
+
+CORS(
+    app,
+    origins=api["ORIGINS"],
+    supports_credentials=True,
+)
 
 create_database()
 create_tables()

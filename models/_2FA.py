@@ -108,8 +108,6 @@ class OTP_Model:
             expires = counter.expires
             age = expires.timestamp() - datetime.now().timestamp()
 
-            print(age)
-
             if age >= 0:
                 logger.error("Too many requests")
                 raise TooManyRequests()
