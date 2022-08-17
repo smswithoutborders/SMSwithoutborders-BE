@@ -169,6 +169,15 @@ class User_Model:
                 if ENABLE_BLOCKING:
                     self.delete_count(counter_id=counter.id)
 
+                update_login = self.Users.update(
+                    last_login = users[0]["current_login"],
+                    current_login = datetime.now()
+                ).where(
+                    self.Users.id == userinfos[0]["userId"]
+                )
+
+                update_login.execute()
+
                 logger.info("- Successfully found verified user: %s" % phone_number_hash)
                 return userinfos[0]
 
