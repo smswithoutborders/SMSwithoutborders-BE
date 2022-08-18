@@ -8,6 +8,7 @@ This is a cloud API and User management service. It is directly configurable wit
 
 1. [Configurations](docs/configurations.md)
 2. [Features](docs/api_versions.md)
+3. [References](./docs/references.md)
 
 ## Contribution
 
