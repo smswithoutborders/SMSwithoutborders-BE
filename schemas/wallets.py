@@ -16,9 +16,9 @@ class Wallets(BaseModel):
     uniqueId = CharField(null=True)
     uniqueIdHash = CharField(unique=True, null=True)
     iv = CharField(null=True)
-    user = ForeignKeyField(Users)
-    platform = ForeignKeyField(Platforms)
+    userId = ForeignKeyField(Users, column_name="userId")
+    platformId = ForeignKeyField(Platforms, column_name="platformId")
     createdAt = DateTimeField(null=True, default=datetime.now)
 
     class Meta:
-        indexes = ((('user_id', 'platform_id'), True),)
+        indexes = ((('userId', 'platformId'), True),)

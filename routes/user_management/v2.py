@@ -168,6 +168,163 @@ def signup():
         logger.exception(err)
         return "internal server error", 500
 
+@v2.route("/recovery", methods=["POST"])
+def recovery():
+    """
+    """
+    try:
+        User = User_Model()
+        Session = Session_Model()
+        data = Data()
+        cookie = Cookie()
+
+        if not "phone_number" in request.json or not request.json["phone_number"]:
+            logger.error("no phone_number")
+            raise BadRequest()
+        
+        user_agent = request.headers.get("User-Agent")
+
+        phone_number = request.json["phone_number"]
+    
+        user = User.find(phone_number=phone_number)
+
+        res = jsonify({
+            "uid": user["userId"]
+        })
+
+        session = Session.create(
+            unique_identifier=data.hash(phone_number),
+            user_agent=user_agent,
+            type="recovery",
+        )
+
+        cookie_data = json.dumps({
+            "sid": session["sid"],
+            "cookie": session["data"],
+            "type":session["type"]
+        })
+        e_cookie = cookie.encrypt(cookie_data)
+
+        session_data = json.loads(session["data"])
+
+        res.set_cookie(
+            cookie_name,
+            e_cookie,
+            max_age=timedelta(milliseconds=session_data["maxAge"]),
+            secure=session_data["secure"],
+            httponly=session_data["httpOnly"],
+            samesite=session_data["sameSite"]
+        )
+
+        return res, 200
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except Unauthorized as err:
+        return str(err), 401
+
+    except Conflict as err:
+        return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+@v2.route("/users/<string:user_id>/recovery", methods=["PUT"])
+async def recovery_check(user_id):
+    """
+    """
+    try:
+        originalUrl = request.host_url
+        Platform = Platform_Model()
+        Grant = Grant_Model()
+        data = Data()
+
+        User = User_Model()
+        Session = Session_Model()
+        cookie = Cookie()
+
+        if not request.cookies.get(cookie_name):
+            logger.error("no cookie")
+            raise Unauthorized()
+        elif not request.headers.get("User-Agent"):
+            logger.error("no user agent")
+            raise BadRequest()
+
+        e_cookie = request.cookies.get(cookie_name)
+        d_cookie = cookie.decrypt(e_cookie)
+        json_cookie = json.loads(d_cookie)
+
+        sid = json_cookie["sid"]
+        unique_identifier = json_cookie["unique_identifier"]
+        user_cookie = json_cookie["cookie"]
+        type = json_cookie["type"]
+        status = json_cookie["status"]
+        user_agent = request.headers.get("User-Agent")
+
+        new_password = request.json["new_password"]
+
+        Session.find(
+            sid=sid,
+            unique_identifier=unique_identifier,
+            user_agent=user_agent,
+            cookie=user_cookie,
+            type=type,
+            status=status
+        )
+
+        wallets = Grant.find_all(user_id=user_id)
+
+        for wallet in wallets:
+            platform = Platform.find(platform_id=wallet["platformId"])
+            grant = Grant.find(user_id=user_id, platform_id=platform.id)
+
+            await Grant.purge(
+                originalUrl=originalUrl,
+                platform_name=platform.name,
+                token=grant.token
+            )
+
+            Grant.delete(grant=grant)
+
+        User.update(
+            user_id=user_id,
+            password=data.hash(new_password)
+        )
+
+        Session.update(
+            sid=sid,
+            unique_identifier=unique_identifier,
+            status="updated",
+            type=type
+        )
+
+        res = Response()
+
+        return res, 200
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except Unauthorized as err:
+        return str(err), 401
+
+    except Conflict as err:
+        return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
+
 @v2.route("/login", methods=["POST"])
 def signin():
     """
@@ -595,7 +752,7 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
             platform_result = Platform.find(platform_name=platform)
             grant = Grant.find(user_id=user_id, platform_id=platform_result.id)
 
-            result = await platform_switch(
+            await platform_switch(
                 originalUrl=originalUrl,
                 platform_name=platform,
                 protocol=protocol,

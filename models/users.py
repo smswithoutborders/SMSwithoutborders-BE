@@ -211,94 +211,48 @@ class User_Model:
             raise InternalServerError(err)
 
 
-    # def find(self, table: str, phone_number: str = None, user_id: str = None, id: str = None) -> UserObject:
-    #     """
-    #     """
-    #     try:
-    #         if table == "userinfo":
-    #             if phone_number:
-    #                 logger.debug("Finding verified userinfo: %s" % phone_number)
+    def find(self, phone_number: str = None, user_id: str = None) -> UserObject:
+        """
+        """
+        try:
+            data = self.Data()
 
-    #                 result = []
+            if phone_number:
+                phone_number_hash = data.hash(phone_number)
 
-    #                 userinfos = (
-    #                     self.UsersInfos.select()
-    #                     .where(
-    #                         self.UsersInfos.full_phone_number == phone_number,
-    #                         self.UsersInfos.status == "verified"
-    #                     )
-    #                     .dicts()
-    #                 )
+                logger.debug("finding user: %s" % phone_number_hash)
 
-    #                 for userinfo in userinfos:
-    #                     result.append(userinfo)
+                userinfos = (
+                    self.UsersInfos.select()
+                    .where(
+                        self.UsersInfos.full_phone_number == phone_number_hash,
+                        self.UsersInfos.status == "verified"
+                    )
+                    .dicts()
+                )
 
-    #                 # check for no user
-    #                 if len(result) < 1:
-    #                     return None
+                # check for no user
+                if len(userinfos) < 1:
+                    logger.error("Invalid Phone number")
+                    raise Unauthorized()
 
-    #                 # check for duplicate user
-    #                 if len(result) > 1:
-    #                     logger.error("Duplicate verified users found: %s" % phone_number)
-    #                     raise Conflict()
+                # check for duplicate user
+                if len(userinfos) > 1:
+                    logger.error("Duplicate verified users found: %s" % phone_number_hash)
+                    raise Conflict()
 
-    #                 logger.info("- Successfully found verified users: %s" % phone_number)
-    #                 return result[0]
+                logger.info("- Successfully found verified user: %s" % phone_number_hash)
+                return userinfos[0]
 
-    #             elif user_id:
-    #                 logger.debug("Finding userinfo with user_id: %s" % user_id)
-
-    #                 result = []
-
-    #                 userinfos = (
-    #                     self.UsersInfos.select()
-    #                     .where(
-    #                         self.UsersInfos.userId == user_id
-    #                     )
-    #                 )
-
-    #                 for userinfo in userinfos:
-    #                     result.append(userinfo)
-
-    #                 # check for no user
-    #                 if len(result) < 1:
-    #                     logger.error("Userinfo with user_id '%s' not found" % user_id)
-    #                     raise Unauthorized()
-
-    #                 # check for duplicate user
-    #                 if len(result) > 1:
-    #                     logger.error("Duplicate users found with user_id: %s" % user_id)
-    #                     raise Conflict()
-
-    #                 logger.info("- Successfully found user with user_id: %s" % user_id)
-    #                 return result[0]
-
-    #         elif table == "user":
-    #             if phone_number:
-    #                 try:
-    #                     data = self.Data()
-    #                     phone_number_hash = data.hash(data=phone_number)
-
-    #                     user = self.UsersInfos.get(self.UsersInfos.full_phone_number == phone_number_hash, self.UsersInfos.status == "verified")
-    #                 except self.UsersInfos.DoesNotExist:
-    #                     logger.error("No user with phone_number '%s' found" % phone_number)
-    #                     return None
-    #                 else:
-    #                     logger.info("- Successfully found user with phone_number '%s'" % phone_number)
-
-    #                     return user
-
-    #     except DatabaseError as err:
-    #         logger.error("Failed finding user check logs")
-    #         raise InternalServerError(err)
+        except DatabaseError as err:
+            logger.error("Failed finding user check logs")
+            raise InternalServerError(err)
     
-    def update(self, user_id: str, status: str = None) -> None:
+    def update(self, user_id: str, status: str = None, password: str = None) -> None:
         """
         """
         try:
             logger.debug("Finding userinfo with user_id: %s" % user_id)
-
-            print(user_id)
 
             result = []
 
@@ -341,6 +295,22 @@ class User_Model:
                 upd_userinfo.execute()
 
                 logger.info("- User status '%s' successfully updated" % user_id)
+
+            elif password:
+                logger.debug("updating user password with user_id: '%s' ..." % user_id)
+
+                upd_user = (
+                    self.Users.update(
+                        password = password
+                    )
+                    .where(
+                        self.Users.id == result[0]["userId"]
+                    )
+                )
+
+                upd_user.execute()
+
+                logger.info("- User password '%s' successfully updated" % user_id)
 
         except DatabaseError as err:
             logger.error("updating user '%s' failed check logs" % user_id)
