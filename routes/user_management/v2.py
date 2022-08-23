@@ -1064,3 +1064,64 @@ async def update_password(user_id):
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
+@v2.route("/users/<string:user_id>/logout", methods=["POST"])
+def logout(user_id):
+    """
+    """
+    try:
+        if not request.cookies.get(cookie_name):
+            logger.error("no cookie")
+            raise Unauthorized()
+        elif not request.headers.get("User-Agent"):
+            logger.error("no user agent")
+            raise BadRequest()
+    
+        Session = Session_Model()
+        cookie = Cookie()
+
+        e_cookie = request.cookies.get(cookie_name)
+        d_cookie = cookie.decrypt(e_cookie)
+        json_cookie = json.loads(d_cookie)
+
+        sid = json_cookie["sid"]
+        user_cookie = json_cookie["cookie"]
+        user_agent = request.headers.get("User-Agent")
+    
+        Session.find(
+            sid=sid,
+            unique_identifier=user_id,
+            user_agent=user_agent,
+            cookie=user_cookie
+        )
+                
+        res = Response()
+
+        res.delete_cookie(cookie_name)
+
+        logger.info("- Successfully cleared cookie")
+
+        return res, 200
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except TooManyRequests as err:
+        return str(err), 429
+
+    except Unauthorized as err:
+        return str(err), 401
+
+    except Forbidden as err:
+        return str(err), 403
+
+    except Conflict as err:
+        return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
