@@ -189,6 +189,9 @@ class User_Model:
                 return userinfos[0]
 
             elif user_id:
+                if ENABLE_BLOCKING:
+                    counter = self.check_count(unique_id=user_id)
+
                 logger.debug("Verifying user with id: %s" % user_id)
 
                 users = (
@@ -202,15 +205,21 @@ class User_Model:
 
                 # check for no user
                 if len(users) < 1:
-                    logger.error("User with Phone number '%s' not found" % phone_number_hash)
+                    if ENABLE_BLOCKING:
+                        self.add_count(counter=counter)
+
+                    logger.error("Invalid user_id or password")
                     raise Unauthorized()
 
                 # check for duplicate user
                 if len(users) > 1:
-                    logger.error("Duplicate users found: %s" % phone_number_hash)
+                    logger.error("Duplicate users found: %s" % user_id)
                     raise Conflict()
 
-                logger.info("- Successfully found verified user: %s" % phone_number_hash)
+                if ENABLE_BLOCKING:
+                    self.delete_count(counter_id=counter.id)
+
+                logger.info("- Successfully found verified user: %s" % user_id)
                 return users[0]
 
         except DatabaseError as err:
