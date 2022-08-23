@@ -192,12 +192,36 @@ class User_Model:
                 if ENABLE_BLOCKING:
                     counter = self.check_count(unique_id=user_id)
 
-                logger.debug("Verifying user with id: %s" % user_id)
+                logger.debug("Verifying user: %s" % user_id)
+
+                userinfos = (
+                    self.UsersInfos.select()
+                    .where(
+                        self.UsersInfos.userId == user_id,
+                        self.UsersInfos.status == "verified"
+                    )
+                    .dicts()
+                )
+
+                # check for no user
+                if len(userinfos) < 1:
+                    if ENABLE_BLOCKING:
+                        self.add_count(counter=counter)
+                    
+                    logger.error("Invalid User ID")
+                    raise Unauthorized()
+
+                # check for duplicate user
+                if len(userinfos) > 1:
+                    logger.error("Duplicate verified users found: %s" % user_id)
+                    raise Conflict()
+
+                logger.debug("Verifying password for user: %s" % user_id)
 
                 users = (
                     self.Users.select()
                     .where(
-                        self.Users.id == user_id,
+                        self.Users.id == userinfos[0]["userId"],
                         self.Users.password == password_hash
                     )
                     .dicts()
@@ -208,7 +232,7 @@ class User_Model:
                     if ENABLE_BLOCKING:
                         self.add_count(counter=counter)
 
-                    logger.error("Invalid user_id or password")
+                    logger.error("Invalid password")
                     raise Unauthorized()
 
                 # check for duplicate user

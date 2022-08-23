@@ -341,6 +341,9 @@ def signin():
         elif not "password" in request.json or not request.json["password"]:
             logger.error("no password")
             raise BadRequest()
+        elif not request.headers.get("User-Agent"):
+            logger.error("no user agent")
+            raise BadRequest()
 
         if ENABLE_RECAPTCHA:
             if not "captcha_token" in request.json or not request.json["captcha_token"]:
@@ -1053,6 +1056,78 @@ async def update_password(user_id):
 
     except Forbidden as err:
         return str(err), 403
+
+    except Conflict as err:
+        return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+@v2.route("/users/<string:user_id>/verify", methods=["POST"])
+def verify_user_id(user_id):
+    """
+    """
+    try:
+        if not "password" in request.json or not request.json["password"]:
+            logger.error("no password")
+            raise BadRequest()
+        elif not request.headers.get("User-Agent"):
+            logger.error("no user agent")
+            raise BadRequest()
+
+        Session = Session_Model()
+        User = User_Model()
+        cookie = Cookie()
+
+        user_agent = request.headers.get("User-Agent")
+
+        password = request.json["password"]
+
+        user = User.verify(
+            user_id=user_id,
+            password=password
+        )
+
+        res = Response()
+
+        session = Session.create(
+            unique_identifier=user["id"],
+            user_agent=user_agent
+        )
+
+        cookie_data = json.dumps({
+            "sid": session["sid"],
+            "cookie": session["data"]
+        })
+
+        e_cookie = cookie.encrypt(cookie_data)
+
+        session_data = json.loads(session["data"])
+
+        res.set_cookie(
+            cookie_name,
+            e_cookie,
+            max_age=timedelta(milliseconds=session_data["maxAge"]),
+            secure=session_data["secure"],
+            httponly=session_data["httpOnly"],
+            samesite=session_data["sameSite"]
+        )
+
+        return res, 200
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except TooManyRequests as err:
+        return str(err), 429
+
+    except Unauthorized as err:
+        return str(err), 401
 
     except Conflict as err:
         return str(err), 409
