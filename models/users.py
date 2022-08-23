@@ -447,6 +447,49 @@ class User_Model:
             logger.error("updating user '%s' failed check logs" % user_id)
             raise InternalServerError(err)
 
+    def delete(self, user_id: str) -> None:
+        """
+        """
+        try:
+            logger.debug("Finding userinfo with user_id: %s" % user_id)
+
+            userinfos = (
+                self.UsersInfos.select()
+                .where(
+                    self.UsersInfos.userId == user_id
+                )
+            )
+
+            # check for no user
+            if len(userinfos) < 1:
+                logger.error("Userinfo with user_id '%s' not found" % user_id)
+                raise Unauthorized()
+
+            # check for duplicate user
+            if len(userinfos) > 1:
+                logger.error("Duplicate users found with user_id: %s" % user_id)
+                raise Conflict()
+
+            user = (
+                self.Users.select()
+                .where(
+                    self.Users.id == userinfos[0].userId
+                )
+            )
+
+            logger.info("- Successfully found user with user_id: %s" % user_id)
+
+            logger.debug("deleting userinfo with user_id: '%s' ..." % user_id)
+
+            userinfos[0].delete_instance()
+            user[0].delete_instance()
+
+            logger.info("- User account '%s' successfully deleted" % user_id)
+
+        except DatabaseError as err:
+            logger.error("deleting user '%s' failed check logs" % user_id)
+            raise InternalServerError(err)
+
     def recaptcha(self, captchaToken: str, remoteIp: str) -> bool:
         """
         """

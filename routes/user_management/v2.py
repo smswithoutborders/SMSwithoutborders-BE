@@ -1125,3 +1125,92 @@ def logout(user_id):
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
+@v2.route("/users/<string:user_id>", methods=["DELETE"])
+async def delete_account(user_id):
+    """
+    """
+    try:
+        if not request.cookies.get(cookie_name):
+            logger.error("no cookie")
+            raise Unauthorized()
+        elif not request.headers.get("User-Agent"):
+            logger.error("no user agent")
+            raise BadRequest()
+        elif not "password" in request.json or not request.json["password"]:
+            logger.error("no password")
+            raise BadRequest()
+
+        originalUrl = request.host_url
+        Platform = Platform_Model()
+        Grant = Grant_Model()
+        Session = Session_Model()
+        User = User_Model()
+        cookie = Cookie()
+
+        e_cookie = request.cookies.get(cookie_name)
+        d_cookie = cookie.decrypt(e_cookie)
+        json_cookie = json.loads(d_cookie)
+
+        sid = json_cookie["sid"]
+        user_cookie = json_cookie["cookie"]
+        user_agent = request.headers.get("User-Agent")
+
+        password = request.json["password"]
+    
+        Session.find(
+            sid=sid,
+            unique_identifier=user_id,
+            user_agent=user_agent,
+            cookie=user_cookie
+        )
+
+        try:
+            user = User.verify(user_id=user_id, password=password)
+        except Unauthorized:
+            raise Forbidden()
+
+        wallets = Grant.find_all(user_id=user["id"])
+
+        for wallet in wallets:
+            platform = Platform.find(platform_id=wallet["platformId"])
+            grant = Grant.find(user_id=user_id, platform_id=platform.id)
+
+            await Grant.purge(
+                originalUrl=originalUrl,
+                platform_name=platform.name,
+                token=grant.token
+            )
+
+            Grant.delete(grant=grant)
+
+        User.delete(
+            user_id=user["id"]
+        )
+
+        res = Response()
+
+        return res, 200
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except TooManyRequests as err:
+        return str(err), 429
+
+    except Unauthorized as err:
+        return str(err), 401
+
+    except Forbidden as err:
+        return str(err), 403
+
+    except Conflict as err:
+        return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
