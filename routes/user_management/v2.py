@@ -780,3 +780,83 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
     except Exception as error:
         logger.exception(error)
         return "internal server error", 500
+
+@v2.route("/users/<string:user_id>/platforms", methods=["GET"])
+def dashboard(user_id):
+    """
+    """
+    try:
+        if not request.cookies.get(cookie_name):
+            logger.error("no cookie")
+            raise Unauthorized()
+        elif not request.headers.get("User-Agent"):
+            logger.error("no user agent")
+            raise BadRequest()
+
+        Session = Session_Model()
+        User = User_Model()
+        cookie = Cookie()
+
+        e_cookie = request.cookies.get(cookie_name)
+        d_cookie = cookie.decrypt(e_cookie)
+        json_cookie = json.loads(d_cookie)
+
+        sid = json_cookie["sid"]
+        user_cookie = json_cookie["cookie"]
+        user_agent = request.headers.get("User-Agent")
+    
+        Session.find(
+            sid=sid,
+            unique_identifier=user_id,
+            user_agent=user_agent,
+            cookie=user_cookie
+        )
+
+        user_platforms = User.find_platform(user_id=user_id)
+
+        res = jsonify(user_platforms)
+
+        session = Session.update(
+            sid=sid,
+            unique_identifier=user_id
+        )
+
+        cookie_data = json.dumps({
+            "sid": session["sid"],
+            "cookie": session["data"]
+        })
+
+        e_cookie = cookie.encrypt(cookie_data)
+
+        session_data = json.loads(session["data"])
+
+        res.set_cookie(
+            cookie_name,
+            e_cookie,
+            max_age=timedelta(milliseconds=session_data["maxAge"]),
+            secure=session_data["secure"],
+            httponly=session_data["httpOnly"],
+            samesite=session_data["sameSite"]
+        )
+
+        return res, 200
+                
+    except BadRequest as err:
+        return str(err), 400
+
+    except TooManyRequests as err:
+        return str(err), 429
+
+    except Unauthorized as err:
+        return str(err), 401
+
+    except Conflict as err:
+        return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500

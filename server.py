@@ -35,6 +35,7 @@ rotatory_handler.setFormatter(formatter)
 logger.addHandler(rotatory_handler)
 
 from flask import Flask
+from flask import send_from_directory
 from flask_cors import CORS
 
 from routes.user_management.v2 import v2
@@ -63,6 +64,10 @@ migrate_usersinfo()
 sync_platforms()
 
 app.register_blueprint(v2, url_prefix="/v2")
+
+@app.route('/public/<path:path>')
+def send_report(path):
+    return send_from_directory('logos', path)
 
 if __name__ == "__main__":
     app.logger.info("Running on un-secure port: %s" % api['PORT'])

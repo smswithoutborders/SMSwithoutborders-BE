@@ -1,3 +1,4 @@
+from builtins import print
 import logging
 logger = logging.getLogger(__name__)
 
@@ -17,14 +18,17 @@ ATTEMPTS_TIME = int(api["SHORT_BLOCK_DURATION"]) * 60000
 BLOCKS_TIME = int(api["LONG_BLOCK_DURATION"]) * 60000
 
 import requests
+import json
 from datetime import datetime
 from datetime import timedelta
 
 from peewee import DatabaseError
 
+from schemas.baseModel import db
 from schemas.users import Users
 from schemas.usersinfo import UsersInfos
 from schemas.retries import Retries
+from schemas.wallets import Wallets
 
 from security.data import Data
 
@@ -35,15 +39,18 @@ from werkzeug.exceptions import TooManyRequests
 from werkzeug.exceptions import InternalServerError
 
 UserObject = ()
+UserPlatformObject= ()
 
 class User_Model:
     def __init__(self) -> None:
         """
         """
+        self.db = db
         self.Users = Users
         self.UsersInfos = UsersInfos
         self.Retries = Retries
         self.Data = Data
+        self.Wallets = Wallets
 
     def create(self, phone_number: str, country_code: str, name: str, password: str) -> str:
         """
@@ -246,6 +253,70 @@ class User_Model:
 
         except DatabaseError as err:
             logger.error("Failed finding user check logs")
+            raise InternalServerError(err)
+
+    def find_platform(self, user_id: str) -> UserPlatformObject:
+        """
+        """
+        try:
+            user_platforms = {
+                "unsaved_platforms": [],
+                "saved_platforms": []
+            }
+
+            logger.debug("Fetching unsaved platforms for %s ..." % user_id)
+
+            query = f"""SELECT t1.*
+                FROM platforms t1
+                LEFT JOIN (SELECT * FROM wallets WHERE wallets.userId = "{user_id}") AS t2 
+                ON t2.platformId = t1.id 
+                WHERE t2.platformId IS NULL"""
+
+            cursor = self.db.execute_sql(query)
+
+            col_names = [col[0] for col in cursor.description]
+            unsaved_platforms = [dict(zip(col_names, row)) for row in cursor.fetchall()]
+
+            for row in unsaved_platforms:
+                result = {
+                    "name": row["name"].lower(),
+                    "description": json.loads(row["description"]),
+                    "logo": row["logo"],
+                    "initialization_url": f"/platforms/{row['name']}/protocols/{row['protocols']}",
+                    "type": row["type"],
+                    "letter": row["letter"]
+                }
+
+                user_platforms["unsaved_platforms"].append(result)
+
+            logger.debug("Fetching saved platforms for %s ..." % user_id)
+
+            saved_platforms = (
+                self.Wallets.select()
+                .where(
+                    self.Wallets.userId == user_id
+                )
+                .dicts()
+            )
+
+            for row in saved_platforms:
+                result = {
+                    "name": row["name"].lower(),
+                    "description": json.loads(row["description"]),
+                    "logo": row["logo"],
+                    "initialization_url": f"/platforms/{row['name']}/protocols/{row['protocols']}",
+                    "type": row["type"],
+                    "letter": row["letter"]
+                }
+
+                user_platforms["saved_platforms"].append(result)
+
+
+            logger.info("- Successfully Fetched users platforms")
+            return user_platforms
+
+        except DatabaseError as err:
+            logger.error("Failed fetching users platforms check logs")
             raise InternalServerError(err)
     
     def update(self, user_id: str, status: str = None, password: str = None) -> None:
