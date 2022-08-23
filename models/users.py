@@ -251,6 +251,57 @@ class User_Model:
                 logger.info("- Successfully found verified user: %s" % phone_number_hash)
                 return userinfos[0]
 
+            elif user_id:
+                logger.debug("finding user: %s" % user_id)
+
+                userinfos = (
+                    self.UsersInfos.select()
+                    .where(
+                        self.UsersInfos.userId == user_id,
+                        self.UsersInfos.status == "verified"
+                    )
+                    .dicts()
+                )
+
+                # check for no user
+                if len(userinfos) < 1:
+                    logger.error("Invalid User Id")
+                    raise Unauthorized()
+
+                # check for duplicate user
+                if len(userinfos) > 1:
+                    logger.error("Duplicate verified users found: %s" % user_id)
+                    raise Conflict()
+
+                logger.info("- Successfully found verified user: %s" % user_id)
+
+                user = (
+                    self.Users.select(
+                        self.Users.createdAt,
+                        self.Users.last_login
+                    )
+                    .where(
+                        self.Users.id == userinfos[0]["userId"]
+                    )
+                    .dicts()
+                )
+
+                 # check for no user
+                if len(user) < 1:
+                    logger.error("Invalid User Id")
+                    raise Unauthorized()
+
+                # check for duplicate user
+                if len(user) > 1:
+                    logger.error("Duplicate verified users found: %s" % user_id)
+                    raise Conflict()
+
+                return {
+                    "userinfo": userinfos[0],
+                    "createdAt": user[0]["createdAt"],
+                    "last_login": user[0]["last_login"]
+                }
+
         except DatabaseError as err:
             logger.error("Failed finding user check logs")
             raise InternalServerError(err)
@@ -282,7 +333,7 @@ class User_Model:
                     "name": row["name"].lower(),
                     "description": json.loads(row["description"]),
                     "logo": row["logo"],
-                    "initialization_url": f"/platforms/{row['name']}/protocols/{row['protocols']}",
+                    "initialization_url": f"/platforms/{row['name']}/protocols/{json.loads(row['protocols'])[0]}",
                     "type": row["type"],
                     "letter": row["letter"]
                 }
@@ -304,7 +355,7 @@ class User_Model:
                     "name": row["name"].lower(),
                     "description": json.loads(row["description"]),
                     "logo": row["logo"],
-                    "initialization_url": f"/platforms/{row['name']}/protocols/{row['protocols']}",
+                    "initialization_url": f"/platforms/{row['name']}/protocols/{json.loads(row['protocols'])[0]}",
                     "type": row["type"],
                     "letter": row["letter"]
                 }

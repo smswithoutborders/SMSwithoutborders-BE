@@ -91,16 +91,16 @@ def sync_platforms() -> None:
                     Platforms.create(
                         name=platform["name"],
                         logo=platform["logo"],
-                        description=json.dumps(platform["descriptions"]),
-                        protocols=platform["protocol"],
+                        description=json.dumps(platform["description"]),
+                        protocols=json.dumps(platform["protocols"]),
                         type=platform["type"],
                         letter=platform["letter"],
                     )
                 else:
                     upd_plarforms = Platforms.update(
                         logo=platform["logo"],
-                        description=json.dumps(platform["descriptions"]),
-                        protocols=platform["protocol"],
+                        description=json.dumps(platform["description"]),
+                        protocols=json.dumps(platform["protocols"]),
                         type=platform["type"],
                         letter=platform["letter"],
                     ).where(
