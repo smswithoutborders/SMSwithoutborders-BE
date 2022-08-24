@@ -474,7 +474,7 @@ def OTP(user_id):
                 expires = otp.add_count(otp_counter)
 
             res = jsonify({
-                "expires": expires
+                "expires": int(round(expires)) * 1000
             })
         else:
             logger.error("OTP FAILED with status '%s'" % otp_res.status)
