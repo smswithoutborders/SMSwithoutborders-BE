@@ -7,6 +7,7 @@ api = config["API"]
 salt = api["SALT"]
 e_key = api["KEY"]
 
+import string
 import hashlib
 import hmac
 from Crypto.Cipher import AES
@@ -93,8 +94,9 @@ class Data:
                 iv_bytes = iv.encode("utf8")
                 cipher = AES.new(self.key, AES.MODE_CBC, iv_bytes)
                 ciphertext = cipher.decrypt(str_data).decode("utf-8")
+                cleared_text = ''.join(c for c in ciphertext if c in string.printable)
 
-                return ciphertext.strip()
+                return cleared_text
         
         except (ValueError, KeyError) as error:
             logger.exception(error)

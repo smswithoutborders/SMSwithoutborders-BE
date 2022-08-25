@@ -9,11 +9,14 @@ twitter_path = platforms["TWITTER"]
 telegram_path = platforms["TELEGRAM"]
 
 import importlib.util       
+import json
 
 from peewee import IntegrityError
 from peewee import DatabaseError
 
 from schemas.wallets import Wallets
+
+from security.data import Data
 
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Conflict
@@ -24,11 +27,13 @@ GrantObject = ()
 class Grant_Model:
     def __init__(self) -> None:
         self.Wallets = Wallets
+        self.Data = Data
 
     def store(self, user_id: str, platform_name: str, platform_id: int, grant: dict) -> None:
         """
         """
         platformName = platform_name.lower()
+        data = self.Data()
 
         # ======================== #
         # ========= GMAIL ======== #
@@ -38,12 +43,13 @@ class Grant_Model:
 
             try:
                 self.Wallets.create(
-                    user_id=user_id, 
-                    platform_id=platform_id,
-                    username=grant["profile"]["name"],
-                    token=grant["token"],
-                    uniqueId=grant["profile"]["email"],
-                    uniqueIdHash=grant["profile"]["email"]
+                    userId=user_id, 
+                    platformId=platform_id,
+                    username=data.encrypt(json.dumps(grant["profile"]["name"]))["e_data"],
+                    token=data.encrypt(grant["token"])["e_data"],
+                    uniqueId=data.encrypt(json.dumps(grant["profile"]["email"]))["e_data"],
+                    uniqueIdHash=data.hash(grant["profile"]["email"]),
+                    iv=data.iv
                 )
 
             except IntegrityError as error:
@@ -64,12 +70,13 @@ class Grant_Model:
 
             try:
                 self.Wallets.create(
-                    user_id=user_id, 
-                    platform_id=platform_id,
-                    username=grant["profile"]["name"],
-                    token=grant["token"],
-                    uniqueId=grant["profile"]["username"],
-                    uniqueIdHash=grant["profile"]["username"]
+                    userId=user_id, 
+                    platformId=platform_id,
+                    username=data.encrypt(json.dumps(grant["profile"]["name"]))["e_data"],
+                    token=data.encrypt(json.dumps(grant["token"]))["e_data"],
+                    uniqueId=data.encrypt(json.dumps(grant["profile"]["username"]))["e_data"],
+                    uniqueIdHash=data.hash(grant["profile"]["username"]),
+                    iv=data.iv
                 )
 
             except IntegrityError as error:
@@ -90,12 +97,13 @@ class Grant_Model:
 
             try:
                 self.Wallets.create(
-                    user_id=user_id, 
-                    platform_id=platform_id,
-                    username=grant["profile"]["first_name"],
-                    token=grant["phone_number"],
-                    uniqueId=grant["phone_number"],
-                    uniqueIdHash=grant["phone_number"]
+                    userId=user_id, 
+                    platformId=platform_id,
+                    username=data.encrypt(json.dumps(grant["profile"]["first_name"]))["e_data"],
+                    token=data.encrypt(json.dumps(grant["phone_number"]))["e_data"],
+                    uniqueId=data.encrypt(json.dumps(grant["phone_number"]))["e_data"],
+                    uniqueIdHash=data.hash(grant["phone_number"]),
+                    iv=data.iv
                 )
 
             except IntegrityError as error:
@@ -107,6 +115,63 @@ class Grant_Model:
                 raise InternalServerError(error)
 
             logger.info("- Successfully Stored %s grant for %s" % (platformName, user_id))
+
+        else:
+            logger.error("Invalid platform name %s" % platformName)
+            raise BadRequest()
+
+    def decrypt(self, platform_name: str, grant) -> dict:
+        """
+        """
+        platformName = platform_name.lower()
+
+        logger.debug("decrypting %s grant ..." % platformName)
+
+        data = self.Data()
+
+        iv = grant.iv
+        username = data.decrypt(data=grant.username, iv=iv)
+        token = data.decrypt(data=grant.token, iv=iv)
+        uniqueId = data.decrypt(data=grant.uniqueId, iv=iv)
+
+        # ======================== #
+        # ========= GMAIL ======== #
+        # ======================== #
+        if platformName == "gmail":
+            decrypted_grant = {
+                "username":json.loads(username),
+                "token":token,
+                "uniqueId":json.loads(uniqueId)
+            }
+
+            logger.info("- Successfully decrypted %s grant" % platformName)
+            return decrypted_grant
+        
+        # ======================== #
+        # ======= TWITTER ======== #
+        # ======================== #
+        elif platformName == "twitter":
+            decrypted_grant = {
+                "username":json.loads(username),
+                "token":token,
+                "uniqueId":json.loads(uniqueId)
+            }
+
+            logger.info("- Successfully decrypted %s grant" % platformName)
+            return decrypted_grant
+
+        # ======================== #
+        # ======= TELEGRAM ======= #
+        # ======================== #
+        elif platformName == "telegram":
+            decrypted_grant = {
+                "username":json.loads(username),
+                "token":token,
+                "uniqueId":json.loads(uniqueId)
+            }
+
+            logger.info("- Successfully decrypted %s grant" % platformName)
+            return decrypted_grant
 
         else:
             logger.error("Invalid platform name %s" % platformName)
@@ -132,7 +197,7 @@ class Grant_Model:
         try:
             logger.debug("Finding grant user_id:%s, platform_id:%d ..." % (user_id, platform_id))
 
-            grant = self.Wallets.get(self.Wallets.user_id == user_id, self.Wallets.platform_id == platform_id)
+            grant = self.Wallets.get(self.Wallets.userId == user_id, self.Wallets.platformId == platform_id)
 
             logger.info("- Successfully found grant")
 

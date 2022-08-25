@@ -640,14 +640,40 @@ def OTP_check():
         logger.exception(err)
         return "internal server error", 500
 
-@v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/", defaults={"action": None}, methods=["POST", "PUT", "DELETE"])
+@v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>", defaults={"action": None}, methods=["POST", "PUT", "DELETE"])
 @v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/<string:action>", methods=["PUT"])
 async def manage_grant(user_id, platform, protocol, action) -> dict:
     """
     """
     try:
-        originalUrl = request.host_url
+        if not request.cookies.get(cookie_name):
+            logger.error("no cookie")
+            raise Unauthorized()
+        elif not request.headers.get("User-Agent"):
+            logger.error("no user agent")
+            raise BadRequest()
+
+        originalUrl = request.headers.get("Origin")
         method = request.method
+        
+        Session = Session_Model()
+        User = User_Model()
+        cookie = Cookie()
+
+        e_cookie = request.cookies.get(cookie_name)
+        d_cookie = cookie.decrypt(e_cookie)
+        json_cookie = json.loads(d_cookie)
+
+        sid = json_cookie["sid"]
+        user_cookie = json_cookie["cookie"]
+        user_agent = request.headers.get("User-Agent")
+
+        Session.find(
+            sid=sid,
+            unique_identifier=user_id,
+            user_agent=user_agent,
+            cookie=user_cookie
+        )
 
         if not "code" in request.json or not request.json["code"]:
             code = None
@@ -753,22 +779,57 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
             })
 
         elif method.lower() == "delete":
+            if not "password" in request.json or not request.json["password"]:
+                logger.error("no password")
+                raise BadRequest()
+
+            password = request.json["password"]
+
+            try:
+                user = User.verify(user_id=user_id, password=password)
+            except Unauthorized:
+                raise Forbidden()
+
             platform_result = Platform.find(platform_name=platform)
-            grant = Grant.find(user_id=user_id, platform_id=platform_result.id)
+            grant = Grant.find(user_id=user["id"], platform_id=platform_result.id)
+            d_grant = Grant.decrypt(platform_name=platform_result.name, grant=grant)
 
             await platform_switch(
                 originalUrl=originalUrl,
-                platform_name=platform,
+                platform_name=platform_result.name,
                 protocol=protocol,
                 method=method,
-                phoneNumber=grant.token,
-                token=grant.token
+                phoneNumber=d_grant["token"],
+                token=d_grant["token"]
             )
 
             Grant.delete(grant=grant)
 
             res = Response()
-        
+
+        session = Session.update(
+            sid=sid,
+            unique_identifier=user_id
+        )
+
+        cookie_data = json.dumps({
+            "sid": session["sid"],
+            "cookie": session["data"]
+        })
+
+        e_cookie = cookie.encrypt(cookie_data)
+
+        session_data = json.loads(session["data"])
+
+        res.set_cookie(
+            cookie_name,
+            e_cookie,
+            max_age=timedelta(milliseconds=session_data["maxAge"]),
+            secure=session_data["secure"],
+            httponly=session_data["httpOnly"],
+            samesite=session_data["sameSite"]
+        )
+
         return res, 200
 
     except BadRequest as error:
@@ -776,6 +837,12 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
 
     except Conflict as error:
         return str(error), 409
+
+    except Unauthorized as error:
+        return str(error), 401
+
+    except Forbidden as error:
+        return str(error), 403
 
     except InternalServerError as error:
         logger.exception(error)

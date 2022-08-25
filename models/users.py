@@ -29,6 +29,7 @@ from schemas.users import Users
 from schemas.usersinfo import UsersInfos
 from schemas.retries import Retries
 from schemas.wallets import Wallets
+from schemas.platforms import Platforms
 
 from security.data import Data
 
@@ -51,6 +52,7 @@ class User_Model:
         self.Retries = Retries
         self.Data = Data
         self.Wallets = Wallets
+        self.Platforms = Platforms
 
     def create(self, phone_number: str, country_code: str, name: str, password: str) -> str:
         """
@@ -375,7 +377,7 @@ class User_Model:
 
             logger.debug("Fetching saved platforms for %s ..." % user_id)
 
-            saved_platforms = (
+            saved_wallet_platform = (
                 self.Wallets.select()
                 .where(
                     self.Wallets.userId == user_id
@@ -383,14 +385,22 @@ class User_Model:
                 .dicts()
             )
 
-            for row in saved_platforms:
+            for row in saved_wallet_platform:
+                saved_platforms = (
+                    self.Platforms.select()
+                    .where(
+                        self.Platforms.id == row["platformId"]
+                    )
+                    .dicts()
+                )
+
                 result = {
-                    "name": row["name"].lower(),
-                    "description": json.loads(row["description"]),
-                    "logo": row["logo"],
-                    "initialization_url": f"/platforms/{row['name']}/protocols/{json.loads(row['protocols'])[0]}",
-                    "type": row["type"],
-                    "letter": row["letter"]
+                    "name": saved_platforms[0]["name"].lower(),
+                    "description": json.loads(saved_platforms[0]["description"]),
+                    "logo": saved_platforms[0]["logo"],
+                    "initialization_url": f"/platforms/{saved_platforms[0]['name']}/protocols/{json.loads(saved_platforms[0]['protocols'])[0]}",
+                    "type": saved_platforms[0]["type"],
+                    "letter": saved_platforms[0]["letter"]
                 }
 
                 user_platforms["saved_platforms"].append(result)
