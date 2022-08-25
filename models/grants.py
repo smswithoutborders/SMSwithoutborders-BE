@@ -73,7 +73,7 @@ class Grant_Model:
                     userId=user_id, 
                     platformId=platform_id,
                     username=data.encrypt(json.dumps(grant["profile"]["name"]))["e_data"],
-                    token=data.encrypt(json.dumps(grant["token"]))["e_data"],
+                    token=data.encrypt(grant["token"])["e_data"],
                     uniqueId=data.encrypt(json.dumps(grant["profile"]["username"]))["e_data"],
                     uniqueIdHash=data.hash(grant["profile"]["username"]),
                     iv=data.iv

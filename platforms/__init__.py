@@ -120,7 +120,9 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
                     
                     logger.info("- Successfully revoked %s token" % platform_name)
                 except Exception as error:
-                    logger.exception(error)
+                    from werkzeug.exceptions import InternalServerError
+                    raise InternalServerError(error)
+                    # logger.exception(error)
 
             else:
                 logger.error("invalid method: %s" % method)
