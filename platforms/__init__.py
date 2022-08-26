@@ -11,6 +11,8 @@ telegram_path = platforms["TELEGRAM"]
 import importlib.util       
 
 from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import Forbidden
+from werkzeug.exceptions import TooManyRequests
 
 PlatformData=()
 
@@ -157,20 +159,28 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
                     return {
                         "body": 201
                     }
-                except telegram.Conflict:
+                except telegram.SessionExistError:
                     return {
                         "body": 200
                     }
+                except telegram.TooManyRequests:
+                    raise TooManyRequests()
                 
             elif method.lower() == "put":
                 if action == "register":
-                    logger.debug("starting %s registration method ..." % platform_name)
+                    try:
+                        logger.debug("starting %s registration method ..." % platform_name)
 
-                    result = await telegramApp.register(first_name=first_name, last_name=last_name)
+                        result = await telegramApp.register(first_name=first_name, last_name=last_name)
 
-                    return {
-                        "grant": result
-                    }
+                        return {
+                            "grant": result
+                        }
+                    except telegram.InvalidCodeError:
+                        raise Forbidden()
+                    except telegram.TooManyRequests:
+                        raise TooManyRequests()
+                        
                 else:
                     try:      
                         logger.debug("starting %s validate method ..." % platform_name)
@@ -180,11 +190,15 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
                         return {
                             "grant": result
                         }
-                    except telegram.RegisterAccount:
+                    except telegram.RegisterAccountError:
                         return {
                             "body": 202,
                             "initialization_url": f"/platforms/{platform_name}/protocols/{protocol}/register"
                         }
+                    except telegram.InvalidCodeError:
+                        raise Forbidden()
+                    except telegram.TooManyRequests:
+                        raise TooManyRequests()
 
             elif method.lower() == "delete":
                 try:

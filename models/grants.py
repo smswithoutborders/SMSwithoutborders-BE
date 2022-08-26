@@ -165,8 +165,8 @@ class Grant_Model:
         # ======================== #
         elif platformName == "telegram":
             decrypted_grant = {
-                "username":json.loads(username),
-                "token":token,
+                "username":json.loads(username) if username else username,
+                "token":json.loads(token),
                 "uniqueId":json.loads(uniqueId)
             }
 

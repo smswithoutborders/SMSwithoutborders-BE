@@ -844,6 +844,9 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
     except Forbidden as error:
         return str(error), 403
 
+    except TooManyRequests as error:
+        return str(error), 429
+
     except InternalServerError as error:
         logger.exception(error)
         return "internal server error", 500
