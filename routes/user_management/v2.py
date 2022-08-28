@@ -284,11 +284,12 @@ async def recovery_check(user_id):
         for wallet in wallets:
             platform = Platform.find(platform_id=wallet["platformId"])
             grant = Grant.find(user_id=user_id, platform_id=platform.id)
+            d_grant = Grant.decrypt(platform_name=platform.name, grant=grant)
 
             await Grant.purge(
                 originalUrl=originalUrl,
                 platform_name=platform.name,
-                token=grant.token
+                token=d_grant["token"]
             )
 
             Grant.delete(grant=grant)
@@ -1074,11 +1075,12 @@ async def update_password(user_id):
         for wallet in wallets:
             platform = Platform.find(platform_id=wallet["platformId"])
             grant = Grant.find(user_id=user_id, platform_id=platform.id)
+            d_grant = Grant.decrypt(platform_name=platform.name, grant=grant)
 
             await Grant.purge(
                 originalUrl=originalUrl,
                 platform_name=platform.name,
-                token=grant.token
+                token=d_grant["token"]
             )
 
             Grant.delete(grant=grant)
@@ -1320,11 +1322,12 @@ async def delete_account(user_id):
         for wallet in wallets:
             platform = Platform.find(platform_id=wallet["platformId"])
             grant = Grant.find(user_id=user_id, platform_id=platform.id)
+            d_grant = Grant.decrypt(platform_name=platform.name, grant=grant)
 
             await Grant.purge(
                 originalUrl=originalUrl,
                 platform_name=platform.name,
-                token=grant.token
+                token=d_grant["token"]
             )
 
             Grant.delete(grant=grant)

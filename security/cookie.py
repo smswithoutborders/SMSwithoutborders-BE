@@ -13,6 +13,7 @@ from Crypto import Random
 
 from werkzeug.exceptions import InternalServerError
 from werkzeug.exceptions import Unauthorized
+
 class Cookie:
     """
     Encrypt and decrypt cookie data.

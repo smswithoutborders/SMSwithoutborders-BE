@@ -120,7 +120,7 @@ class Grant_Model:
             logger.error("Invalid platform name %s" % platformName)
             raise BadRequest()
 
-    def decrypt(self, platform_name: str, grant) -> dict:
+    def decrypt(self, platform_name: str, grant, refresh: bool = False) -> dict:
         """
         """
         platformName = platform_name.lower()
@@ -140,7 +140,7 @@ class Grant_Model:
         if platformName == "gmail":
             decrypted_grant = {
                 "username":json.loads(username),
-                "token":token,
+                "token":json.loads(token),
                 "uniqueId":json.loads(uniqueId)
             }
 
@@ -151,14 +151,52 @@ class Grant_Model:
         # ======= TWITTER ======== #
         # ======================== #
         elif platformName == "twitter":
-            decrypted_grant = {
-                "username":json.loads(username),
-                "token":token,
-                "uniqueId":json.loads(uniqueId)
-            }
+            if refresh:
+                logger.debug("initializing %s client ..." % platformName)
 
-            logger.info("- Successfully decrypted %s grant" % platformName)
-            return decrypted_grant
+                spec = importlib.util.spec_from_file_location("twitter_app", twitter_path)   
+                twitter = importlib.util.module_from_spec(spec)       
+                spec.loader.exec_module(twitter)
+
+                twitterClient = twitter.Twitter(originalUrl="")
+
+                logger.debug("starting %s refresh method ..." % platformName)
+
+                r_token = twitterClient.refresh(token=json.loads(token))
+
+                upd_wallet = (
+                    self.Wallets.update(
+                    username=data.encrypt(username)["e_data"],
+                    token=data.encrypt(json.dumps(r_token))["e_data"],
+                    uniqueId=data.encrypt(uniqueId)["e_data"],
+                    iv=data.iv)
+                    .where(
+                        self.Wallets.id == grant.id
+                    )
+                )
+
+                upd_wallet.execute()
+                
+                logger.info("- Successfully refreshed %s token" % platformName)
+
+                decrypted_grant = {
+                    "username":json.loads(username),
+                    "token":r_token,
+                    "uniqueId":json.loads(uniqueId)
+                }
+
+                logger.info("- Successfully decrypted %s grant" % platformName)
+                return decrypted_grant
+
+            else:
+                decrypted_grant = {
+                    "username":json.loads(username),
+                    "token":json.loads(token),
+                    "uniqueId":json.loads(uniqueId)
+                }
+
+                logger.info("- Successfully decrypted %s grant" % platformName)
+                return decrypted_grant
 
         # ======================== #
         # ======= TELEGRAM ======= #

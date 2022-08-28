@@ -16,7 +16,7 @@ from werkzeug.exceptions import TooManyRequests
 
 PlatformData=()
 
-async def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, code_verifier:str = None, token:str=None, phoneNumber:str = None, action:str = None, first_name:str = None, last_name:str = None) -> PlatformData:
+async def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, code_verifier:str = None, token:dict=None, phoneNumber:str = None, action:str = None, first_name:str = None, last_name:str = None) -> PlatformData:
     """
     """
     # ======================== #
