@@ -38,6 +38,7 @@ from werkzeug.exceptions import Unauthorized
 from werkzeug.exceptions import Forbidden
 from werkzeug.exceptions import InternalServerError
 from werkzeug.exceptions import TooManyRequests
+from werkzeug.exceptions import UnprocessableEntity
 
 @v2.route("/signup", methods=["POST", "PUT"])
 def signup():
@@ -681,6 +682,11 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
         else:
             code = request.json["code"]
         
+        if not "scope" in request.json or not request.json["scope"]:
+            scope = None
+        else:
+            scope = request.json["scope"]
+
         if not "phone_number" in request.json or not request.json["phone_number"]:
             phone_number = None
         else:
@@ -742,6 +748,7 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
                 protocol=protocol,
                 method=method,
                 code=code,
+                scope=scope,
                 code_verifier=code_verifier,
                 phoneNumber=phone_number,
                 action=action,
@@ -848,6 +855,9 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
     except TooManyRequests as error:
         return str(error), 429
 
+    except UnprocessableEntity as error:
+        return str(error), 422
+        
     except InternalServerError as error:
         logger.exception(error)
         return "internal server error", 500

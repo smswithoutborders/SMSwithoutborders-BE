@@ -13,10 +13,11 @@ import importlib.util
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Forbidden
 from werkzeug.exceptions import TooManyRequests
+from werkzeug.exceptions import UnprocessableEntity
 
 PlatformData=()
 
-async def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, code_verifier:str = None, token:dict=None, phoneNumber:str = None, action:str = None, first_name:str = None, last_name:str = None) -> PlatformData:
+async def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, scope:str = None, code_verifier:str = None, token:dict=None, phoneNumber:str = None, action:str = None, first_name:str = None, last_name:str = None) -> PlatformData:
     """
     """
     # ======================== #
@@ -47,15 +48,18 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
                 }
                 
             elif method.lower() == "put":
-                logger.debug("starting %s validate method ..." % platform_name)
+                try:
+                    logger.debug("starting %s validate method ..." % platform_name)
 
-                result = gmailClient.validate(code=code)
+                    result = gmailClient.validate(code=code, scope=scope)
 
-                logger.info("- Successfully fetched %s user_info and tokens" % platform_name)
+                    logger.info("- Successfully fetched %s user_info and tokens" % platform_name)
 
-                return {
-                    "grant": result
-                }
+                    return {
+                        "grant": result
+                    }
+                except gmail.MisMatchScope:
+                    raise UnprocessableEntity()
 
             elif method.lower() == "delete":
                 try:
@@ -122,9 +126,7 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
                     
                     logger.info("- Successfully revoked %s token" % platform_name)
                 except Exception as error:
-                    from werkzeug.exceptions import InternalServerError
-                    raise InternalServerError(error)
-                    # logger.exception(error)
+                    logger.exception(error)
 
             else:
                 logger.error("invalid method: %s" % method)
