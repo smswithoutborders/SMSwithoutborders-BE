@@ -545,6 +545,16 @@
 }
 ```
 
+- 422 UnprocessableEntity (e.g Invalid authorization scopes)
+
+`application/json`
+
+```ts
+{
+  "type": "string"
+}
+```
+
 - 500 Internal Server Error
 
 `application/json`
