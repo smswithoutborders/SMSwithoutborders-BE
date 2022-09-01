@@ -7,38 +7,25 @@ config = baseConfig()
 api = config["API"]
 cookie_name = api['COOKIE_NAME']
 dev_cookie_name = api['DEV_COOKIE_NAME']
-enable_otp_counter = eval(config["OTP"]["ENABLE"])
 
 from flask import Blueprint
 from flask import request
-from flask import Response
 from flask import jsonify
-
-from platforms import platform_switch
-
-from security.cookie import Cookie
-from security.data import Data
 
 import json
 import base64
-
-from datetime import datetime
-from datetime import timedelta
 
 from models.grants import Grant_Model
 from models.platforms import Platform_Model
 from models.users import User_Model
 from models.sessions import Session_Model
-from models._2FA import OTP_Model
 
 v2 = Blueprint("v2", __name__)
 
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Conflict
 from werkzeug.exceptions import Unauthorized
-from werkzeug.exceptions import Forbidden
 from werkzeug.exceptions import InternalServerError
-from werkzeug.exceptions import TooManyRequests
 
 @v2.route("/decrypt", methods=["POST"])
 def decrypt():
@@ -153,6 +140,12 @@ def whoami():
         res = jsonify({
             "user_id": user["userId"]
         })
+
+        Session.create(
+            unique_identifier=user["userId"],
+            user_agent=user_agent,
+            type="active"
+        )
 
         return res, 200
                 
