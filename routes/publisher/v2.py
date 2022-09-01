@@ -154,11 +154,6 @@ def whoami():
             "user_id": user["userId"]
         })
 
-        Session.create(
-            unique_identifier=user["userId"],
-            user_agent=user_agent
-        )
-
         return res, 200
                 
     except BadRequest as err:
