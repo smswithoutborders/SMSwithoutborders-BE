@@ -7,6 +7,7 @@ platforms = config["PLATFORMS"]
 gmail_path = platforms["GMAIL"]
 twitter_path = platforms["TWITTER"]
 telegram_path = platforms["TELEGRAM"]
+slack_path = platforms["SLACK"]
 
 import importlib.util       
 
@@ -212,6 +213,62 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
                 except Exception as error:
                     logger.exception(error)
 
+            else:
+                logger.error("invalid method: %s" % method)
+                raise BadRequest()
+
+        else:
+            logger.error("invalid protocol: %s" % protocol)
+            raise BadRequest()
+
+    # ======================== #
+    # ========= SLACK ======== #
+    # ======================== #
+    if platform_name == "slack":
+
+        if protocol == "oauth2":
+            logger.debug("initializing %s %s client ..." % (platform_name, protocol))
+
+            spec = importlib.util.spec_from_file_location("slack_app", slack_path)   
+            slack = importlib.util.module_from_spec(spec)       
+            spec.loader.exec_module(slack)
+
+            slackClient = slack.Slack(originalUrl=originalUrl)
+
+            logger.info("- Successfully initialized %s %s client" % (platform_name, protocol))
+
+            if method.lower() == "post":
+                logger.debug("starting %s init method ..." % platform_name)
+
+                result = slackClient.init()
+
+                logger.info("- Successfully fetched %s init url" % platform_name)
+
+                return {
+                    "url": result["url"]
+                }
+                
+            elif method.lower() == "put":
+                logger.debug("starting %s validate method ..." % platform_name)
+
+                result = slackClient.validate(code=code)
+
+                logger.info("- Successfully fetched %s user_info and tokens" % platform_name)
+
+                return {
+                    "grant": result
+                }
+
+            elif method.lower() == "delete":
+                try:
+                    logger.debug("starting %s revoke method ..." % platform_name)
+
+                    slackClient.revoke(token=token)
+                    
+                    logger.info("- Successfully revoked %s token" % platform_name)
+                except Exception as error:
+                    logger.exception(error)
+                    
             else:
                 logger.error("invalid method: %s" % method)
                 raise BadRequest()

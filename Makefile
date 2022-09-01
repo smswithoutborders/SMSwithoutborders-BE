@@ -22,6 +22,9 @@ install:
 		wget -P $(platforms_dir)/telegram https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Telegram/dev/requirements.txt; \
 		$(pip) install -r $(platforms_dir)/telegram/requirements.txt; \
 		rm -rf $(platforms_dir)/telegram; \
+		wget -P $(platforms_dir)/slack https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Slack/dev/requirements.txt; \
+		$(pip) install -r $(platforms_dir)/slack/requirements.txt; \
+		rm -rf $(platforms_dir)/slack; \
 	)
 	@echo "[*] python requirements installation completed successfully"
 
