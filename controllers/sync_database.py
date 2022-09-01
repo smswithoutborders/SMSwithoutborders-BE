@@ -80,34 +80,35 @@ def sync_platforms() -> None:
             error = "Platforms information file not found at %s" % platform_info_filepath
             raise FileNotFoundError(error)
 
-        with open(platform_info_filepath) as data_file:    
+        with open(platform_info_filepath, encoding="utf-8") as data_file:    
             data = json.load(data_file)
-            for platform in data:
-                try:
-                    Platforms.get(Platforms.name == platform["name"])
-                except Platforms.DoesNotExist:
-                    logger.debug("Adding platform %s ..." % platform['name'])
 
-                    Platforms.create(
-                        name=platform["name"],
-                        logo=platform["logo"],
-                        description=json.dumps(platform["description"]),
-                        protocols=json.dumps(platform["protocols"]),
-                        type=platform["type"],
-                        letter=platform["letter"],
-                    )
-                else:
-                    upd_plarforms = Platforms.update(
-                        logo=platform["logo"],
-                        description=json.dumps(platform["description"]),
-                        protocols=json.dumps(platform["protocols"]),
-                        type=platform["type"],
-                        letter=platform["letter"],
-                    ).where(
-                        Platforms.name == platform['name']
-                    )
+        for platform in data:
+            try:
+                Platforms.get(Platforms.name == platform["name"])
+            except Platforms.DoesNotExist:
+                logger.debug("Adding platform %s ..." % platform['name'])
 
-                    upd_plarforms.execute()
+                Platforms.create(
+                    name=platform["name"],
+                    logo=platform["logo"],
+                    description=json.dumps(platform["description"]),
+                    protocols=json.dumps(platform["protocols"]),
+                    type=platform["type"],
+                    letter=platform["letter"],
+                )
+            else:
+                upd_plarforms = Platforms.update(
+                    logo=platform["logo"],
+                    description=json.dumps(platform["description"]),
+                    protocols=json.dumps(platform["protocols"]),
+                    type=platform["type"],
+                    letter=platform["letter"],
+                ).where(
+                    Platforms.name == platform['name']
+                )
+
+                upd_plarforms.execute()
 
     except Exception as error:
         raise error
