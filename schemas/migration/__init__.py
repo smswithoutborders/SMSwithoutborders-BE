@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 from playhouse.migrate import MySQLMigrator
 from playhouse.migrate import migrate
 
+from peewee import CharField
 from peewee import OperationalError
 
 from schemas.baseModel import db
@@ -36,6 +37,20 @@ def migrate_usersinfo() -> None:
         )
 
         logger.info("- Successfully migrated usersinfo schema")
+
+    except OperationalError as error:
+        logger.error(error)
+
+def migrate_sessions() -> None:
+    """
+    """
+    try:
+        logger.debug("Starting session schema migration ...")
+        migrate(
+            migrator.alter_column_type('sessions', 'type', CharField()),
+        )
+
+        logger.info("- Successfully migrated session schema")
 
     except OperationalError as error:
         logger.error(error)
