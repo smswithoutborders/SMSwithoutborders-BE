@@ -48,9 +48,15 @@ make install
 
 All configuration files are found in the **[configs](../configs)** directory.
 
-## Configuration Options
+### configuration file
 
-#### SEVER
+To set up Database and API, copy the template files "example.default.ini" and rename to "default.ini"
+
+```bash
+cp configs/example.default.ini configs/default.ini
+```
+
+### Configuration Options
 
 Manages access to the SMS without borders centralize resources and services.
 
@@ -91,14 +97,6 @@ A user has four attempts to request an OTP code daily
 2. **CERTIFICATE**: Path to your SSL Certificate.
 3. **KEY**: Path to your SSL Key.
 4. **PEM**: Path to your SSL PEM.
-
-### configuration file
-
-To set up Database and API, copy the template files "example.default.ini" and rename to "default.ini"
-
-```bash
-cp configs/example.default.ini configs/default.ini
-```
 
 ## How to use
 
