@@ -22,10 +22,10 @@ def migrate_platforms() -> None:
             migrator.add_column('platforms', 'description', Platforms.description),
         )
 
-        logger.info("- Successfully migrated platforms schema")
+        logger.debug("- Successfully migrated platforms schema")
 
     except OperationalError as error:
-        logger.error(error)
+        logger.debug(error)
 
 def migrate_usersinfo() -> None:
     """
@@ -36,10 +36,10 @@ def migrate_usersinfo() -> None:
             migrator.drop_column('usersInfos', 'phone_number'),
         )
 
-        logger.info("- Successfully migrated usersinfo schema")
+        logger.debug("- Successfully migrated usersinfo schema")
 
     except OperationalError as error:
-        logger.error(error)
+        logger.debug(error)
 
 def migrate_sessions() -> None:
     """
@@ -48,9 +48,10 @@ def migrate_sessions() -> None:
         logger.debug("Starting session schema migration ...")
         migrate(
             migrator.alter_column_type('sessions', 'type', CharField()),
+            migrator.drop_not_null('sessions', 'type')
         )
 
-        logger.info("- Successfully migrated session schema")
+        logger.debug("- Successfully migrated session schema")
 
     except OperationalError as error:
-        logger.error(error)
+        logger.debug(error)
