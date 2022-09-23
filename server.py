@@ -49,6 +49,7 @@ from controllers.SSL import isSSL
 
 from schemas.migration import migrate_platforms
 from schemas.migration import migrate_usersinfo
+from schemas.migration import migrate_sessions
 
 app = Flask(__name__)
 
@@ -63,6 +64,7 @@ create_tables()
 
 migrate_platforms()
 migrate_usersinfo()
+migrate_sessions()
 
 sync_platforms()
 

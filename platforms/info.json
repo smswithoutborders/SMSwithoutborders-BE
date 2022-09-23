@@ -30,5 +30,16 @@
         "logo": "/public/telegram-icon.svg",
         "protocols": ["twofactor"],
         "letter": "T"
+    },
+    {
+        "name": "slack",
+        "description": {
+            "en": "Slack is a messaging app for business that connects people to the information they need. By bringing people together to work as one unified team, Slack transforms the way organizations communicate.",
+            "fr": "Slack est une application de messagerie pour les entreprises qui connecte les gens aux informations dont ils ont besoin. En rassemblant les gens pour qu'ils travaillent comme une seule équipe unifiée, Slack transforme la façon dont les organisations communiquent."
+        },
+        "type": "text",
+        "logo": "/public/slack-icon.svg",
+        "protocols": ["oauth2"],
+        "letter": "s"
     }
 ]

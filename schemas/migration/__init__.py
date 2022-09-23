@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 from playhouse.migrate import MySQLMigrator
 from playhouse.migrate import migrate
 
+from peewee import CharField
 from peewee import OperationalError
 
 from schemas.baseModel import db
@@ -21,10 +22,10 @@ def migrate_platforms() -> None:
             migrator.add_column('platforms', 'description', Platforms.description),
         )
 
-        logger.info("- Successfully migrated platforms schema")
+        logger.debug("- Successfully migrated platforms schema")
 
     except OperationalError as error:
-        logger.error(error)
+        logger.debug(error)
 
 def migrate_usersinfo() -> None:
     """
@@ -35,7 +36,22 @@ def migrate_usersinfo() -> None:
             migrator.drop_column('usersInfos', 'phone_number'),
         )
 
-        logger.info("- Successfully migrated usersinfo schema")
+        logger.debug("- Successfully migrated usersinfo schema")
 
     except OperationalError as error:
-        logger.error(error)
+        logger.debug(error)
+
+def migrate_sessions() -> None:
+    """
+    """
+    try:
+        logger.debug("Starting session schema migration ...")
+        migrate(
+            migrator.alter_column_type('sessions', 'type', CharField()),
+            migrator.drop_not_null('sessions', 'type')
+        )
+
+        logger.debug("- Successfully migrated session schema")
+
+    except OperationalError as error:
+        logger.debug(error)

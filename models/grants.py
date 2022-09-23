@@ -7,6 +7,7 @@ platforms = config["PLATFORMS"]
 gmail_path = platforms["GMAIL"]
 twitter_path = platforms["TWITTER"]
 telegram_path = platforms["TELEGRAM"]
+slack_path = platforms["SLACK"]
 
 import importlib.util       
 import json
@@ -116,6 +117,37 @@ class Grant_Model:
 
             logger.info("- Successfully Stored %s grant for %s" % (platformName, user_id))
 
+        # ======================== #
+        # ========= SLACK ======== #
+        # ======================== #
+        elif platformName == "slack":
+            logger.debug("Storing %s grant for %s ..." % (platformName, user_id))
+
+            try:
+                self.Wallets.create(
+                    userId=user_id, 
+                    platformId=platform_id,
+                    username=data.encrypt(json.dumps(grant["profile"]["real_name"]))["e_data"],
+                    token=data.encrypt(grant["token"])["e_data"],
+                    uniqueId=data.encrypt(json.dumps("@"+grant["profile"]["email"]))["e_data"],
+                    uniqueIdHash=data.hash("@"+grant["profile"]["email"]),
+                    iv=data.iv
+                )
+
+            except IntegrityError as error:
+                logger.error("user %s already has %s grant" % (user_id, platformName))
+                raise Conflict()
+
+            except DatabaseError as error:
+                logger.error("Failed storing %s grant for %s" % (platformName, user_id))
+                raise InternalServerError(error)
+
+            logger.info("- Successfully Stored %s grant for %s" % (platformName, user_id))
+
+        # ======================== #
+        # == Add more platforms == #
+        # ======================== #
+
         else:
             logger.error("Invalid platform name %s" % platformName)
             raise BadRequest()
@@ -210,6 +242,23 @@ class Grant_Model:
 
             logger.info("- Successfully decrypted %s grant" % platformName)
             return decrypted_grant
+
+        # ======================== #
+        # ========= GMAIL ======== #
+        # ======================== #
+        elif platformName == "slack":
+            decrypted_grant = {
+                "username":json.loads(username),
+                "token":json.loads(token),
+                "uniqueId":json.loads(uniqueId)
+            }
+
+            logger.info("- Successfully decrypted %s grant" % platformName)
+            return decrypted_grant
+
+        # ======================== #
+        # == Add more platforms == #
+        # ======================== #
 
         else:
             logger.error("Invalid platform name %s" % platformName)
@@ -334,6 +383,28 @@ class Grant_Model:
                 logger.debug("starting %s revoke method ..." % platformName)
 
                 await telegramApp.revoke()
+                
+                logger.info("- Successfully revoked %s token" % platformName)
+                
+            except Exception as error:
+                logger.exception(error)
+        
+        # ======================== #
+        # ========= SLACK ======== #
+        # ======================== #
+        elif platformName == "slack":
+            try:
+                logger.debug("initializing %s client ..." % platformName)
+
+                spec = importlib.util.spec_from_file_location("slack_app", slack_path)   
+                slack = importlib.util.module_from_spec(spec)       
+                spec.loader.exec_module(slack)
+
+                slackClient = slack.Slack(originalUrl=originalUrl)
+
+                logger.debug("starting %s revoke method ..." % platformName)
+
+                slackClient.revoke(token=token)
                 
                 logger.info("- Successfully revoked %s token" % platformName)
                 

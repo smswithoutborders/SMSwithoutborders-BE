@@ -947,7 +947,7 @@ def get_platforms(user_id):
         return "internal server error", 500
 
 @v2.route("/users/<string:user_id>/dashboard", methods=["GET"])
-def dashbaord(user_id):
+def dashboard(user_id):
     """
     """
     try:
@@ -1344,6 +1344,12 @@ async def delete_account(user_id):
 
         User.delete(
             user_id=user["id"]
+        )
+
+        Session.create(
+            unique_identifier=user["id"],
+            user_agent=user_agent,
+            type="deleted"
         )
 
         res = Response()
