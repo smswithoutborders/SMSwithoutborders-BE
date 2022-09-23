@@ -224,7 +224,7 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
     # ======================== #
     # ========= SLACK ======== #
     # ======================== #
-    if platform_name == "slack":
+    elif platform_name == "slack":
 
         if protocol == "oauth2":
             logger.debug("initializing %s %s client ..." % (platform_name, protocol))
