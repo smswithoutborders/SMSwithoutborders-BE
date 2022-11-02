@@ -23,6 +23,7 @@ from datetime import datetime
 from datetime import timedelta
 
 from peewee import DatabaseError
+from peewee import JOIN
 
 from schemas.baseModel import db
 from schemas.users import Users
@@ -351,17 +352,22 @@ class User_Model:
             }
 
             logger.debug("Fetching unsaved platforms for %s ..." % user_id)
+            
+            t2 = (
+                self.Wallets.alias("t2").select()
+                .where(
+                    self.Wallets.alias("t2").userId == user_id
+                )
+            )
 
-            query = f"""SELECT t1.*
-                FROM platforms t1
-                LEFT JOIN (SELECT * FROM wallets WHERE wallets.userId = "{user_id}") AS t2 
-                ON t2.platformId = t1.id 
-                WHERE t2.platformId IS NULL"""
-
-            cursor = self.db.execute_sql(query)
-
-            col_names = [col[0] for col in cursor.description]
-            unsaved_platforms = [dict(zip(col_names, row)) for row in cursor.fetchall()]
+            unsaved_platforms = (
+                self.Platforms.select()
+                .join(t2, JOIN.LEFT_OUTER, on=(t2.c.platformId == self.Platforms.id))
+                .where(
+                    t2.c.platformId == None
+                )
+                .dicts()
+            )
 
             for row in unsaved_platforms:
                 result = {
