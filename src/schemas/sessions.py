@@ -2,7 +2,7 @@ from peewee import CharField
 from peewee import DateTimeField
 from peewee import TextField
 
-from schemas.baseModel import BaseModel
+from src.schemas.baseModel import BaseModel
 
 from uuid import uuid4
 

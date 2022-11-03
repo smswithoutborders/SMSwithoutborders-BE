@@ -40,16 +40,16 @@ from flask import Flask
 from flask import send_from_directory
 from flask_cors import CORS
 
-from routes.user_management.v2 import v2
+from src.routes.user_management.v2 import v2
 
 from controllers.sync_database import create_database
 from controllers.sync_database import create_tables
 from controllers.sync_database import sync_platforms
 from controllers.SSL import isSSL
 
-from schemas.migration import migrate_platforms
-from schemas.migration import migrate_usersinfo
-from schemas.migration import migrate_sessions
+from src.schemas.migration import migrate_platforms
+from src.schemas.migration import migrate_usersinfo
+from src.schemas.migration import migrate_sessions
 
 app = Flask(__name__)
 

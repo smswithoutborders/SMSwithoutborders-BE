@@ -25,14 +25,14 @@ from datetime import timedelta
 from peewee import DatabaseError
 from peewee import JOIN
 
-from schemas.baseModel import db
-from schemas.users import Users
-from schemas.usersinfo import UsersInfos
-from schemas.retries import Retries
-from schemas.wallets import Wallets
-from schemas.platforms import Platforms
+from src.schemas.baseModel import db
+from src.schemas.users import Users
+from src.schemas.usersinfo import UsersInfos
+from src.schemas.retries import Retries
+from src.schemas.wallets import Wallets
+from src.schemas.platforms import Platforms
 
-from security.data import Data
+from src.security.data import Data
 
 from werkzeug.exceptions import Unauthorized
 from werkzeug.exceptions import BadRequest

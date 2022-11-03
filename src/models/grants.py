@@ -15,9 +15,9 @@ import json
 from peewee import IntegrityError
 from peewee import DatabaseError
 
-from schemas.wallets import Wallets
+from src.schemas.wallets import Wallets
 
-from security.data import Data
+from src.security.data import Data
 
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Conflict

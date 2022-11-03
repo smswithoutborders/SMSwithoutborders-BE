@@ -15,10 +15,10 @@ from flask import jsonify
 import json
 import base64
 
-from models.grants import Grant_Model
-from models.platforms import Platform_Model
-from models.users import User_Model
-from models.sessions import Session_Model
+from src.models.grants import Grant_Model
+from src.models.platforms import Platform_Model
+from src.models.users import User_Model
+from src.models.sessions import Session_Model
 
 v2 = Blueprint("v2", __name__)
 

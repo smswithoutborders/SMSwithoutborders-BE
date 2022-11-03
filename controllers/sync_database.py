@@ -9,18 +9,18 @@ platforms_path = config["PLATFORMS_PATH"]
 import os
 import json
 
-from schemas.baseModel import db
+from src.schemas.baseModel import db
 from contextlib import closing
 from mysql.connector import connect
 from mysql.connector import Error
 
-from schemas.wallets import Wallets
-from schemas.platforms import Platforms
-from schemas.users import Users
-from schemas.sessions import Sessions
-from schemas.usersinfo import UsersInfos
-from schemas.svretries import Svretries
-from schemas.retries import Retries
+from src.schemas.wallets import Wallets
+from src.schemas.platforms import Platforms
+from src.schemas.users import Users
+from src.schemas.sessions import Sessions
+from src.schemas.usersinfo import UsersInfos
+from src.schemas.svretries import Svretries
+from src.schemas.retries import Retries
 
 def create_database() -> None:
     """

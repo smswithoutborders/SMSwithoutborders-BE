@@ -3,10 +3,10 @@ from peewee import TextField
 from peewee import ForeignKeyField
 from peewee import DateTimeField
 
-from schemas.baseModel import BaseModel
+from src.schemas.baseModel import BaseModel
 
-from schemas.users import Users
-from schemas.platforms import Platforms
+from src.schemas.users import Users
+from src.schemas.platforms import Platforms
 
 from datetime import datetime
 

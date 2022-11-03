@@ -13,7 +13,7 @@ dev_port = developer["PORT"]
 
 from peewee import DatabaseError
 
-from schemas.sessions import Sessions
+from src.schemas.sessions import Sessions
 
 import json
 import requests

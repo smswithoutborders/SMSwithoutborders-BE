@@ -16,7 +16,7 @@ def baseConfig():
         "API": config["API"],
         "SSL_API": config["SSL_API"],
         "PLATFORMS": config["PLATFORMS"],
-        "PLATFORMS_PATH": os.path.join(os.path.dirname(__file__), 'platforms'),
+        "PLATFORMS_PATH": os.path.join(os.path.dirname(__file__), 'src/platforms'),
         "TWILIO": config["TWILIO"],
         "RECAPTCHA": config["RECAPTCHA"],
         "OTP": config["OTP"],

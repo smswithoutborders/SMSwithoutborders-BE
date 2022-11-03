@@ -19,7 +19,7 @@ duration_2 = eval(otp["SECOND_RESEND_DURATION"])
 duration_3 = eval(otp["THIRD_RESEND_DURATION"])
 duration_4 = eval(otp["FOURTH_RESEND_DURATION"])
 
-from schemas.svretries import Svretries
+from src.schemas.svretries import Svretries
 
 from datetime import datetime
 from datetime import timedelta

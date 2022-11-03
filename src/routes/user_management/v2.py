@@ -15,20 +15,20 @@ from flask import request
 from flask import Response
 from flask import jsonify
 
-from platforms import platform_switch
+from src.platforms import platform_switch
 
-from security.cookie import Cookie
-from security.data import Data
+from src.security.cookie import Cookie
+from src.security.data import Data
 
 import json
 from datetime import datetime
 from datetime import timedelta
 
-from models.grants import Grant_Model
-from models.platforms import Platform_Model
-from models.users import User_Model
-from models.sessions import Session_Model
-from models._2FA import OTP_Model
+from src.models.grants import Grant_Model
+from src.models.platforms import Platform_Model
+from src.models.users import User_Model
+from src.models.sessions import Session_Model
+from src.models._2FA import OTP_Model
 
 v2 = Blueprint("v2", __name__)
 

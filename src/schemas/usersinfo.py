@@ -2,8 +2,8 @@ from peewee import CharField
 from peewee import DateTimeField
 from peewee import ForeignKeyField
 
-from schemas.baseModel import BaseModel
-from schemas.users import Users
+from src.schemas.baseModel import BaseModel
+from src.schemas.users import Users
 
 from datetime import datetime
 
