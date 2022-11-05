@@ -60,7 +60,7 @@ def main():
     try:
         if args.setkeys:
             user = input("Username [default = %s]:" % db["MYSQL_USER"]) or db["MYSQL_USER"]
-            password = getpass() or db["MYSQL_PASSWORD"]
+            password = getpass()
             database = input("Database [default = %s]:" % db["MYSQL_DATABASE"]) or db["MYSQL_DATABASE"]
 
             keyPairs = GetKeys(
@@ -84,7 +84,7 @@ def main():
 
         elif args.getkeys:
             user = input("Username [default = %s]:" % db["MYSQL_USER"]) or db["MYSQL_USER"]
-            password = getpass() or db["MYSQL_PASSWORD"]
+            password = getpass()
             database = input("Database [default = %s]:" % db["MYSQL_DATABASE"]) or db["MYSQL_DATABASE"]
 
             keyPairs = GetKeys(
