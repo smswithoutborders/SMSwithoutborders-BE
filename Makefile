@@ -29,7 +29,7 @@ install:
 	@echo "[*] python requirements installation completed successfully"
 
 start:
-	@echo "[!] Activating venv ..."
+	@echo "[!] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
 	@echo "[!] Starting server ..."
@@ -37,11 +37,38 @@ start:
 		$(python) server.py; \
 	)
 
-start_dev:
-	@echo "[!] Activating venv ..."
+start-dev-env:
+	@echo "[!] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
 	@echo "[!] Starting server ..."
 	@. $(venv_path)/bin/activate && (\
 		FLASK_ENV=development $(python) server.py --logs=debug; \
+	)
+
+set-keys:
+	@test -d $(venv_path) || $(python) -m venv $(venv_path)
+
+	@echo "[!] Activating virtual environment ..."
+	@test -d $(venv_path) || $(python) -m venv $(venv_path)
+	
+	@echo "[!] Login to database."
+	@echo ""
+	@echo "Press [Enter] to use default value."
+	@. $(venv_path)/bin/activate && (\
+		$(python) configurationHelper.py --setkeys; \
+	)
+	@echo "[*] Success!."
+
+get-keys:
+	@test -d $(venv_path) || $(python) -m venv $(venv_path)
+
+	@echo "[!] Activating virtual environment ..."
+	@test -d $(venv_path) || $(python) -m venv $(venv_path)
+	
+	@echo "[!] Login to database."
+	@echo ""
+	@echo "Press [Enter] to use default value."
+	@. $(venv_path)/bin/activate && (\
+		$(python) configurationHelper.py --getkeys; \
 	)

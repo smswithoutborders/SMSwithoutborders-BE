@@ -21,6 +21,7 @@ from src.schemas.sessions import Sessions
 from src.schemas.usersinfo import UsersInfos
 from src.schemas.svretries import Svretries
 from src.schemas.retries import Retries
+from src.schemas.credentials import Credentials
 
 def create_database() -> None:
     """
@@ -62,7 +63,8 @@ def create_tables() -> None:
             UsersInfos,
             Sessions,
             Svretries,
-            Retries
+            Retries,
+            Credentials
         ])
 
         logger.info("- Successfully Sync database %s" % database['MYSQL_DATABASE'])
@@ -109,6 +111,20 @@ def sync_platforms() -> None:
                 )
 
                 upd_plarforms.execute()
+
+    except Exception as error:
+        raise error
+
+def sync_credentials() -> None:
+    """
+    """
+    try:
+        try:
+            Credentials.get(Credentials.id == 1)
+        except Credentials.DoesNotExist:
+            logger.debug("Adding initials credentials ...")
+
+            Credentials.create()
 
     except Exception as error:
         raise error

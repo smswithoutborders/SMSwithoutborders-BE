@@ -1,10 +1,9 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from Configs import baseConfig
-config = baseConfig()
-api = config["API"]
-e_key = api["KEY"]
+from src.schemas.credentials import Credentials
+creds = Credentials.get(Credentials.id == 1)
+e_key = creds.shared_key
 
 from base64 import b64encode, b64decode
 from Crypto.Cipher import AES

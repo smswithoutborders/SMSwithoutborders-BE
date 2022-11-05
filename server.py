@@ -4,6 +4,21 @@ import os
 import argparse
 import ssl
 
+from controllers.sync_database import create_database, create_tables, sync_platforms, sync_credentials
+from controllers.SSL import isSSL
+
+from src.schemas.migration import migrate_platforms, migrate_usersinfo, migrate_sessions
+
+create_database()
+create_tables()
+
+migrate_platforms()
+migrate_usersinfo()
+migrate_sessions()
+
+sync_platforms()
+sync_credentials()
+
 from Configs import baseConfig
 
 config = baseConfig()
@@ -42,15 +57,6 @@ from flask_cors import CORS
 
 from src.routes.user_management.v2 import v2
 
-from controllers.sync_database import create_database
-from controllers.sync_database import create_tables
-from controllers.sync_database import sync_platforms
-from controllers.SSL import isSSL
-
-from src.schemas.migration import migrate_platforms
-from src.schemas.migration import migrate_usersinfo
-from src.schemas.migration import migrate_sessions
-
 app = Flask(__name__)
 
 CORS(
@@ -58,15 +64,6 @@ CORS(
     origins=api["ORIGINS"],
     supports_credentials=True,
 )
-
-create_database()
-create_tables()
-
-migrate_platforms()
-migrate_usersinfo()
-migrate_sessions()
-
-sync_platforms()
 
 app.register_blueprint(v2, url_prefix="/v2")
 

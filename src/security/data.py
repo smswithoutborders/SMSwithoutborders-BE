@@ -1,11 +1,10 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from Configs import baseConfig
-config = baseConfig()
-api = config["API"]
-salt = api["SALT"]
-e_key = api["KEY"]
+from src.schemas.credentials import Credentials
+creds = Credentials.get(Credentials.id == 1)
+e_key = creds.shared_key
+salt = creds.hashing_salt
 
 import string
 import hashlib
