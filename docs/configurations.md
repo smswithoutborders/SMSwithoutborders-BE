@@ -60,6 +60,8 @@ $ cp configs/example.default.ini configs/default.ini
 
 Set shared-key and hashing-salt in database
 
+> Note: If no keys are set, the API creates a set of random keys when started for the first time.
+
 ```bash
 $ make set-keys
 ```
@@ -68,6 +70,16 @@ Get shared-key and hashing-salt from database
 
 ```bash
 $ make get-keys
+```
+
+### Inject dummy data
+
+_For testing purposes only!_
+
+- **Inject User**: This creates a new user with _NO_ pre-stored grants.
+
+```bash
+$ make inject-user
 ```
 
 ### Configuration Options

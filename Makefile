@@ -1,6 +1,7 @@
 python=python3
 venv_path=venv
 platforms_dir=platforms
+dump_dir=utils/.db
 
 pip=pip3
 
@@ -52,7 +53,7 @@ set-keys:
 	@echo "[!] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
-	@echo "[!] Login to database."
+	@echo "[!] Login to database engine."
 	@echo ""
 	@echo "Press [Enter] to use default value."
 	@. $(venv_path)/bin/activate && (\
@@ -66,9 +67,23 @@ get-keys:
 	@echo "[!] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
-	@echo "[!] Login to database."
+	@echo "[!] Login to database engine."
 	@echo ""
 	@echo "Press [Enter] to use default value."
 	@. $(venv_path)/bin/activate && (\
 		$(python) configurationHelper.py --getkeys; \
 	)
+
+inject-user:
+	@echo "Injecting dummy data ..."
+	@echo ""
+	@echo "[!] Login to database engine."
+	@mysql -u root -p < $(dump_dir)/inject_user_dump.sql;
+	@echo ""
+	@echo "- Database = dummySmswithoutborders"
+	@echo "- User ID = dead3662-5f78-11ed-b8e7-6d06c3aaf3c6"
+	@echo "- Password = testpassword"
+	@echo "- Name = Test User"
+	@echo "- Phone NUmber = +237123456789"
+	@echo ""
+	@echo "[*] Success!"
