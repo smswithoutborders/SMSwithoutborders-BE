@@ -20,20 +20,20 @@
 On Ubuntu **libmysqlclient-dev** is required
 
 ```bash
-sudo apt install python3-dev libmysqlclient-dev
-sudo apt-get install libapache2-mod-wsgi-py3
+$ sudo apt install python3-dev libmysqlclient-dev
+$ sudo apt-get install libapache2-mod-wsgi-py3
 ```
 
 Install `GNU Make`
 
 ```bash
-sudo apt install make
+$ sudo apt install make
 ```
 
 If using apache2 wsgi on Ubuntu
 
 ```bash
-sudo apt-get install libapache2-mod-wsgi-py3
+$ sudo apt-get install libapache2-mod-wsgi-py3
 ```
 
 ## Installation
@@ -41,7 +41,7 @@ sudo apt-get install libapache2-mod-wsgi-py3
 Install all python packages for SMSWITHOUTBORDERS-BE and SMSWITHOUTBORDERS-Custom-Platforms
 
 ```bash
-make install
+$ make install
 ```
 
 ## Setup
@@ -53,7 +53,21 @@ All configuration files are found in the **[configs](../configs)** directory.
 To set up Database and API, copy the template files "example.default.ini" and rename to "default.ini"
 
 ```bash
-cp configs/example.default.ini configs/default.ini
+$ cp configs/example.default.ini configs/default.ini
+```
+
+### configure keys
+
+Set shared-key and hashing-salt in database
+
+```bash
+$ make set-keys
+```
+
+Get shared-key and hashing-salt from database
+
+```bash
+$ make get-keys
 ```
 
 ### Configuration Options
@@ -71,15 +85,13 @@ Manages access to the SMS without borders centralize resources and services.
 
 1. **PORT**: The port number to connect to. (Default: 9000)
 2. **PUBLISHER PORT**: The port number to connect to. (Default: 10000)
-3. **KEY**: The key used to encrypt a user's data. (Default: "de4053831a43d62d9e68fc11319270a9")
-4. **SALT**: The salt used to hash a user's data. (Default: "acaad78fd9dadcb056840c09073190a8")
-5. **SECURE COOKIE**: Specifies the boolean value for the [Secure Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). When truthy, the Secure attribute is set, otherwise it is not. By default, the Secure sessions attribute is set to truthy.
-6. **COOKIE MAXAGE**: Specifies the number (in milliseconds) to use when calculating the [Expires Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (7200000 ms).
-7. **ENABLE BLOCKING**: Specifies the boolean value for tracking user failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts.
-8. **SHORT BLOCK ATTEMPTS**: Specifies the number of failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts before a short block. Several short blocks results to a long block.
-9. **LONG BLOCK ATTEMPTS**: Specifies the number of failed short block attempts before a long block.
-10. **SHORT BLOCK DURATION**: Specifies the duration (in minutes) of a short block.
-11. **LONG BLOCK DURATION**: Specifies the duration (in minutes) of a long block.
+3. **SECURE COOKIE**: Specifies the boolean value for the [Secure Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). When truthy, the Secure attribute is set, otherwise it is not. By default, the Secure sessions attribute is set to truthy.
+4. **COOKIE MAXAGE**: Specifies the number (in milliseconds) to use when calculating the [Expires Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (7200000 ms).
+5. **ENABLE BLOCKING**: Specifies the boolean value for tracking user failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts.
+6. **SHORT BLOCK ATTEMPTS**: Specifies the number of failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts before a short block. Several short blocks results to a long block.
+7. **LONG BLOCK ATTEMPTS**: Specifies the number of failed short block attempts before a long block.
+8. **SHORT BLOCK DURATION**: Specifies the duration (in minutes) of a short block.
+9. **LONG BLOCK DURATION**: Specifies the duration (in minutes) of a long block.
 
 **OTP**
 
@@ -103,7 +115,7 @@ A user has four attempts to request an OTP code daily
 ### Start Backend User management API
 
 ```bash
-make start
+$ make start
 ```
 
 ### Start Backend Publisher API
@@ -111,15 +123,15 @@ make start
 Move into Virtual Environments workspace
 
 ```
-. venv/bin/activate
+$ . venv/bin/activate
 ```
 
 ```bash
-python3 server_pub.py
+$ python3 server_pub.py
 ```
 
 ### logger
 
 ```bash
-python3 server.py --logs=debug
+$ python3 server.py --logs=debug
 ```
