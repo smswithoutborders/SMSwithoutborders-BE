@@ -106,7 +106,11 @@ class OTP_Model:
             logger.debug("Checking SMS resend record for %s using %s ..." % (user_id, unique_id))
 
             expires = counter.expires
-            age = expires.timestamp() - datetime.now().timestamp()
+
+            if expires:
+                age = expires.timestamp() - datetime.now().timestamp()
+            else:
+                age = -1
 
             if age >= 0:
                 logger.error("Too many requests")
