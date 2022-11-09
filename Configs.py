@@ -19,6 +19,5 @@ def baseConfig():
         "PLATFORMS_PATH": os.path.join(os.path.dirname(__file__), 'src/platforms'),
         "TWILIO": config["TWILIO"],
         "RECAPTCHA": config["RECAPTCHA"],
-        "OTP": config["OTP"],
-        "DEVELOPER": config["DEVELOPER"]
+        "OTP": config["OTP"]
     }

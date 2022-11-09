@@ -96,14 +96,13 @@ Manages access to the SMS without borders centralize resources and services.
 **API**
 
 1. **PORT**: The port number to connect to. (Default: 9000)
-2. **PUBLISHER PORT**: The port number to connect to. (Default: 10000)
-3. **SECURE COOKIE**: Specifies the boolean value for the [Secure Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). When truthy, the Secure attribute is set, otherwise it is not. By default, the Secure sessions attribute is set to truthy.
-4. **COOKIE MAXAGE**: Specifies the number (in milliseconds) to use when calculating the [Expires Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (7200000 ms).
-5. **ENABLE BLOCKING**: Specifies the boolean value for tracking user failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts.
-6. **SHORT BLOCK ATTEMPTS**: Specifies the number of failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts before a short block. Several short blocks results to a long block.
-7. **LONG BLOCK ATTEMPTS**: Specifies the number of failed short block attempts before a long block.
-8. **SHORT BLOCK DURATION**: Specifies the duration (in minutes) of a short block.
-9. **LONG BLOCK DURATION**: Specifies the duration (in minutes) of a long block.
+2. **SECURE COOKIE**: Specifies the boolean value for the [Secure Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). When truthy, the Secure attribute is set, otherwise it is not. By default, the Secure sessions attribute is set to truthy.
+3. **COOKIE MAXAGE**: Specifies the number (in milliseconds) to use when calculating the [Expires Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (7200000 ms).
+4. **ENABLE BLOCKING**: Specifies the boolean value for tracking user failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts.
+5. **SHORT BLOCK ATTEMPTS**: Specifies the number of failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts before a short block. Several short blocks results to a long block.
+6. **LONG BLOCK ATTEMPTS**: Specifies the number of failed short block attempts before a long block.
+7. **SHORT BLOCK DURATION**: Specifies the duration (in minutes) of a short block.
+8. **LONG BLOCK DURATION**: Specifies the duration (in minutes) of a long block.
 
 **OTP**
 
@@ -130,20 +129,12 @@ A user has four attempts to request an OTP code daily
 $ make start
 ```
 
-### Start Backend Publisher API
-
-Move into Virtual Environments workspace
-
-```
-$ . venv/bin/activate
-```
-
-```bash
-$ python3 server_pub.py
-```
-
-### logger
+## logger
 
 ```bash
 $ python3 server.py --logs=debug
 ```
+
+## References
+
+- [SMSWithoutBorders-BE-Publisher](https://github.com/smswithoutborders/SMSWithoutBorders-BE-Publisher)
