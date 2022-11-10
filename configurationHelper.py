@@ -9,6 +9,70 @@ import logging
 from contextlib import closing
 from mysql.connector import connect
 
+def DatabaseExists(user: str, password: str, database: str, host: str) -> None:
+    """
+    """
+    try:
+        with closing(
+            connect(
+                user=user,
+                password=password,
+                host=host,
+                database=database,
+                auth_plugin="mysql_native_password",
+            )
+        ) as connection:
+            test_db_query = "SELECT 1+1"
+
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(test_db_query)
+                cursor.fetchall()
+
+                return True
+
+    except Exception as error:
+        if str(error) == "1049 (42000): Unknown database '%s'" % database:
+            return False
+        else:
+            raise error
+
+def CreateDatabase(user: str, password: str, database: str, host: str) -> None:
+    """
+    """
+    try:
+        with closing(
+            connect(
+                user=user,
+                password=password,
+                host=host,
+                auth_plugin="mysql_native_password",
+            )
+        ) as connection:
+            create_db_query = "CREATE DATABASE IF NOT EXISTS %s;" % database
+
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(create_db_query)
+
+    except Exception as error:
+        raise error
+
+def CreateCredentialsTable(user: str, password: str, database: str) -> None:
+    """
+    """
+    with closing(
+        connect(
+            user=user,
+            password=password,
+            database=database
+        )
+    ) as connection:
+        create_table_query = """CREATE TABLE IF NOT EXISTS `credentials` (`id` int NOT NULL AUTO_INCREMENT, `shared_key` text NOT NULL, `hashing_salt` text NOT NULL, `createdAt` datetime DEFAULT NULL, PRIMARY KEY (`id`)) ;"""
+      
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(create_table_query)
+
+            return None
+
 def SetKeys(user: str, password: str, database: str, key: str, salt: str) -> None:
     """
     """
@@ -43,7 +107,13 @@ def GetKeys(user: str, password: str, database: str) -> None:
             cursor.execute(get_keys_query, (1,))
             result = cursor.fetchall()
 
-            return result[0]
+            if len(result) < 1:
+                return {
+                    "shared_key": "",
+                    "hashing_salt": ""
+                }
+            else:
+                return result[0]
 
 def main():
     """
@@ -58,19 +128,47 @@ def main():
     args = parser.parse_args()
 
     try:
-        if args.setkeys:
-            user = input("Username [default = %s]:" % db["MYSQL_USER"]) or db["MYSQL_USER"]
-            password = getpass()
-            database = input("Database [default = %s]:" % db["MYSQL_DATABASE"]) or db["MYSQL_DATABASE"]
+        host = input("Host [default = '%s']: " % db["MYSQL_HOST"]) or db["MYSQL_HOST"]
+        user = input("Username [default = '%s']: " % db["MYSQL_USER"]) or db["MYSQL_USER"]
+        database = input("Database [default = '%s']: " % db["MYSQL_DATABASE"]) or db["MYSQL_DATABASE"]
+        password = getpass()
 
+        if DatabaseExists(user=user, password=password, database=database, host=host):
+            pass
+        else:
+            decision = input("[!] Unknown database '%s'. Do you want to create database '%s'? [Y/n]: " % (database, database)) or "Y"
+
+            if str(decision) in ["Y", "y"]:
+                CreateDatabase(
+                    user=user,
+                    password=password,
+                    database=database,
+                    host=host
+                )
+
+            elif str(decision) in ["N", "n"]:
+                print("Ok, Bye!")
+                sys.exit(0)
+            
+            else:
+                print("Unknown decision '%s'" % decision)
+                sys.exit(1)
+
+        CreateCredentialsTable(
+            user=user,
+            password=password,
+            database=database
+        )
+
+        if args.setkeys:
             keyPairs = GetKeys(
                 user=user,
                 password=password,
                 database=database
             )
             
-            key = input("Shared Key [default = %s]:" % keyPairs["shared_key"]) or keyPairs["shared_key"]
-            salt = input("Hashing Salt [default = %s]:" % keyPairs["hashing_salt"]) or keyPairs["hashing_salt"]
+            key = input("Shared Key [default = '%s']:" % keyPairs["shared_key"]) or keyPairs["shared_key"]
+            salt = input("Hashing Salt [default = '%s']:" % keyPairs["hashing_salt"]) or keyPairs["hashing_salt"]
 
             SetKeys(
                 user=user,
@@ -83,10 +181,6 @@ def main():
             sys.exit(0)
 
         elif args.getkeys:
-            user = input("Username [default = %s]:" % db["MYSQL_USER"]) or db["MYSQL_USER"]
-            password = getpass()
-            database = input("Database [default = %s]:" % db["MYSQL_DATABASE"]) or db["MYSQL_DATABASE"]
-
             keyPairs = GetKeys(
                 user=user,
                 password=password,

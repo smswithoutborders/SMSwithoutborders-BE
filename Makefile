@@ -8,7 +8,7 @@ pip=pip3
 all: install start
 
 install:
-	@echo "[!] Starting installation ..."
+	@echo "[*] Starting installation ..."
 
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	@( \
@@ -30,19 +30,19 @@ install:
 	@echo "[*] python requirements installation completed successfully"
 
 start:
-	@echo "[!] Activating virtual environment ..."
+	@echo "[*] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
-	@echo "[!] Starting server ..."
+	@echo "[*] Starting server ..."
 	@. $(venv_path)/bin/activate && (\
 		$(python) server.py; \
 	)
 
 start-dev-env:
-	@echo "[!] Activating virtual environment ..."
+	@echo "[*] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
-	@echo "[!] Starting server ..."
+	@echo "[*] Starting server ..."
 	@. $(venv_path)/bin/activate && (\
 		FLASK_ENV=development $(python) server.py --logs=debug; \
 	)
@@ -50,12 +50,13 @@ start-dev-env:
 set-keys:
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 
-	@echo "[!] Activating virtual environment ..."
+	@echo "[*] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
 	@echo "[!] Login to database engine."
 	@echo ""
 	@echo "Press [Enter] to use default value."
+	@echo ""
 	@. $(venv_path)/bin/activate && (\
 		$(python) configurationHelper.py --setkeys; \
 	)
@@ -64,12 +65,13 @@ set-keys:
 get-keys:
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 
-	@echo "[!] Activating virtual environment ..."
+	@echo "[*] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
 	@echo "[!] Login to database engine."
 	@echo ""
 	@echo "Press [Enter] to use default value."
+	@echo ""
 	@. $(venv_path)/bin/activate && (\
 		$(python) configurationHelper.py --getkeys; \
 	)
