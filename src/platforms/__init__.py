@@ -1,13 +1,9 @@
 import logging
-logger = logging.getLogger(__name__)
+import os 
 
 from Configs import baseConfig
 config = baseConfig()
-platforms = config["PLATFORMS"]
-gmail_path = platforms["GMAIL"]
-twitter_path = platforms["TWITTER"]
-telegram_path = platforms["TELEGRAM"]
-slack_path = platforms["SLACK"]
+platforms_path = config["PLATFORMS_PATH"]
 
 import importlib.util       
 
@@ -17,6 +13,8 @@ from werkzeug.exceptions import TooManyRequests
 from werkzeug.exceptions import UnprocessableEntity
 
 PlatformData=()
+
+logger = logging.getLogger(__name__)
 
 async def platform_switch(originalUrl: str, platform_name: str, protocol: str, method: str, code:str=None, scope:str = None, code_verifier:str = None, token:dict=None, phoneNumber:str = None, action:str = None, first_name:str = None, last_name:str = None) -> PlatformData:
     """
@@ -29,7 +27,7 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
         if protocol == "oauth2":
             logger.debug("initializing %s %s client ..." % (platform_name, protocol))
 
-            spec = importlib.util.spec_from_file_location("gmail_app", gmail_path)   
+            spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
             gmail = importlib.util.module_from_spec(spec)       
             spec.loader.exec_module(gmail)
 
@@ -88,7 +86,7 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
         if protocol == "oauth2":
             logger.debug("initializing %s %s client ..." % (platform_name, protocol))
 
-            spec = importlib.util.spec_from_file_location("twitter_app", twitter_path)   
+            spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
             twitter = importlib.util.module_from_spec(spec)       
             spec.loader.exec_module(twitter)
 
@@ -145,7 +143,7 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
         if protocol == "twofactor":
             logger.debug("initializing %s %s client ..." % (platform_name, protocol))
 
-            spec = importlib.util.spec_from_file_location("telegram", telegram_path)   
+            spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
             telegram = importlib.util.module_from_spec(spec)       
             spec.loader.exec_module(telegram)
 
@@ -229,7 +227,7 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
         if protocol == "oauth2":
             logger.debug("initializing %s %s client ..." % (platform_name, protocol))
 
-            spec = importlib.util.spec_from_file_location("slack_app", slack_path)   
+            spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
             slack = importlib.util.module_from_spec(spec)       
             spec.loader.exec_module(slack)
 

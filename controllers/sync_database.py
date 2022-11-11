@@ -76,41 +76,45 @@ def sync_platforms() -> None:
     """
     """
     try:
-        platform_info_filepath = os.path.join(platforms_path, "info.json")
+        available_platforms = [ f.path for f in os.scandir(platforms_path) if f.is_dir() ]
 
-        if not os.path.exists(platform_info_filepath):
-            error = "Platforms information file not found at %s" % platform_info_filepath
-            raise FileNotFoundError(error)
+        for Platform in available_platforms:
+            platform_info_filepath = os.path.join(platforms_path, Platform, "info.json")
 
-        with open(platform_info_filepath, encoding="utf-8") as data_file:    
-            data = json.load(data_file)
+            if not os.path.exists(platform_info_filepath):
+                error = "Missing platform information file at %s" % os.path.join(platforms_path, Platform)
+                logger.error(error)
+                continue
 
-        for platform in data:
-            try:
-                Platforms.get(Platforms.name == platform["name"])
-            except Platforms.DoesNotExist:
-                logger.debug("Adding platform %s ..." % platform['name'])
+            with open(platform_info_filepath, encoding="utf-8") as data_file:    
+                data = json.load(data_file)
 
-                Platforms.create(
-                    name=platform["name"],
-                    logo=platform["logo"],
-                    description=json.dumps(platform["description"]),
-                    protocols=json.dumps(platform["protocols"]),
-                    type=platform["type"],
-                    letter=platform["letter"],
-                )
-            else:
-                upd_plarforms = Platforms.update(
-                    logo=platform["logo"],
-                    description=json.dumps(platform["description"]),
-                    protocols=json.dumps(platform["protocols"]),
-                    type=platform["type"],
-                    letter=platform["letter"],
-                ).where(
-                    Platforms.name == platform['name']
-                )
+            for platform in data:
+                try:
+                    Platforms.get(Platforms.name == platform["name"])
+                except Platforms.DoesNotExist:
+                    logger.debug("Adding platform %s ..." % platform['name'])
 
-                upd_plarforms.execute()
+                    Platforms.create(
+                        name=platform["name"],
+                        logo=platform["logo"],
+                        description=json.dumps(platform["description"]),
+                        protocols=json.dumps(platform["protocols"]),
+                        type=platform["type"],
+                        letter=platform["letter"],
+                    )
+                else:
+                    upd_plarforms = Platforms.update(
+                        logo=platform["logo"],
+                        description=json.dumps(platform["description"]),
+                        protocols=json.dumps(platform["protocols"]),
+                        type=platform["type"],
+                        letter=platform["letter"],
+                    ).where(
+                        Platforms.name == platform['name']
+                    )
+
+                    upd_plarforms.execute()
 
     except Exception as error:
         raise error

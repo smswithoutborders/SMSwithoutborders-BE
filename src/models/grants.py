@@ -1,13 +1,9 @@
 import logging
-logger = logging.getLogger(__name__)
+import os
 
 from Configs import baseConfig
 config = baseConfig()
-platforms = config["PLATFORMS"]
-gmail_path = platforms["GMAIL"]
-twitter_path = platforms["TWITTER"]
-telegram_path = platforms["TELEGRAM"]
-slack_path = platforms["SLACK"]
+platforms_path = config["PLATFORMS_PATH"]
 
 import importlib.util       
 import json
@@ -24,6 +20,8 @@ from werkzeug.exceptions import Conflict
 from werkzeug.exceptions import InternalServerError
 
 GrantObject = ()
+
+logger = logging.getLogger(__name__)
 
 class Grant_Model:
     def __init__(self) -> None:
@@ -186,7 +184,7 @@ class Grant_Model:
             if refresh:
                 logger.debug("initializing %s client ..." % platformName)
 
-                spec = importlib.util.spec_from_file_location("twitter_app", twitter_path)   
+                spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
                 twitter = importlib.util.module_from_spec(spec)       
                 spec.loader.exec_module(twitter)
 
@@ -330,7 +328,7 @@ class Grant_Model:
             try:
                 logger.debug("initializing %s client ..." % platformName)
 
-                spec = importlib.util.spec_from_file_location("gmail_app", gmail_path)   
+                spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
                 gmail = importlib.util.module_from_spec(spec)       
                 spec.loader.exec_module(gmail)
 
@@ -352,7 +350,7 @@ class Grant_Model:
             try:
                 logger.debug("initializing %s client ..." % platformName)
 
-                spec = importlib.util.spec_from_file_location("twitter_app", twitter_path)   
+                spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
                 twitter = importlib.util.module_from_spec(spec)       
                 spec.loader.exec_module(twitter)
 
@@ -374,7 +372,7 @@ class Grant_Model:
             try:
                 logger.debug("initializing %s client ..." % platformName)
 
-                spec = importlib.util.spec_from_file_location("telegram", telegram_path)   
+                spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
                 telegram = importlib.util.module_from_spec(spec)       
                 spec.loader.exec_module(telegram)
 
@@ -396,7 +394,7 @@ class Grant_Model:
             try:
                 logger.debug("initializing %s client ..." % platformName)
 
-                spec = importlib.util.spec_from_file_location("slack_app", slack_path)   
+                spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
                 slack = importlib.util.module_from_spec(spec)       
                 spec.loader.exec_module(slack)
 
