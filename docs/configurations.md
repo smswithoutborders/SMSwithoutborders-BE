@@ -82,6 +82,16 @@ _For testing purposes only!_
 $ make inject-user
 ```
 
+details
+
+```
+- Database = dummySmswithoutborders
+- User ID = dead3662-5f78-11ed-b8e7-6d06c3aaf3c6
+- Password = testpassword
+- Name = Test User
+- Phone NUmber = +237123456789
+```
+
 ### Configuration Options
 
 Manages access to the SMS without borders centralize resources and services.
