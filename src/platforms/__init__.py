@@ -27,7 +27,23 @@ async def platform_switch(originalUrl: str, platform_name: str, protocol: str, m
         if protocol == "oauth2":
             logger.debug("initializing %s %s client ..." % (platform_name, protocol))
 
-            spec = importlib.util.spec_from_file_location(platform_name, os.path.join(platforms_path, "%s_%s" % (platform_name, "_app.py")))   
+            available_platforms = [ f.path for f in os.scandir(platforms_path) if f.is_dir() ]
+            platform_execution_filepath = None
+
+            for Platform in available_platforms:
+                temp_platform_execution_filepath = os.path.join(platforms_path, Platform, "%s_%s" % (platform_name, "_app.py"))
+
+                if os.path.exists(temp_platform_execution_filepath):
+                    platform_execution_filepath = temp_platform_execution_filepath
+
+                    break
+
+            if not platform_execution_filepath:
+                error = "Missing platform execution file '%s'" % platform_name
+                logger.error(error)
+                raise BadRequest()
+
+            spec = importlib.util.spec_from_file_location(platform_name, platform_execution_filepath)   
             gmail = importlib.util.module_from_spec(spec)       
             spec.loader.exec_module(gmail)
 

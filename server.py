@@ -7,14 +7,8 @@ import ssl
 from controllers.sync_database import create_database, create_tables, sync_platforms, sync_credentials
 from controllers.SSL import isSSL
 
-from src.schemas.migration import migrate_platforms, migrate_usersinfo, migrate_sessions
-
 create_database()
 create_tables()
-
-migrate_platforms()
-migrate_usersinfo()
-migrate_sessions()
 
 sync_platforms()
 sync_credentials()

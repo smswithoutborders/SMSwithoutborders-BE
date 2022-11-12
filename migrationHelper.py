@@ -1,5 +1,5 @@
 import logging
-logger = logging.getLogger(__name__)
+import sys
 
 from playhouse.migrate import MySQLMigrator
 from playhouse.migrate import migrate
@@ -11,6 +11,8 @@ from src.schemas.baseModel import db
 from src.schemas.platforms import Platforms
 
 migrator = MySQLMigrator(db)
+
+logger = logging.getLogger(__name__)
 
 def migrate_platforms() -> None:
     """
@@ -55,3 +57,27 @@ def migrate_sessions() -> None:
 
     except OperationalError as error:
         logger.debug(error)
+
+def main() -> None:
+    """
+    """
+    try:
+        migrate_platforms()
+        logger.info("- Successfully Migrated Platforms Table")
+
+        migrate_usersinfo()
+        logger.info("- Successfully Migrated UsersInfo Table")
+
+        migrate_sessions()
+        logger.info("- Successfully Migrated Sessions Table")
+
+        sys.exit(0)
+        
+    except Exception as error:
+        logger.error(str(error))
+        sys.exit(1)
+
+if __name__ == "__main__":
+
+    logging.basicConfig(level="INFO")
+    main()

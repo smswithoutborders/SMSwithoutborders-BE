@@ -8,9 +8,10 @@ pip=pip3
 all: install start
 
 install:
-	@echo "[*] Starting installation ..."
-
+	@echo "[*] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
+
+	@echo "[*] Starting installation ..."
 	@( \
 		. $(venv_path)/bin/activate; \
 		$(pip) install -r requirements.txt; \
@@ -61,8 +62,6 @@ start-dev-env:
 	)
 
 set-keys:
-	@test -d $(venv_path) || $(python) -m venv $(venv_path)
-
 	@echo "[*] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
@@ -76,8 +75,6 @@ set-keys:
 	@echo "[*] Success!."
 
 get-keys:
-	@test -d $(venv_path) || $(python) -m venv $(venv_path)
-
 	@echo "[*] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 	
@@ -90,7 +87,7 @@ get-keys:
 	)
 
 inject-user:
-	@echo "Injecting dummy data ..."
+	@echo "[*] Injecting dummy data ..."
 	@echo ""
 	@echo "[!] Login to database engine."
 	@mysql -u root -p < $(dump_dir)/inject_user_dump.sql;
@@ -100,5 +97,16 @@ inject-user:
 	@echo "- Password = testpassword"
 	@echo "- Name = Test User"
 	@echo "- Phone NUmber = +237123456789"
+	@echo ""
+	@echo "[*] Success!"
+
+migrate:
+	@echo "[*] Activating virtual environment ..."
+	@test -d $(venv_path) || $(python) -m venv $(venv_path)
+	
+	@echo "[*] Starting migration ..."
+	@. $(venv_path)/bin/activate && (\
+		$(python) migrationHelper.py; \
+	)
 	@echo ""
 	@echo "[*] Success!"
