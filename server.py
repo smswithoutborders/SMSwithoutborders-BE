@@ -4,20 +4,20 @@ import os
 import argparse
 import ssl
 
-from controllers.sync_database import create_database, create_tables, sync_platforms, sync_credentials
-from controllers.SSL import isSSL
-
-create_database()
-create_tables()
-
-sync_platforms()
-sync_credentials()
+from utils.routines import sync_platforms, sync_credentials
+from utils.SSL import isSSL
 
 from Configs import baseConfig
+
+from src.schemas.platforms import Platforms
+from src.schemas.credentials import Credentials
 
 config = baseConfig()
 api = config["API"]
 SSL = config["SSL_API"]
+
+sync_platforms(Platforms=Platforms)
+sync_credentials(Credentials=Credentials)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--logs", help="Set log level")

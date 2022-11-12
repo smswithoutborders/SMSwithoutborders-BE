@@ -1,16 +1,13 @@
-from peewee import CharField
-from peewee import TextField
-from peewee import ForeignKeyField
-from peewee import DateTimeField
+from peewee import Model, CharField, TextField, ForeignKeyField, DateTimeField
 
-from src.schemas.baseModel import BaseModel
+from src.schemas.db_connector import db
 
 from src.schemas.users import Users
 from src.schemas.platforms import Platforms
 
 from datetime import datetime
 
-class Wallets(BaseModel):
+class Wallets(Model):
     username = CharField(null=True)
     token = TextField(null=True)
     uniqueId = CharField(null=True)
@@ -21,4 +18,8 @@ class Wallets(BaseModel):
     createdAt = DateTimeField(null=True, default=datetime.now)
 
     class Meta:
+        database = db
         indexes = ((('userId', 'platformId'), True),)
+
+if db.table_exists('wallets') is False:
+    db.create_tables([Wallets])

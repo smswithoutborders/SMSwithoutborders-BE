@@ -1,7 +1,9 @@
 import os
 from configparser import ConfigParser
 
-def baseConfig():
+def baseConfig() -> dict:
+    """
+    """
     config_filepath = os.path.join(os.path.dirname(__file__), 'configs', 'default.ini')
 
     if not os.path.exists(config_filepath):

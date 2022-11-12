@@ -7,7 +7,7 @@ from playhouse.migrate import migrate
 from peewee import CharField
 from peewee import OperationalError
 
-from src.schemas.baseModel import db
+from schemas.db_connector import db
 from src.schemas.platforms import Platforms
 
 migrator = MySQLMigrator(db)

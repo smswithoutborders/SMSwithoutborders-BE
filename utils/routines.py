@@ -1,78 +1,34 @@
 import logging
-logger = logging.getLogger(__name__)
 
 from Configs import baseConfig
 config = baseConfig()
-database = config["DATABASE"]
 platforms_path = config["PLATFORMS_PATH"]
 
 import os
 import json
 
-from src.schemas.baseModel import db
-from contextlib import closing
-from mysql.connector import connect
-from mysql.connector import Error
+from configurationHelper import DatabaseExists, CreateDatabase
 
-from src.schemas.wallets import Wallets
-from src.schemas.platforms import Platforms
-from src.schemas.users import Users
-from src.schemas.sessions import Sessions
-from src.schemas.usersinfo import UsersInfos
-from src.schemas.svretries import Svretries
-from src.schemas.retries import Retries
-from src.schemas.credentials import Credentials
+logger = logging.getLogger(__name__)
 
-def create_database() -> None:
+def create_database_if_not_exits(user: str, password: str, database: str, host: str) -> None:
     """
     """
     try:
-        with closing(
-            connect(
-                user=database["MYSQL_USER"],
-                password=database["MYSQL_PASSWORD"],
-                host=database["MYSQL_HOST"],
-                auth_plugin="mysql_native_password",
+        if DatabaseExists(user=user, password=password, database=database, host=host):
+            pass
+        else:
+            CreateDatabase(
+                user=user,
+                password=password,
+                database=database,
+                host=host
             )
-        ) as connection:
-            create_db_query = "CREATE DATABASE IF NOT EXISTS %s;" % database['MYSQL_DATABASE']
-
-            with closing(connection.cursor()) as cursor:
-                logger.debug("Creating database %s ..." % database['MYSQL_DATABASE'])
-
-                cursor.execute(create_db_query)
-
-                logger.info("- Database %s successfully created" % database['MYSQL_DATABASE'])
-
-    except Error as error:
-        raise error
 
     except Exception as error:
         raise error
 
-def create_tables() -> None:
-    """
-    """
-    try:
-        logger.debug("Syncing database %s ..." % database['MYSQL_DATABASE'])
-
-        db.create_tables([
-            Wallets,
-            Platforms,
-            Users,
-            UsersInfos,
-            Sessions,
-            Svretries,
-            Retries,
-            Credentials
-        ])
-
-        logger.info("- Successfully Sync database %s" % database['MYSQL_DATABASE'])
-
-    except Exception as error:
-        raise error
-
-def sync_platforms() -> None:
+def sync_platforms(Platforms: object) -> None:
     """
     """
     try:
@@ -119,7 +75,7 @@ def sync_platforms() -> None:
     except Exception as error:
         raise error
 
-def sync_credentials() -> None:
+def sync_credentials(Credentials: object) -> None:
     """
     """
     try:

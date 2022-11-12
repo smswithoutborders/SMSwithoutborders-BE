@@ -1,13 +1,11 @@
-from peewee import CharField
-from peewee import DateTimeField
-from peewee import ForeignKeyField
+from peewee import Model, CharField, DateTimeField, ForeignKeyField
 
-from src.schemas.baseModel import BaseModel
+from src.schemas.db_connector import db
 from src.schemas.users import Users
 
 from datetime import datetime
 
-class UsersInfos(BaseModel):
+class UsersInfos(Model):
     name = CharField(null=True)
     country_code = CharField(null=True)
     full_phone_number = CharField(null=True)
@@ -17,4 +15,8 @@ class UsersInfos(BaseModel):
     createdAt = DateTimeField(null=True, default=datetime.now)
 
     class Meta:
+        database = db
         table_name = 'usersInfos'
+
+if db.table_exists('usersInfos') is False:
+    db.create_tables([UsersInfos])

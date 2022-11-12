@@ -24,7 +24,7 @@ from datetime import timedelta
 from peewee import DatabaseError
 from peewee import JOIN
 
-from src.schemas.baseModel import db
+from src.schemas.db_connector import db
 from src.schemas.users import Users
 from src.schemas.usersinfo import UsersInfos
 from src.schemas.retries import Retries
