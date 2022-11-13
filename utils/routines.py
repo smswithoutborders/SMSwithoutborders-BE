@@ -8,6 +8,7 @@ import os
 import json
 
 from configurationHelper import DatabaseExists, CreateDatabase
+from utils.platformHelper import check_format
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +36,12 @@ def sync_platforms(Platforms: object) -> None:
         available_platforms = [ f.path for f in os.scandir(platforms_path) if f.is_dir() ]
 
         for Platform in available_platforms:
-            platform_info_filepath = os.path.join(platforms_path, Platform, "info.json")
+            platform_path = os.path.join(platforms_path, Platform)
 
-            if not os.path.exists(platform_info_filepath):
-                error = "Missing platform information file at %s" % os.path.join(platforms_path, Platform)
-                logger.error(error)
+            if not check_format(search_path=platform_path):
                 continue
-
+          
+            platform_info_filepath = os.path.join(platform_path, "info.json")
             with open(platform_info_filepath, encoding="utf-8") as data_file:    
                 data = json.load(data_file)
 

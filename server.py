@@ -49,7 +49,7 @@ from flask import Flask
 from flask import send_from_directory
 from flask_cors import CORS
 
-from src.routes.user_management.v2 import v2
+from src.api_v2 import v2
 
 app = Flask(__name__)
 

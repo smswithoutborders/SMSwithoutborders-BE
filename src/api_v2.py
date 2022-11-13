@@ -15,7 +15,7 @@ from flask import request
 from flask import Response
 from flask import jsonify
 
-from src.platforms import platform_switch
+from src.platformHandler import OAuth2, TwoFactor
 
 from src.security.cookie import Cookie
 from src.security.data import Data
@@ -655,7 +655,7 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
             logger.error("no user agent")
             raise BadRequest()
 
-        originalUrl = request.headers.get("Origin")
+        originUrl = request.headers.get("Origin")
         method = request.method
         
         Session = Session_Model()
@@ -677,62 +677,27 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
             cookie=user_cookie
         )
 
-        if not "code" in request.json or not request.json["code"]:
-            code = None
-        else:
-            code = request.json["code"]
-        
-        if not "scope" in request.json or not request.json["scope"]:
-            scope = None
-        else:
-            scope = request.json["scope"]
-
-        if not "phone_number" in request.json or not request.json["phone_number"]:
-            phone_number = None
-        else:
-            phone_number = request.json["phone_number"]
-
-        if not "code_verifier" in request.json or not request.json["code_verifier"]:
-            code_verifier = None
-        else:
-            code_verifier = request.json["code_verifier"]
-
-        if not "first_name" in request.json or not request.json["first_name"]:
-            first_name = None
-        else:
-            first_name = request.json["first_name"]
-        
-        if not "last_name" in request.json or not request.json["last_name"]:
-            last_name = None
-        else:
-            last_name = request.json["last_name"]
+        code = request.json.get("code")
+        scope = request.json.get("scope")
+        phone_number = request.json.get("phone_number")
+        code_verifier = request.json.get("code_verifier")
+        first_name = request.json.get("first_name")
+        last_name = request.json.get("last_name")
 
         Platform = Platform_Model()
         Grant = Grant_Model()
 
+        if protocol == "oauth2":
+            Protocol = OAuth2(origin=originUrl, platform_name=platform)
+        elif protocol == "twofactor":
+            Protocol = TwoFactor(identifier=phone_number, platform_name=platform)
+
         if method.lower() == "post":
-            result = await platform_switch(
-                originalUrl=originalUrl,
-                platform_name=platform,
-                protocol=protocol,
-                method=method,
-                phoneNumber=phone_number
-            )
+            result = await Protocol.authorization()
 
-            if not "url" in result or not result["url"]:
-                url = ""
-            else:
-                url = result["url"]
-
-            if not "code_verifier" in result or not result["code_verifier"]:
-                code_verifier = ""
-            else:
-                code_verifier = result["code_verifier"]
-
-            if not "body" in result or not result["body"]:
-                body = ""
-            else:
-                body = result["body"]
+            url = "" if not result["url"] else result["url"]
+            code_verifier = "" if not result["code_verifier"] else result["code_verifier"]
+            body = "" if not result["body"] else result["body"]
 
             res = jsonify({
                 "url": url,
@@ -741,35 +706,23 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
                 "platform": platform.lower()
             })
 
-        elif method.lower() == "put":                     
-            result = await platform_switch(
-                originalUrl=originalUrl,
-                platform_name=platform,
-                protocol=protocol,
-                method=method,
-                code=code,
-                scope=scope,
-                code_verifier=code_verifier,
-                phoneNumber=phone_number,
-                action=action,
-                first_name=first_name,
-                last_name=last_name
-            )
+        elif method.lower() == "put":      
+            if action == "register":
+                result = await Protocol.registration(
+                    first_name=first_name,
+                    last_name=last_name
+                )
 
-            if not "body" in result or not result["body"]:
-                body = ""
             else:
-                body = result["body"]
+                result = await Protocol.validation(
+                    code=code,
+                    scope=scope,
+                    code_verifier=code_verifier
+                )
 
-            if not "initialization_url" in result or not result["initialization_url"]:
-                initialization_url = ""
-            else:
-                initialization_url = result["initialization_url"]
-
-            if not "grant" in result or not result["grant"]:
-                grant = None
-            else:
-                grant = result["grant"]
+            body = "" if not result.get("body") else result.get("body")
+            initialization_url = "" if not result.get("initialization_url") else result.get("initialization_url")
+            grant = result.get("grant")
 
             platform_result = Platform.find(platform_name=platform)
 
@@ -787,11 +740,11 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
             })
 
         elif method.lower() == "delete":
-            if not "password" in request.json or not request.json["password"]:
+            if not request.json.get("password"):
                 logger.error("no password")
                 raise BadRequest()
 
-            password = request.json["password"]
+            password = request.json.get("password")
 
             try:
                 user = User.verify(user_id=user_id, password=password)
@@ -802,14 +755,7 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
             grant = Grant.find(user_id=user["id"], platform_id=platform_result.id)
             d_grant = Grant.decrypt(platform_name=platform_result.name, grant=grant)
 
-            await platform_switch(
-                originalUrl=originalUrl,
-                platform_name=platform_result.name,
-                protocol=protocol,
-                method=method,
-                phoneNumber=d_grant["token"],
-                token=d_grant["token"]
-            )
+            await Protocol.invalidation(token=d_grant["token"])
 
             Grant.delete(grant=grant)
 

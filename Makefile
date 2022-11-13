@@ -33,8 +33,8 @@ install:
 start:
 	@echo "[*] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
-	
 	@echo "[*] Starting server ..."
+	@echo ""
 	@. $(venv_path)/bin/activate && (\
 		MYSQL_HOST=${MYSQL_HOST} \
 		MYSQL_USER=${MYSQL_USER} \
