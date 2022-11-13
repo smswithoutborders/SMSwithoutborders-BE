@@ -21,7 +21,7 @@ def check_format(search_path: str = None) -> bool:
     platform_info_status = None
     platform_methods_status = None
     platform_requirements_status = None
-    platform_app_status = None
+    platform_logo_status = None
 
     if not os.path.exists(platform_info_filepath):
         error = "[!] Missing platform 'information file (info.json)' at %s. This Platform will not be added to the Database.\n" % platform_search_path
@@ -29,6 +29,16 @@ def check_format(search_path: str = None) -> bool:
         platform_info_status = False
     else:
         platform_info_status = True
+
+        with open(platform_info_filepath, encoding="utf-8") as data_file:    
+            data = json.load(data_file)
+        
+        platform_logo_filepath = os.path.join(platform_search_path, "%s-icon.svg" % data.get("name"))
+
+        if not os.path.exists(platform_logo_filepath):
+            error = "[!] Missing platform 'logo file (%s-icon.svg)' at %s. This Platform will not be added to the Database.\n" % (data.get("name"), platform_search_path)
+            logger.error(error)
+            platform_logo_status = False
 
     if not os.path.exists(platform_methods_filepath):
         error = "[!] Missing platform 'methods file (methods.py)' at %s. This Platform will not be added to the Database.\n" % platform_search_path
@@ -50,7 +60,7 @@ def check_format(search_path: str = None) -> bool:
         "platform_requirements_file":platform_requirements_status
     }
 
-    if platform_info_status == True and platform_methods_status == True and platform_requirements_status == True and  platform_app_status == True:
+    if platform_info_status == True and platform_methods_status == True and platform_requirements_status == True and  platform_logo_status == True:
         logger.info(status_report)
         logger.info("- All checks passed!")
         return True

@@ -1,34 +1,48 @@
 python=python3
 venv_path=venv
-platforms_dir=platforms
 dump_dir=utils/.db
 
 pip=pip3
 
 all: install start
 
-install:
+install: setup-backend setup-third-party
+
+setup-backend:
+	@echo "[*] Fetching Backend requirements ..."
+
 	@echo "[*] Activating virtual environment ..."
 	@test -d $(venv_path) || $(python) -m venv $(venv_path)
 
-	@echo "[*] Starting installation ..."
-	@( \
+	@(\
 		. $(venv_path)/bin/activate; \
 		$(pip) install -r requirements.txt; \
-		wget -P $(platforms_dir)/gmail https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Gmail/dev/requirements.txt; \
-		$(pip) install -r $(platforms_dir)/gmail/requirements.txt; \
-		rm -rf $(platforms_dir)/gmail; \
-		wget -P $(platforms_dir)/twitter https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Twitter/dev/requirements.txt; \
-		$(pip) install -r $(platforms_dir)/twitter/requirements.txt; \
-		rm -rf $(platforms_dir)/twitter; \
-		wget -P $(platforms_dir)/telegram https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Telegram/dev/requirements.txt; \
-		$(pip) install -r $(platforms_dir)/telegram/requirements.txt; \
-		rm -rf $(platforms_dir)/telegram; \
-		wget -P $(platforms_dir)/slack https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Slack/dev/requirements.txt; \
-		$(pip) install -r $(platforms_dir)/slack/requirements.txt; \
-		rm -rf $(platforms_dir)/slack; \
+	)	
+
+	@echo ""
+	@echo "[*] Successfully installed Backend requirements"
+	@echo ""
+
+setup-third-party:
+	@echo "[*] Fetching Third-Party Platforms requirements ..."
+
+	@echo "[*] Activating virtual environment ..."
+	@test -d $(venv_path) || $(python) -m venv $(venv_path)
+	@echo ""
+
+	@. $(venv_path)/bin/activate && (\
+		for f in $(shell ls ${PLATFORMS_PATH}); do \
+			echo "[*] Fetching ${PLATFORMS_PATH}/$${f}/requirements.txt requirements ..."; \
+			echo ""; \
+			test -f ${PLATFORMS_PATH}/$${f}/requirements.txt && $(pip) install -r ${PLATFORMS_PATH}/$${f}/requirements.txt \
+			&& echo "" && echo "[*] successfully installed ${PLATFORMS_PATH}/$${f}/requirements.txt"; \
+			test -f ${PLATFORMS_PATH}/$${f}/*.svg && echo "" && echo "[*] Copying logo ..." && cp ${PLATFORMS_PATH}/$${f}/*.svg ./logos \
+			&& echo "[*] successfully copied logo ${PLATFORMS_PATH}/$${f}/*.svg"; \
+			echo ""; \
+		done \
 	)
-	@echo "[*] python requirements installation completed successfully"
+
+	@echo "[*] Successfully installed Third-Party Platforms requirements"
 
 start:
 	@echo "[*] Activating virtual environment ..."
