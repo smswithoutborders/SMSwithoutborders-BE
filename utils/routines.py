@@ -45,32 +45,31 @@ def sync_platforms(Platforms: object) -> None:
             with open(platform_info_filepath, encoding="utf-8") as data_file:    
                 data = json.load(data_file)
 
-            for platform in data:
-                try:
-                    Platforms.get(Platforms.name == platform["name"])
-                except Platforms.DoesNotExist:
-                    logger.debug("Adding platform %s ..." % platform['name'])
+            try:
+                Platforms.get(Platforms.name == data.get("name"))
+            except Platforms.DoesNotExist:
+                logger.debug("Adding platform %s ..." % data.get("name"))
 
-                    Platforms.create(
-                        name=platform["name"],
-                        logo=platform["logo"],
-                        description=json.dumps(platform["description"]),
-                        protocols=json.dumps(platform["protocols"]),
-                        type=platform["type"],
-                        letter=platform["letter"],
-                    )
-                else:
-                    upd_plarforms = Platforms.update(
-                        logo=platform["logo"],
-                        description=json.dumps(platform["description"]),
-                        protocols=json.dumps(platform["protocols"]),
-                        type=platform["type"],
-                        letter=platform["letter"],
-                    ).where(
-                        Platforms.name == platform['name']
-                    )
+                Platforms.create(
+                    name=data.get("name"),
+                    logo=data.get("logo"),
+                    description=json.dumps(data.get("description")),
+                    protocols=json.dumps(data.get("protocols")),
+                    type=data.get("type"),
+                    letter=data.get("letter"),
+                )
+            else:
+                upd_plarforms = Platforms.update(
+                    logo=data.get("logo"),
+                    description=json.dumps(data.get("description")),
+                    protocols=json.dumps(data.get("protocols")),
+                    type=data.get("type"),
+                    letter=data.get("letter"),
+                ).where(
+                    Platforms.name == data.get("name")
+                )
 
-                    upd_plarforms.execute()
+                upd_plarforms.execute()
 
     except Exception as error:
         raise error

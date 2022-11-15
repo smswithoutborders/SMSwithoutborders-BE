@@ -15,7 +15,7 @@ from flask import request
 from flask import Response
 from flask import jsonify
 
-from src.platformHandler import OAuth2, TwoFactor
+from src.protocolHandler import OAuth2, TwoFactor
 
 from src.security.cookie import Cookie
 from src.security.data import Data
@@ -287,7 +287,7 @@ async def recovery_check(user_id):
             grant = Grant.find(user_id=user_id, platform_id=platform.id)
             d_grant = Grant.decrypt(platform_name=platform.name, grant=grant)
 
-            await Grant.purge(
+            Grant.purge(
                 originalUrl=originalUrl,
                 platform_name=platform.name,
                 token=d_grant["token"]
@@ -644,7 +644,7 @@ def OTP_check():
 
 @v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>", defaults={"action": None}, methods=["POST", "PUT", "DELETE"])
 @v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/<string:action>", methods=["PUT"])
-async def manage_grant(user_id, platform, protocol, action) -> dict:
+def manage_grant(user_id, platform, protocol, action) -> dict:
     """
     """
     try:
@@ -690,14 +690,14 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
         if protocol == "oauth2":
             Protocol = OAuth2(origin=originUrl, platform_name=platform)
         elif protocol == "twofactor":
-            Protocol = TwoFactor(identifier=phone_number, platform_name=platform)
+            Protocol = TwoFactor(identifier=phone_number or "", platform_name=platform)
 
         if method.lower() == "post":
-            result = await Protocol.authorization()
+            result = Protocol.authorization()
 
-            url = "" if not result["url"] else result["url"]
-            code_verifier = "" if not result["code_verifier"] else result["code_verifier"]
-            body = "" if not result["body"] else result["body"]
+            url = result.get("url") or ""
+            code_verifier = result.get("code_verifier") or ""
+            body = result.get("body") or ""
 
             res = jsonify({
                 "url": url,
@@ -708,20 +708,20 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
 
         elif method.lower() == "put":      
             if action == "register":
-                result = await Protocol.registration(
+                result = Protocol.registration(
                     first_name=first_name,
                     last_name=last_name
                 )
 
             else:
-                result = await Protocol.validation(
+                result = Protocol.validation(
                     code=code,
                     scope=scope,
                     code_verifier=code_verifier
                 )
 
-            body = "" if not result.get("body") else result.get("body")
-            initialization_url = "" if not result.get("initialization_url") else result.get("initialization_url")
+            body = result.get("body") or ""
+            initialization_url = result.get("initialization_url") or ""
             grant = result.get("grant")
 
             platform_result = Platform.find(platform_name=platform)
@@ -754,8 +754,8 @@ async def manage_grant(user_id, platform, protocol, action) -> dict:
             platform_result = Platform.find(platform_name=platform)
             grant = Grant.find(user_id=user["id"], platform_id=platform_result.id)
             d_grant = Grant.decrypt(platform_name=platform_result.name, grant=grant)
-
-            await Protocol.invalidation(token=d_grant["token"])
+            
+            Protocol.invalidation(token=d_grant["token"])
 
             Grant.delete(grant=grant)
 
@@ -1033,7 +1033,7 @@ async def update_password(user_id):
             grant = Grant.find(user_id=user_id, platform_id=platform.id)
             d_grant = Grant.decrypt(platform_name=platform.name, grant=grant)
 
-            await Grant.purge(
+            Grant.purge(
                 originalUrl=originalUrl,
                 platform_name=platform.name,
                 token=d_grant["token"]
@@ -1280,7 +1280,7 @@ async def delete_account(user_id):
             grant = Grant.find(user_id=user_id, platform_id=platform.id)
             d_grant = Grant.decrypt(platform_name=platform.name, grant=grant)
 
-            await Grant.purge(
+            Grant.purge(
                 originalUrl=originalUrl,
                 platform_name=platform.name,
                 token=d_grant["token"]

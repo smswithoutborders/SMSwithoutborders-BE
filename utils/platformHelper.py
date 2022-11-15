@@ -39,6 +39,8 @@ def check_format(search_path: str = None) -> bool:
             error = "[!] Missing platform 'logo file (%s-icon.svg)' at %s. This Platform will not be added to the Database.\n" % (data.get("name"), platform_search_path)
             logger.error(error)
             platform_logo_status = False
+        else:
+            platform_logo_status = True
 
     if not os.path.exists(platform_methods_filepath):
         error = "[!] Missing platform 'methods file (methods.py)' at %s. This Platform will not be added to the Database.\n" % platform_search_path
@@ -60,7 +62,7 @@ def check_format(search_path: str = None) -> bool:
         "platform_requirements_file":platform_requirements_status
     }
 
-    if platform_info_status == True and platform_methods_status == True and platform_requirements_status == True and  platform_logo_status == True:
+    if platform_info_status and platform_methods_status and platform_requirements_status and  platform_logo_status:
         logger.info(status_report)
         logger.info("- All checks passed!")
         return True
@@ -102,7 +104,7 @@ def importplatform(platform_name: str) -> object:
         if not platform_path:
             return None 
         else:   
-            platform_methods_filepath = os.path.join(platform_path, "method.py")
+            platform_methods_filepath = os.path.join(platform_path, "methods.py")
 
             spec = importlib.util.spec_from_file_location(platform_name, platform_methods_filepath)   
             Platform = importlib.util.module_from_spec(spec)       

@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 from Configs import baseConfig
 config = baseConfig()
@@ -40,8 +41,8 @@ class OAuth2:
         result = self.Methods.authorize()
 
         return {
-            "url": result["url"],
-            "code_verifier": result["code_verifier"] or ""
+            "url": result.get("url"),
+            "code_verifier": result.get("code_verifier") or ""
         }
 
     def validation(self, code, scope=None, code_verifier=None) -> dict:
@@ -51,7 +52,7 @@ class OAuth2:
             try:    
                 result = self.Methods.validate(code=code, scope=scope)
             
-            except self.Methods.MisMatchScope:
+            except self.Platform.MisMatchScope:
                 raise UnprocessableEntity()
 
         elif code_verifier:
@@ -89,11 +90,11 @@ class TwoFactor:
         else:
             self.Methods = self.Platform.Methods(identifier = self.identifier)  
 
-    async def authorization(self) -> dict:
+    def authorization(self) -> dict:
         """
         """
         try:
-            await self.Methods.authorize()
+            asyncio.run(self.Methods.authorize())
 
             return {
                 "body": 201
@@ -107,11 +108,11 @@ class TwoFactor:
         except self.Platform.TooManyRequests:
             raise TooManyRequests()
     
-    async def validation(self, code: str) -> dict:
+    def validation(self, code: str, **kwargs) -> dict:
         """
         """
         try:      
-            result = await self.Methods.validation(code=code)
+            result = asyncio.run(self.Methods.validate(code=code))
 
             return {
                 "grant": result
@@ -129,11 +130,11 @@ class TwoFactor:
         except self.Platform.TooManyRequests:
             raise TooManyRequests()
 
-    async def registration(self, first_name: str, last_name: str) -> dict:
+    def registration(self, first_name: str, last_name: str) -> dict:
         """
         """
         try:
-            result = await self.Methods.register(first_name=first_name, last_name=last_name)
+            result = asyncio.run(self.Methods.register(first_name=first_name, last_name=last_name))
 
             return {
                 "grant": result
@@ -145,11 +146,13 @@ class TwoFactor:
         except self.Platform.TooManyRequests:
             raise TooManyRequests()
 
-    async def invalidation(self) -> None:
+    def invalidation(self, token: str, **kwargs) -> None:
         """
         """
         try:
-            await self.Methods.revoke()
+            self.Methods = self.Platform.Methods(identifier = token)  
+
+            asyncio.run(self.Methods.invalidate())
 
             return None
             
