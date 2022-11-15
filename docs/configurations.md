@@ -36,25 +36,35 @@ If using apache2 wsgi on Ubuntu
 $ sudo apt-get install libapache2-mod-wsgi-py3
 ```
 
+## Linux Environment Variables
+
+Variables used for the Project:
+
+- MYSQL_HOST=STRING
+- MYSQL_USER=STRING
+- MYSQL_PASSWORD=STRING
+- MYSQL_DATABASE=STRING
+- HOST=STRING
+- PORT=STRING
+- ORIGINS=ARRAY
+- PLATFORMS_PATH=STRING
+- TWILIO_ACCOUNT_SID=STRING
+- TWILIO_AUTH_TOKEN=STRING
+- TWILIO_SERVICE_SID=STRING
+- ENABLE_RECAPTCHA=BOOLEAN
+- RECAPTCHA_SECRET_KEY=STRING
+
 ## Installation
 
 Install all python packages for SMSWITHOUTBORDERS-BE and SMSWITHOUTBORDERS-Custom-Platforms
 
 ```bash
-$ make install
+$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= PLATFORMS_PATH= make install
 ```
 
 ## Setup
 
 All configuration files are found in the **[configs](../configs)** directory.
-
-### configuration file
-
-To set up Database and API, copy the template files "example.default.ini" and rename to "default.ini"
-
-```bash
-$ cp configs/example.default.ini configs/default.ini
-```
 
 ### configure keys
 
@@ -76,7 +86,7 @@ $ make get-keys
 
 _For testing purposes only!_
 
-- **Inject User**: This creates a new user with _NO_ pre-stored grants.
+- **Inject User**: This creates a new user with **_NO_** pre-stored grants.
 
 ```bash
 $ make inject-user
@@ -96,16 +106,8 @@ details
 
 Manages access to the SMS without borders centralize resources and services.
 
-**DATABASE**
-
-1. **MYSQL_HOST**: The hostname of the database you are connecting to. (Default: localhost)
-2. **MYSQL_USER**: The MySQL user to authenticate as. (Default: root)
-3. **MYSQL_PASSWORD**: The password of that MySQL user.
-4. **MYSQL_DATABASE**: Name of the database to use for this connection (Default: smswithoutborders)
-
 **API**
 
-1. **PORT**: The port number to connect to. (Default: 9000)
 2. **SECURE COOKIE**: Specifies the boolean value for the [Secure Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). When truthy, the Secure attribute is set, otherwise it is not. By default, the Secure sessions attribute is set to truthy.
 3. **COOKIE MAXAGE**: Specifies the number (in milliseconds) to use when calculating the [Expires Set-Cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie). This is done by taking the current server time and adding maxAge milliseconds to the value to calculate an Expires datetime. By default, maximum age is set for two hours (7200000 ms).
 4. **ENABLE BLOCKING**: Specifies the boolean value for tracking user failed [authentication](FEATURES_v2.md#2-authenticate-an-account) attempts.
@@ -124,19 +126,12 @@ A user has four attempts to request an OTP code daily
 4. **THIRD RESEND DURATION**: Specifies the duration (in milliseconds) for the third OTP request.
 5. **FOURTH RESEND DURATION**: Specifies the duration (in milliseconds) for the fourth OTP request.
 
-**SSL API**
-
-1. **PORT**: The port number to connect to.
-2. **CERTIFICATE**: Path to your SSL Certificate.
-3. **KEY**: Path to your SSL Key.
-4. **PEM**: Path to your SSL PEM.
-
 ## How to use
 
 ### Start Backend User management API
 
 ```bash
-$ make start
+$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= ORIGINS=[""] PLATFORMS_PATH= TWILIO_ACCOUNT_SID= TWILIO_AUTH_TOKEN= TWILIO_SERVICE_SID= ENABLE_RECAPTCHA= RECAPTCHA_SECRET_KEY= make start
 ```
 
 ## logger
