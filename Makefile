@@ -1,7 +1,4 @@
 python=python3
-dump_dir=utils/.db
-
-all: install start
 
 start:
 	@(\

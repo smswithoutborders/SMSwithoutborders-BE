@@ -56,14 +56,16 @@ def CreateDatabase(user: str, password: str, database: str, host: str) -> None:
     except Exception as error:
         raise error
 
-def CreateCredentialsTable(user: str, password: str, database: str) -> None:
+def CreateCredentialsTable(user: str, password: str, database: str, host: str) -> None:
     """
     """
     with closing(
         connect(
             user=user,
             password=password,
-            database=database
+            database=database,
+            host=host,
+            auth_plugin="mysql_native_password",
         )
     ) as connection:
         create_table_query = """CREATE TABLE IF NOT EXISTS `credentials` (`id` int NOT NULL AUTO_INCREMENT, `shared_key` text NOT NULL, `hashing_salt` text NOT NULL, `createdAt` datetime DEFAULT NULL, PRIMARY KEY (`id`)) ;"""
@@ -73,14 +75,16 @@ def CreateCredentialsTable(user: str, password: str, database: str) -> None:
 
             return None
 
-def SetKeys(user: str, password: str, database: str, key: str, salt: str) -> None:
+def SetKeys(user: str, password: str, database: str, host: str, key: str, salt: str) -> None:
     """
     """
     with closing(
         connect(
             user=user,
             password=password,
-            database=database
+            database=database,
+            host=host,
+            auth_plugin="mysql_native_password",
         )
     ) as connection:
         set_keys_query = """INSERT INTO credentials(id, shared_key, hashing_salt, createdAt) VALUES(%s, %s, %s, %s) ON DUPLICATE KEY UPDATE shared_key=%s, hashing_salt=%s, createdAt=%s;"""
@@ -91,14 +95,16 @@ def SetKeys(user: str, password: str, database: str, key: str, salt: str) -> Non
 
             return None
             
-def GetKeys(user: str, password: str, database: str) -> None:
+def GetKeys(user: str, password: str, database: str, host: str) -> None:
     """
     """
     with closing(
         connect(
             user=user,
             password=password,
-            database=database
+            database=database,
+            host=host,
+            auth_plugin="mysql_native_password",
         )
     ) as connection:
         get_keys_query = """SELECT shared_key, hashing_salt FROM credentials WHERE id = %s;"""
@@ -157,14 +163,16 @@ def main():
         CreateCredentialsTable(
             user=user,
             password=password,
-            database=database
+            database=database,
+            host=host
         )
 
         if args.setkeys:
             keyPairs = GetKeys(
                 user=user,
                 password=password,
-                database=database
+                database=database,
+                host=host
             )
             
             key = input("Shared Key [default = '%s']:" % keyPairs["shared_key"]) or keyPairs["shared_key"]
@@ -174,6 +182,7 @@ def main():
                 user=user,
                 password=password,
                 database=database,
+                host=host,
                 salt=salt,
                 key=key
             )
@@ -184,7 +193,8 @@ def main():
             keyPairs = GetKeys(
                 user=user,
                 password=password,
-                database=database
+                database=database,
+                host=host
             )
 
             print(keyPairs)

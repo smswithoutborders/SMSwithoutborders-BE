@@ -79,6 +79,26 @@ $ pip install -r requirements.txt
 
 All configuration files are found in the **[configs](../configs)** directory.
 
+### Set Keys
+
+Configure shared-key and hashing-salt
+
+```bash
+$ MYSQL_HOST= \
+  MYSQL_USER= \
+  MYSQL_PASSWORD= \
+  MYSQL_DATABASE= \
+  make set-keys
+```
+
+If running the smswithoutborders-backend docker image use
+
+```bash
+$ docker exec -it smswithoutborders-backend make set-keys
+```
+
+> See current shared-key and hashing-salt with the `make get-keys command`
+
 ### Inject dummy data
 
 _For testing purposes only!_
