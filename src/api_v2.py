@@ -30,6 +30,8 @@ from src.models.users import User_Model
 from src.models.sessions import Session_Model
 from src.models._2FA import OTP_Model
 
+from src.schemas.db_connector import db
+
 v2 = Blueprint("v2", __name__)
 
 from werkzeug.exceptions import BadRequest
@@ -39,6 +41,15 @@ from werkzeug.exceptions import Forbidden
 from werkzeug.exceptions import InternalServerError
 from werkzeug.exceptions import TooManyRequests
 from werkzeug.exceptions import UnprocessableEntity
+
+@v2.before_request
+def before_request():
+    db.connect()
+
+@v2.after_request
+def after_request(response):
+    db.close()
+    return response
 
 @v2.route("/signup", methods=["POST", "PUT"])
 def signup():
