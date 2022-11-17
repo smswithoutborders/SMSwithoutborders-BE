@@ -1,47 +1,36 @@
 python=python3
-venv_path=venv
-platforms_dir=platforms
-
-pip=pip3
+dump_dir=utils/.db
 
 all: install start
 
-install:
-	@echo "[!] Starting installation ..."
-
-	@test -d $(venv_path) || $(python) -m venv $(venv_path)
-	@( \
-		. $(venv_path)/bin/activate; \
-		$(pip) install -r requirements.txt; \
-		wget -P $(platforms_dir)/gmail https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Gmail/staging/requirements.txt; \
-		$(pip) install -r $(platforms_dir)/gmail/requirements.txt; \
-		rm -rf $(platforms_dir)/gmail; \
-		wget -P $(platforms_dir)/twitter https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Twitter/staging/requirements.txt; \
-		$(pip) install -r $(platforms_dir)/twitter/requirements.txt; \
-		rm -rf $(platforms_dir)/twitter; \
-		wget -P $(platforms_dir)/telegram https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Telegram/staging/requirements.txt; \
-		$(pip) install -r $(platforms_dir)/telegram/requirements.txt; \
-		rm -rf $(platforms_dir)/telegram; \
-		wget -P $(platforms_dir)/slack https://raw.githubusercontent.com/smswithoutborders/SMSwithoutBorders-customplatform-Slack/dev/requirements.txt; \
-		$(pip) install -r $(platforms_dir)/slack/requirements.txt; \
-		rm -rf $(platforms_dir)/slack; \
-	)
-	@echo "[*] python requirements installation completed successfully"
-
 start:
-	@echo "[!] Activating venv ..."
-	@test -d $(venv_path) || $(python) -m venv $(venv_path)
-	
-	@echo "[!] Starting server ..."
-	@. $(venv_path)/bin/activate && (\
-		$(python) server.py; \
+	@(\
+		if [ "$(shell echo ${MODE} | tr '[:upper:]' '[:lower:]')" = "production" ] && [ "${SSL_CERTIFICATE}" != "" ] && [ "${SSL_KEY}" != "" ] && [ "${SSL_PEM}" != "" ]; then \
+			echo "[*] Starting Production server ..."; \
+			mod_wsgi-express start-server wsgi_script.py --user www-data --group www-data --port ${PORT} --ssl-certificate-file ${SSL_CERTIFICATE} --ssl-certificate-key-file ${SSL_KEY} --ssl-certificate-chain-file ${SSL_PEM} --https-only --server-name ${SSL_SERVER_NAME} --https-port ${SSL_PORT}; \
+		else \
+			echo "[*] Starting Development server ..." && \
+			mod_wsgi-express start-server wsgi_script.py --user www-data --group www-data --port ${PORT}; \
+		fi \
 	)
 
-start_dev:
-	@echo "[!] Activating venv ..."
-	@test -d $(venv_path) || $(python) -m venv $(venv_path)
-	
-	@echo "[!] Starting server ..."
-	@. $(venv_path)/bin/activate && (\
-		FLASK_ENV=development $(python) server.py --logs=debug; \
-	)
+set-keys:
+	@echo "[!] Login to database engine."
+	@echo ""
+	@echo "Press [Enter] to use default value."
+	@echo ""
+	@$(python) configurationHelper.py --setkeys
+	@echo "[*] Success!."
+
+get-keys:
+	@echo "[!] Login to database engine."
+	@echo ""
+	@echo "Press [Enter] to use default value."
+	@echo ""
+	@$(python) configurationHelper.py --getkeys
+
+migrate:
+	@echo "[*] Starting migration ..."
+	@$(python) migrationHelper.py
+	@echo ""
+	@echo "[*] Success!"

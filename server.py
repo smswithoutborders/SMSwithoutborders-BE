@@ -1,55 +1,33 @@
 import logging
-from logging.handlers import TimedRotatingFileHandler
-import os
 import argparse
 import ssl
+import os
+
+from utils.routines import sync_platforms, sync_credentials, dummy_data
+from utils.SSL import isSSL
 
 from Configs import baseConfig
+
+from src.schemas.platforms import Platforms
+from src.schemas.credentials import Credentials
 
 config = baseConfig()
 api = config["API"]
 SSL = config["SSL_API"]
+DATABASE = config["DATABASE"]
+DUMMY_DATA = eval(os.environ.get("DUMMY_DATA") or "False")
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--logs", help="Set log level")
-args = parser.parse_args()
+sync_platforms(Platforms=Platforms)
+sync_credentials(Credentials=Credentials)
 
-log_level = args.logs or "info"
-numeric_level = getattr(logging, log_level.upper(), None)
-
-if not isinstance(numeric_level, int):
-    raise ValueError("Invalid log level: %s" % log_level)
-
-if not os.path.exists("logs/"):
-    os.makedirs("logs/")
-
-logging.basicConfig(level=numeric_level)
-
-logger = logging.getLogger()
-rotatory_handler = TimedRotatingFileHandler(
-    "logs/combined.log", when="D", interval=1, backupCount=30
-)
-rotatory_handler.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)s | %(message)s", "%m-%d-%Y %H:%M:%S"
-)
-rotatory_handler.setFormatter(formatter)
-logger.addHandler(rotatory_handler)
+if DUMMY_DATA:
+    dummy_data(user=DATABASE["MYSQL_USER"], password=DATABASE["MYSQL_PASSWORD"], host=DATABASE["MYSQL_HOST"])
 
 from flask import Flask
 from flask import send_from_directory
 from flask_cors import CORS
 
-from routes.user_management.v2 import v2
-
-from controllers.sync_database import create_database
-from controllers.sync_database import create_tables
-from controllers.sync_database import sync_platforms
-from controllers.SSL import isSSL
-
-from schemas.migration import migrate_platforms
-from schemas.migration import migrate_usersinfo
-from schemas.migration import migrate_sessions
+from src.api_v2 import v2
 
 app = Flask(__name__)
 
@@ -58,15 +36,6 @@ CORS(
     origins=api["ORIGINS"],
     supports_credentials=True,
 )
-
-create_database()
-create_tables()
-
-migrate_platforms()
-migrate_usersinfo()
-migrate_sessions()
-
-sync_platforms()
 
 app.register_blueprint(v2, url_prefix="/v2")
 
@@ -77,6 +46,19 @@ def send_report(path):
 checkSSL = isSSL(path_crt_file=SSL["CERTIFICATE"], path_key_file=SSL["KEY"], path_pem_file=SSL["PEM"])
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--logs", help="Set log level")
+    args = parser.parse_args()
+
+    log_level = args.logs or "info"
+    numeric_level = getattr(logging, log_level.upper(), None)
+
+    if not isinstance(numeric_level, int):
+        raise ValueError("Invalid log level: %s" % log_level)
+
+    logging.basicConfig(level=numeric_level)
+
     if checkSSL:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(SSL["CERTIFICATE"], SSL["KEY"])

@@ -1,6 +1,6 @@
 credentials.json
-default.ini
 logs/
+logos/*.svg
 .vscode
 # Byte-compiled / optimized / DLL files
 __pycache__/
