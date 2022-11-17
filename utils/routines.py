@@ -10,6 +10,9 @@ import json
 from configurationHelper import DatabaseExists, CreateDatabase
 from utils.platformHelper import check_format
 
+from contextlib import closing
+from mysql.connector import connect
+
 logger = logging.getLogger(__name__)
 
 def create_database_if_not_exits(user: str, password: str, database: str, host: str) -> None:
@@ -29,11 +32,34 @@ def create_database_if_not_exits(user: str, password: str, database: str, host: 
     except Exception as error:
         raise error
 
+def dummy_data(user: str, password:str, host: str) -> None:
+    """
+    """
+    try:
+        with closing(
+            connect(
+                user=user,
+                password=password,
+                host=host,
+                auth_plugin="mysql_native_password",
+            )
+        ) as connection:
+            path_to_dump = os.path.join(os.path.dirname(__file__), '.db', 'inject_user_dump.sql')
+            with open(path_to_dump, 'r') as f:
+                with closing(connection.cursor()) as cursor:
+                    cursor.execute(f.read(), multi=True)
+
+    except Exception as error:
+        raise error
+
 def sync_platforms(Platforms: object) -> None:
     """
     """
     try:
-        available_platforms = [ f.path for f in os.scandir(platforms_path) if f.is_dir() ]
+        if platforms_path:
+            available_platforms = [ f.path for f in os.scandir(platforms_path) if f.is_dir() ]
+        else:
+            available_platforms = []
 
         for Platform in available_platforms:
             platform_path = os.path.join(platforms_path, Platform)

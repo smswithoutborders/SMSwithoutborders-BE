@@ -8,6 +8,9 @@
 4. [Setup](#setup)
 5. [Configuration Options](#Configuration-Options)
 6. [How to use](#how-to-use)
+7. [Docker](#docker)
+8. [Logger](#logger)
+9. [References](#references)
 
 ## Requirements
 
@@ -21,7 +24,6 @@ On Ubuntu **libmysqlclient-dev** is required
 
 ```bash
 $ sudo apt install python3-dev libmysqlclient-dev
-$ sudo apt-get install libapache2-mod-wsgi-py3
 ```
 
 Install `GNU Make`
@@ -33,7 +35,7 @@ $ sudo apt install make
 If using apache2 wsgi on Ubuntu
 
 ```bash
-$ sudo apt-get install libapache2-mod-wsgi-py3
+$ sudo apt install libapache2-mod-wsgi-py3
 ```
 
 ## Linux Environment Variables
@@ -46,6 +48,11 @@ Variables used for the Project:
 - MYSQL_DATABASE=STRING
 - HOST=STRING
 - PORT=STRING
+- SSL_SERVER_NAME=STRING
+- SSL_PORT=STRING
+- SSL_CERTIFICATE=PATH
+- SSL_KEY=PATH
+- SSL_PEM=PATH
 - ORIGINS=ARRAY
 - PLATFORMS_PATH=STRING
 - TWILIO_ACCOUNT_SID=STRING
@@ -53,52 +60,42 @@ Variables used for the Project:
 - TWILIO_SERVICE_SID=STRING
 - ENABLE_RECAPTCHA=BOOLEAN
 - RECAPTCHA_SECRET_KEY=STRING
+- MODE=STRING
+- DUMMY_DATA=BOOLEAN
 
 ## Installation
 
-Install all python packages for SMSWITHOUTBORDERS-BE and SMSWITHOUTBORDERS-Custom-Platforms
+Install all python packages for SMSWITHOUTBORDERS-BE
+
+### Pip
 
 ```bash
-$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= PLATFORMS_PATH= make install
+$ python3 -m venv venv
+$ . venv/bin/activate
+$ pip install -r requirements.txt
 ```
 
 ## Setup
 
 All configuration files are found in the **[configs](../configs)** directory.
 
-### configure keys
-
-Set shared-key and hashing-salt in database
-
-> Note: If no keys are set, the API creates a set of random keys when started for the first time.
-
-```bash
-$ make set-keys
-```
-
-Get shared-key and hashing-salt from database
-
-```bash
-$ make get-keys
-```
-
 ### Inject dummy data
 
 _For testing purposes only!_
 
-- **Inject User**: This creates a new user with **_NO_** pre-stored grants.
+- Toggle the [environment variable](#linux-environment-variables) **DUMMY_DATA** to True
 
 ```bash
-$ make inject-user
+$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= `DUMMY_DATA=True` python3 server.py
 ```
 
 details
 
 ```
-- Database = dummySmswithoutborders
+- Database = swob_dummy_db
 - User ID = dead3662-5f78-11ed-b8e7-6d06c3aaf3c6
-- Password = testpassword
-- Name = Test User
+- Password = dummy_password
+- Name = dummy_user
 - Phone NUmber = +237123456789
 ```
 
@@ -128,18 +125,123 @@ A user has four attempts to request an OTP code daily
 
 ## How to use
 
-### Start Backend User management API
+### Start Backend API
+
+**Python**
 
 ```bash
-$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= ORIGINS=[""] PLATFORMS_PATH= TWILIO_ACCOUNT_SID= TWILIO_AUTH_TOKEN= TWILIO_SERVICE_SID= ENABLE_RECAPTCHA= RECAPTCHA_SECRET_KEY= make start
+$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= SSL_SERVER_NAME= SSL_PORT= SSL_CERTIFICATE= SSL_KEY= SSL_PEM= ORIGINS=[""] TWILIO_ACCOUNT_SID= TWILIO_AUTH_TOKEN= TWILIO_SERVICE_SID= ENABLE_RECAPTCHA= RECAPTCHA_SECRET_KEY= MODE=production \
+python3 server.py
 ```
 
+**MOD_WSGI**
+
+```bash
+$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= SSL_SERVER_NAME= SSL_PORT= SSL_CERTIFICATE= SSL_KEY= SSL_PEM= ORIGINS=[""] TWILIO_ACCOUNT_SID= TWILIO_AUTH_TOKEN= TWILIO_SERVICE_SID= ENABLE_RECAPTCHA= RECAPTCHA_SECRET_KEY= MODE=production \
+mod_wsgi-express start-server wsgi_script.py \
+--user www-data \
+--group www-data \
+--port '${PORT}' \
+--ssl-certificate-file '${SSL_CERTIFICATE}' \
+--ssl-certificate-key-file '${SSL_KEY}' \
+--ssl-certificate-chain-file '${SSL_PEM}' \
+--https-only \
+--server-name '${SSL_SERVER_NAME}' \
+--https-port '${SSL_PORT}'
+```
+
+## Docker
+
+### Build
+
+Build smswithoutborders-backend development docker image
+
+```bash
+$ docker build --target development-image -t smswithoutborders-backend .
+```
+
+Build smswithoutborders-backend production docker image
+
+```bash
+$ docker build --target production-image -t smswithoutborders-backend .
+```
+
+### Run
+
+Run smswithoutborders-backend development docker image. Fill in all the neccessary [environment variables](#linux-environment-variables)
+
+```bash
+$ docker run -d -p 9000:9000 \
+  --name smswithoutborders-backend \
+  --env 'MYSQL_HOST=' \
+  --env 'MYSQL_USER=' \
+  --env 'MYSQL_PASSWORD=' \
+  --env 'MYSQL_DATABASE=' \
+  --env 'HOST=' \
+  --env 'PORT=' \
+  --env 'ORIGINS=[""]' \
+  --env 'TWILIO_ACCOUNT_SID=' \
+  --env 'TWILIO_AUTH_TOKEN=' \
+  --env 'TWILIO_SERVICE_SID=' \
+  --env 'ENABLE_RECAPTCHA=' \
+  --env 'RECAPTCHA_SECRET_KEY=' \
+  --env 'DUMMY_DATA=' \
+  smswithoutborders-backend
+```
+
+Run smswithoutborders-backend production docker image. Fill in all the neccessary [environment variables](#linux-environment-variables)
+
+```bash
+$ docker run -d -p 9000:9000 \
+  --name smswithoutborders-backend \
+  --env 'MYSQL_HOST=' \
+  --env 'MYSQL_USER=' \
+  --env 'MYSQL_PASSWORD=' \
+  --env 'MYSQL_DATABASE=' \
+  --env 'HOST=' \
+  --env 'PORT=' \
+  --env 'SSL_SERVER_NAME=' \
+  --env 'SSL_PORT=' \
+  --env 'SSL_CERTIFICATE=' \
+  --env 'SSL_KEY=' \
+  --env 'SSL_PEM=' \
+  --env 'ORIGINS=[""]' \
+  --env 'TWILIO_ACCOUNT_SID=' \
+  --env 'TWILIO_AUTH_TOKEN=' \
+  --env 'TWILIO_SERVICE_SID=' \
+  --env 'ENABLE_RECAPTCHA=' \
+  --env 'RECAPTCHA_SECRET_KEY=' \
+  --env 'MODE=production' \
+  smswithoutborders-backend
+```
+
+> Read in a file of environment variables with `--env-file` command e.g. `docker run -d -p 9000:9000 --name smswithoutborders-backend --env-file myenv.txt smswithoutborders-backend`
+> Mount path to SSL files with volume `-v` command e.g. `docker run -v /host/path/to/certs:/container/path/to/certs -d -p 9000:9000 --name smswithoutborders-backend --env-file myenv.txt smswithoutborders-backend
+
 ## logger
+
+### Python
 
 ```bash
 $ python3 server.py --logs=debug
 ```
 
+### Docker
+
+Container logs
+
+```bash
+$ docker logs smswithoutborders-backend
+```
+
+API logs in container
+
+```bash
+$ docker exec -it smswithoutborders-backend tail -f <path_to_mod_wsgi_error_logs>
+```
+
 ## References
 
 - [SMSWithoutBorders-BE-Publisher](https://github.com/smswithoutborders/SMSWithoutBorders-BE-Publisher)
+- [MySQL Docker official image](https://hub.docker.com/_/mysql)
+- [MariaDB Docker official image](https://hub.docker.com/_/mariadb)

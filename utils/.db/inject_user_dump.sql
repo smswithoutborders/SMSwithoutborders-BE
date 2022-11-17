@@ -19,11 +19,11 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `dummySmswithoutborders`
+-- Database: `swob_dummy_db`
 --
-DROP DATABASE IF EXISTS `dummySmswithoutborders`;
-CREATE DATABASE IF NOT EXISTS `dummySmswithoutborders` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `dummySmswithoutborders`;
+DROP DATABASE IF EXISTS `swob_dummy_db`;
+CREATE DATABASE IF NOT EXISTS `swob_dummy_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `swob_dummy_db`;
 
 -- --------------------------------------------------------
 
@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`id`, `password`, `current_login`, `last_login`, `createdAt`) VALUES
-('dead3662-5f78-11ed-b8e7-6d06c3aaf3c6', 'cc0f716255274e8d5aef7c949cd9c375728572cf47cc60259b37f550218cede97ff71cfe10792f4049d0ad1adc98e7612171b75982743c55fe0c104b81771b80', NULL, NULL, '2022-11-08 16:20:37');
+('dead3662-5f78-11ed-b8e7-6d06c3aaf3c6', 'b829955d86babb6f7d1c68236166e91598f0b541a3ca424ee241633a7a255238b1d7a63b5332db4b8988519ef0dab341a3555fc22947788d06aa6bbd3841cbb0', NULL, NULL, '2022-11-08 16:20:37');
 
 -- --------------------------------------------------------
 
@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS `usersInfos` (
 --
 
 INSERT INTO `usersInfos` (`id`, `name`, `country_code`, `full_phone_number`, `status`, `userId`, `iv`, `createdAt`) VALUES
-(1, 'fb8cf00e21b92700373f7ba7c625b55d', 'd8399ba8fa1749f375aa4f65d572352e', '601141fe121799a07267bda9ad5e15d9778121661b3510be9f46418f07d630c01dfac1a12919d873ad6c12fd9a1ea2e7cf25e4e28574324586a87573ac3b470c', 'verified', 'dead3662-5f78-11ed-b8e7-6d06c3aaf3c6', '2445a6b5141f7b3b', '2022-11-08 16:27:42');
+(1, '74a6a9facbba61178c4d00de9e1adeb9', 'd8399ba8fa1749f375aa4f65d572352e', '601141fe121799a07267bda9ad5e15d9778121661b3510be9f46418f07d630c01dfac1a12919d873ad6c12fd9a1ea2e7cf25e4e28574324586a87573ac3b470c', 'verified', 'dead3662-5f78-11ed-b8e7-6d06c3aaf3c6', '2445a6b5141f7b3b', '2022-11-08 16:27:42');
 
 -- --------------------------------------------------------
 
