@@ -85,9 +85,7 @@ _For testing purposes only!_
 
 - Toggle the [environment variable](#linux-environment-variables) **DUMMY_DATA** to True
 
-```bash
-$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= `DUMMY_DATA=True` python3 server.py
-```
+> MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= `DUMMY_DATA=True` python3 server.py
 
 details
 
@@ -130,24 +128,58 @@ A user has four attempts to request an OTP code daily
 **Python**
 
 ```bash
-$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= SSL_SERVER_NAME= SSL_PORT= SSL_CERTIFICATE= SSL_KEY= SSL_PEM= ORIGINS=[""] TWILIO_ACCOUNT_SID= TWILIO_AUTH_TOKEN= TWILIO_SERVICE_SID= ENABLE_RECAPTCHA= RECAPTCHA_SECRET_KEY= MODE=production \
-python3 server.py
+$ MYSQL_HOST= \
+  MYSQL_USER= \
+  MYSQL_PASSWORD= \
+  MYSQL_DATABASE= \
+  HOST= \
+  PORT= \
+  SSL_SERVER_NAME= \
+  SSL_PORT= \
+  SSL_CERTIFICATE= \
+  SSL_KEY= \
+  SSL_PEM= \
+  ORIGINS=[""] \
+  TWILIO_ACCOUNT_SID= \
+  TWILIO_AUTH_TOKEN= \
+  TWILIO_SERVICE_SID= \
+  ENABLE_RECAPTCHA= \
+  RECAPTCHA_SECRET_KEY= \
+  MODE=production \
+  python3 server.py
 ```
 
 **MOD_WSGI**
 
 ```bash
-$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= SSL_SERVER_NAME= SSL_PORT= SSL_CERTIFICATE= SSL_KEY= SSL_PEM= ORIGINS=[""] TWILIO_ACCOUNT_SID= TWILIO_AUTH_TOKEN= TWILIO_SERVICE_SID= ENABLE_RECAPTCHA= RECAPTCHA_SECRET_KEY= MODE=production \
-mod_wsgi-express start-server wsgi_script.py \
---user www-data \
---group www-data \
---port '${PORT}' \
---ssl-certificate-file '${SSL_CERTIFICATE}' \
---ssl-certificate-key-file '${SSL_KEY}' \
---ssl-certificate-chain-file '${SSL_PEM}' \
---https-only \
---server-name '${SSL_SERVER_NAME}' \
---https-port '${SSL_PORT}'
+$ MYSQL_HOST= \
+  MYSQL_USER= \
+  MYSQL_PASSWORD= \
+  MYSQL_DATABASE= \
+  HOST= \
+  PORT= \
+  SSL_SERVER_NAME= \
+  SSL_PORT= \
+  SSL_CERTIFICATE= \
+  SSL_KEY= \
+  SSL_PEM= \
+  ORIGINS=[""] \
+  TWILIO_ACCOUNT_SID= \
+  TWILIO_AUTH_TOKEN= \
+  TWILIO_SERVICE_SID= \
+  ENABLE_RECAPTCHA= \
+  RECAPTCHA_SECRET_KEY= \
+  MODE=production \
+  mod_wsgi-express start-server wsgi_script.py \
+  --user www-data \
+  --group www-data \
+  --port '${PORT}' \
+  --ssl-certificate-file '${SSL_CERTIFICATE}' \
+  --ssl-certificate-key-file '${SSL_KEY}' \
+  --ssl-certificate-chain-file '${SSL_PEM}' \
+  --https-only \
+  --server-name '${SSL_SERVER_NAME}' \
+  --https-port '${SSL_PORT}'
 ```
 
 ## Docker
@@ -216,6 +248,7 @@ $ docker run -d -p 9000:9000 \
 ```
 
 > Read in a file of environment variables with `--env-file` command e.g. `docker run -d -p 9000:9000 --name smswithoutborders-backend --env-file myenv.txt smswithoutborders-backend`
+
 > Mount path to SSL files with volume `-v` command e.g. `docker run -v /host/path/to/certs:/container/path/to/certs -d -p 9000:9000 --name smswithoutborders-backend --env-file myenv.txt smswithoutborders-backend
 
 ## logger
