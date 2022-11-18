@@ -15,13 +15,9 @@ config = baseConfig()
 api = config["API"]
 SSL = config["SSL_API"]
 DATABASE = config["DATABASE"]
-DUMMY_DATA = eval(os.environ.get("DUMMY_DATA") or "False")
 
 sync_platforms(Platforms=Platforms)
 sync_credentials(Credentials=Credentials)
-
-if DUMMY_DATA:
-    dummy_data(user=DATABASE["MYSQL_USER"], password=DATABASE["MYSQL_PASSWORD"], host=DATABASE["MYSQL_HOST"])
 
 from flask import Flask
 from flask import send_from_directory

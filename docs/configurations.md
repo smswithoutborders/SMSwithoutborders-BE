@@ -103,9 +103,17 @@ $ docker exec -it smswithoutborders-backend make set-keys
 
 _For testing purposes only!_
 
-- Toggle the [environment variable](#linux-environment-variables) **DUMMY_DATA** to True
+- Fill in all the neccessary [environment variables](#linux-environment-variables)
 
-> MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= MYSQL_DATABASE= HOST= PORT= `DUMMY_DATA=True` python3 server.py
+```bash
+$ MYSQL_HOST= MYSQL_USER= MYSQL_PASSWORD= make dummy-user-inject
+```
+
+If running the smswithoutborders-backend docker image use
+
+```bash
+$ docker exec -it smswithoutborders-backend make dummy-user-inject
+```
 
 details
 
