@@ -58,7 +58,7 @@ def baseConfig() -> dict:
     }
 
     RECAPTCHA = {
-        "ENABLE_RECAPTCHA":os.environ.get("ENABLE_RECAPTCHA"),
+        "ENABLE_RECAPTCHA":os.environ.get("ENABLE_RECAPTCHA") or "False",
         "SECRET_KEY":os.environ.get("RECAPTCHA_SECRET_KEY")
     }
 
