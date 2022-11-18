@@ -10,6 +10,7 @@ itsdangerous==2.1.2
 Jinja2==3.1.2
 MarkupSafe==2.1.1
 mysql-connector-python==8.0.29
+mod_wsgi-standalone==4.9.4
 mysqlclient==2.1.1
 peewee==3.15.1
 protobuf==4.21.2

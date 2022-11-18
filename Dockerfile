@@ -8,8 +8,6 @@ RUN apt-get install build-essential python3-dev default-libmysqlclient-dev -y
 
 COPY . .
 
-RUN pip3 install -U pip
-RUN pip install mod_wsgi-standalone
 RUN pip install -r requirements.txt
 
 FROM base as production-image
