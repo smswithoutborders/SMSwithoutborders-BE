@@ -209,13 +209,13 @@ $ MYSQL_HOST= \
 Build smswithoutborders-backend development docker image
 
 ```bash
-$ docker build --target development-image -t smswithoutborders-backend .
+$ docker build --target development -t smswithoutborders-backend .
 ```
 
 Build smswithoutborders-backend production docker image
 
 ```bash
-$ docker build --target production-image -t smswithoutborders-backend .
+$ docker build --target production -t smswithoutborders-backend .
 ```
 
 ### Run
