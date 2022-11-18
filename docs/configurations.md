@@ -61,7 +61,6 @@ Variables used for the Project:
 - ENABLE_RECAPTCHA=BOOLEAN
 - RECAPTCHA_SECRET_KEY=STRING
 - MODE=STRING
-- DUMMY_DATA=BOOLEAN
 
 ## Installation
 
@@ -245,7 +244,6 @@ $ docker run -d -p 9000:9000 \
   --env 'TWILIO_SERVICE_SID=' \
   --env 'ENABLE_RECAPTCHA=' \
   --env 'RECAPTCHA_SECRET_KEY=' \
-  --env 'DUMMY_DATA=' \
   smswithoutborders-backend
 ```
 
