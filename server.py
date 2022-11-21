@@ -3,21 +3,13 @@ import argparse
 import ssl
 import os
 
-from utils.routines import sync_platforms, sync_credentials, dummy_data
 from utils.SSL import isSSL
-
 from Configs import baseConfig
-
-from src.schemas.platforms import Platforms
-from src.schemas.credentials import Credentials
 
 config = baseConfig()
 api = config["API"]
 SSL = config["SSL_API"]
 DATABASE = config["DATABASE"]
-
-sync_platforms(Platforms=Platforms)
-sync_credentials(Credentials=Credentials)
 
 from flask import Flask
 from flask import send_from_directory

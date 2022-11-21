@@ -36,7 +36,6 @@ dummy-user-inject:
 	@echo "[*] Injecting dummy user ..."
 	@$(python) injectDummyData.py --user
 	@echo ""
-	@echo "- Database = swob_dummy_db"
 	@echo "- User ID = dead3662-5f78-11ed-b8e7-6d06c3aaf3c6"
 	@echo "- Password = dummy_password"
 	@echo "- Name = dummy_user"

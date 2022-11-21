@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from peewee import Model, TextField, DateTimeField
 
 from src.schemas.db_connector import db
@@ -18,3 +21,14 @@ class Credentials(Model):
 
 if db.table_exists('credentials') is False:
     db.create_tables([Credentials])
+
+try:
+    try:
+        Credentials.get(Credentials.id == 1)
+    except Credentials.DoesNotExist:
+        logger.debug("Adding initials credentials ...")
+
+        Credentials.create()
+
+except Exception as error:
+    raise error

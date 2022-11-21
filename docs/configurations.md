@@ -117,7 +117,6 @@ $ docker exec -it smswithoutborders-backend make dummy-user-inject
 details
 
 ```
-- Database = swob_dummy_db
 - User ID = dead3662-5f78-11ed-b8e7-6d06c3aaf3c6
 - Password = dummy_password
 - Name = dummy_user

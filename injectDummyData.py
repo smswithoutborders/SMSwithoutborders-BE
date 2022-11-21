@@ -1,36 +1,87 @@
 import logging
 import argparse
 import sys
-import os
 
-from contextlib import closing
-from mysql.connector import connect
+from peewee import DatabaseError
 
-def dummy_data(user: str, password:str, host: str, path_to_dump: str) -> None:
+from src.schemas.usersinfo import UsersInfos
+from src.schemas.users import Users
+from src.security.data import Data
+
+logger = logging.getLogger(__name__)
+
+def create(user_id: str, phone_number: str, country_code: str, name: str, password: str) -> None:
     """
     """
     try:
-        with closing(
-            connect(
-                user=user,
-                password=password,
-                host=host,
-                auth_plugin="mysql_native_password",
-            )
-        ) as connection:
-            with open(path_to_dump, 'r') as f:
-                with closing(connection.cursor()) as cursor:
-                    cursor.execute(f.read(), multi=True)
+        data = Data()
+        full_phone_number = country_code+phone_number
+        phone_number_hash = data.hash(data=full_phone_number)
 
-    except Exception as error:
-        raise error
+        logger.debug("Finding verified userinfo: %s" % phone_number_hash)
+
+        result = []
+
+        userinfos = (
+            UsersInfos.select()
+            .where(
+                UsersInfos.full_phone_number == phone_number_hash,
+                UsersInfos.status == "verified"
+            )
+            .dicts()
+        )
+
+        for userinfo in userinfos:
+            result.append(userinfo)
+
+        # check for duplicate user
+        if len(result) > 1:
+            error = "Duplicate verified users found: %s" % phone_number_hash
+            logger.error(error)
+            sys.exit(1)
+
+        logger.info("- Successfully found verified users: %s" % phone_number_hash)
+
+        # check for no user
+        if len(result) < 1:
+            logger.debug("creating user '%s' ..." % phone_number_hash)
+
+            data = Data()
+            password_hash = data.hash(password)
+
+            new_user = Users.create(
+                id = user_id,
+                password = password_hash
+            )
+
+            UsersInfos.create(
+                name = data.encrypt(data=name)["e_data"],
+                country_code = data.encrypt(data=country_code)["e_data"],
+                full_phone_number = phone_number_hash,
+                userId= new_user.id,
+                status="verified",
+                iv = data.iv
+            )
+
+            logger.info("- User '%s' successfully created" % phone_number_hash)
+
+            return None
+        else:
+            error = "user '%s' already has an acount" % phone_number_hash
+            logger.error(error)
+            sys.exit(1)
+            
+    except DatabaseError as err:
+        raise err
 
 def main():
     """
     """
-    from Configs import baseConfig
-    config = baseConfig()
-    db = config["DATABASE"]
+    user_id="dead3662-5f78-11ed-b8e7-6d06c3aaf3c6"
+    phone_number="123456789"
+    country_code="+237"
+    name="dummy_user"
+    password="dummy_password" 
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--user", help="Inject dummy user", action="store_true")
@@ -38,15 +89,15 @@ def main():
 
     try:
         if args.user:
-            path_to_dump = os.path.join(os.path.dirname(__file__), 'utils/.db', 'inject_user_dump.sql')
 
-            dummy_data(
-                user=db["MYSQL_USER"],
-                password=db["MYSQL_PASSWORD"],
-                host=db["MYSQL_HOST"],
-                path_to_dump=path_to_dump
+            create(
+                user_id=user_id,
+                phone_number=phone_number,
+                country_code=country_code,
+                name=name,
+                password=password 
             )
-
+          
             sys.exit(0)
 
     except Exception as error:
