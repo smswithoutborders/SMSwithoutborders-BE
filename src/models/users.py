@@ -6,7 +6,7 @@ from Configs import baseConfig
 config = baseConfig()
 
 recaptcha = config["RECAPTCHA"]
-ENABLE_RECAPTCHA = eval(recaptcha["ENABLE_RECAPTCHA"])
+ENABLE_RECAPTCHA = recaptcha["ENABLE_RECAPTCHA"]
 SECRET_KEY = recaptcha["SECRET_KEY"]
 
 api = config["API"]

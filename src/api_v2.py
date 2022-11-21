@@ -8,7 +8,7 @@ api = config["API"]
 cookie_name = api['COOKIE_NAME']
 enable_otp_counter = eval(config["OTP"]["ENABLE"])
 recaptcha = config["RECAPTCHA"]
-ENABLE_RECAPTCHA = eval(recaptcha["ENABLE_RECAPTCHA"])
+ENABLE_RECAPTCHA = recaptcha["ENABLE_RECAPTCHA"]
 
 from flask import Blueprint
 from flask import request

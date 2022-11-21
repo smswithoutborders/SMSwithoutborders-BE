@@ -57,8 +57,15 @@ def baseConfig() -> dict:
         "SERVICE_SID":os.environ.get("TWILIO_SERVICE_SID")
     }
 
+    ENABLE_RECAPTCHA_BOOL = False
+
+    if (os.environ.get("ENABLE_RECAPTCHA") or "False").lower() == "false":
+        ENABLE_RECAPTCHA_BOOL = False
+    elif (os.environ.get("ENABLE_RECAPTCHA") or "False").lower() == "true":
+        ENABLE_RECAPTCHA_BOOL = True
+
     RECAPTCHA = {
-        "ENABLE_RECAPTCHA":os.environ.get("ENABLE_RECAPTCHA") or "False",
+        "ENABLE_RECAPTCHA": ENABLE_RECAPTCHA_BOOL,
         "SECRET_KEY":os.environ.get("RECAPTCHA_SECRET_KEY")
     }
 
