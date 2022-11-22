@@ -69,7 +69,7 @@ def create(user_id: str, phone_number: str, country_code: str, name: str, passwo
         else:
             error = "user '%s' already has an acount" % phone_number_hash
             logger.error(error)
-            sys.exit(1)
+            return None
             
     except DatabaseError as err:
         raise err
