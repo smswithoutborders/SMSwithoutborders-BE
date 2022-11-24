@@ -8,7 +8,7 @@ RUN apt-get install build-essential python3-dev default-libmysqlclient-dev -y
 
 COPY . .
 
-RUN pip install --force-reinstall -r requirements.txt
+RUN pip install --no-cache-dir --force-reinstall -r requirements.txt
 
 FROM base as production
 CMD echo "[*] Starting Production server ..." && \
