@@ -160,4 +160,3 @@ class TwoFactor:
 
         except Exception as error:
             logger.exception(error)
-            raise error
