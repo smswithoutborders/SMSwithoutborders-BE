@@ -3,7 +3,6 @@ from peewee import Model, CharField, TextField, ForeignKeyField, DateTimeField
 from src.schemas.db_connector import db
 
 from src.schemas.users import Users
-from src.schemas.platforms import Platforms
 
 from datetime import datetime
 
@@ -14,7 +13,7 @@ class Wallets(Model):
     uniqueIdHash = CharField(unique=True, null=True)
     iv = CharField(null=True)
     userId = ForeignKeyField(Users, column_name="userId")
-    platformId = ForeignKeyField(Platforms, column_name="platformId")
+    platformId = CharField(column_name="platformId")
     createdAt = DateTimeField(null=True, default=datetime.now)
 
     class Meta:

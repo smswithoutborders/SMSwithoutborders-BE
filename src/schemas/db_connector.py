@@ -1,9 +1,9 @@
-from Configs import baseConfig
-
 from peewee import MySQLDatabase
 from peewee import DatabaseError
 
-from utils.routines import create_database_if_not_exits
+from configurationHelper import DatabaseExists, CreateDatabase
+
+from Configs import baseConfig
 
 config = baseConfig()
 database = config["DATABASE"]
@@ -12,6 +12,23 @@ db_name = database["MYSQL_DATABASE"]
 db_host = database["MYSQL_HOST"]
 db_password = database["MYSQL_PASSWORD"]
 db_user = database["MYSQL_USER"]
+
+def create_database_if_not_exits(user: str, password: str, database: str, host: str) -> None:
+    """
+    """
+    try:
+        if DatabaseExists(user=user, password=password, database=database, host=host):
+            pass
+        else:
+            CreateDatabase(
+                user=user,
+                password=password,
+                database=database,
+                host=host
+            )
+
+    except Exception as error:
+        raise error
 
 try:
     create_database_if_not_exits(

@@ -8,74 +8,71 @@ from peewee import CharField
 from peewee import OperationalError
 
 from src.schemas.db_connector import db
-from src.schemas.platforms import Platforms
 
 migrator = MySQLMigrator(db)
 
-logger = logging.getLogger(__name__)
-
-def migrate_platforms() -> None:
+def migrate_wallets() -> None:
     """
     """
     try:
-        logger.debug("Starting platforms schema migration ...")
+        logging.debug("Starting wallets schema migration ...")
         migrate(
-            migrator.drop_column('platforms', 'description'),
-            migrator.add_column('platforms', 'description', Platforms.description),
+            migrator.drop_constraint('wallets', 'wallets_ibfk_2'),
+            migrator.drop_index('wallets', 'wallets_platformId'),
+            migrator.alter_column_type('wallets', 'platformId', CharField()),
         )
 
-        logger.debug("- Successfully migrated platforms schema")
+        logging.debug("- Successfully migrated wallets schema")
 
     except OperationalError as error:
-        logger.debug(error)
+        raise error
 
 def migrate_usersinfo() -> None:
     """
     """
     try:
-        logger.debug("Starting usersinfo schema migration ...")
+        logging.debug("Starting usersinfo schema migration ...")
         migrate(
             migrator.drop_column('usersInfos', 'phone_number'),
         )
 
-        logger.debug("- Successfully migrated usersinfo schema")
+        logging.debug("- Successfully migrated usersinfo schema")
 
     except OperationalError as error:
-        logger.debug(error)
+        raise error
 
 def migrate_sessions() -> None:
     """
     """
     try:
-        logger.debug("Starting session schema migration ...")
+        logging.debug("Starting session schema migration ...")
         migrate(
             migrator.alter_column_type('sessions', 'type', CharField()),
             migrator.drop_not_null('sessions', 'type')
         )
 
-        logger.debug("- Successfully migrated session schema")
+        logging.debug("- Successfully migrated session schema")
 
     except OperationalError as error:
-        logger.debug(error)
+        raise error
 
 def main() -> None:
     """
     """
     try:
-        migrate_platforms()
-        logger.info("- Successfully Migrated Platforms Table")
+        migrate_wallets()
+        logging.info("- Successfully Migrated Wallets Table")
 
         migrate_usersinfo()
-        logger.info("- Successfully Migrated UsersInfo Table")
+        logging.info("- Successfully Migrated UsersInfo Table")
 
         migrate_sessions()
-        logger.info("- Successfully Migrated Sessions Table")
+        logging.info("- Successfully Migrated Sessions Table")
 
         sys.exit(0)
         
     except Exception as error:
-        logger.error(str(error))
-        sys.exit(1)
+        logging.error(str(error))
 
 if __name__ == "__main__":
 

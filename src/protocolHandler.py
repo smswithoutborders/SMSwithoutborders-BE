@@ -4,8 +4,8 @@ import asyncio
 from Configs import baseConfig
 config = baseConfig()
 
-from src.schemas.platforms import Platforms
-from utils.platformHelper import importplatform
+from SwobThirdPartyPlatforms import ImportPlatform
+from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
 
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Forbidden
@@ -21,19 +21,14 @@ class OAuth2:
         """
         self.origin = origin
         self.platform_name = platform_name
-        self.Platform = importplatform(platform_name=self.platform_name)
 
         try:
-            Platforms.get(Platforms.name == self.platform_name)
-        except Platforms.DoesNotExist:
+            self.Platform = ImportPlatform(platform_name=self.platform_name)
+        except PlatformDoesNotExist:
             logger.error("invalid platform name: %s" % self.platform_name)
             raise BadRequest()  
         else:       
-            if not self.Platform:
-                logger.error("invalid platform name: %s" % self.platform_name)
-                raise BadRequest()     
-            else:
-                self.Methods = self.Platform.Methods(origin = self.origin)
+            self.Methods = self.Platform.methods(origin = self.origin)
 
     def authorization(self) -> dict:
         """
@@ -52,7 +47,7 @@ class OAuth2:
             try:    
                 result = self.Methods.validate(code=code, scope=scope)
             
-            except self.Platform.MisMatchScope:
+            except self.Platform.exceptions.MisMatchScope:
                 raise UnprocessableEntity()
 
         elif code_verifier:
@@ -64,7 +59,7 @@ class OAuth2:
             "grant": result
         }
 
-    def invalidation(self, token) -> None:
+    def invalidation(self, token: str) -> None:
         """
         """
         try:
@@ -82,13 +77,14 @@ class TwoFactor:
         """
         self.identifier = identifier
         self.platform_name = platform_name
-        self.Platform = importplatform(platform_name=self.platform_name)
 
-        if not self.Platform:
+        try:
+            self.Platform = ImportPlatform(platform_name=self.platform_name)
+        except PlatformDoesNotExist:
             logger.error("invalid platform name: %s" % self.platform_name)
-            raise BadRequest()     
-        else:
-            self.Methods = self.Platform.Methods(identifier = self.identifier)  
+            raise BadRequest()  
+        else:       
+            self.Methods = self.Platform.methods(identifier = self.identifier)  
 
     def authorization(self) -> dict:
         """
@@ -100,12 +96,12 @@ class TwoFactor:
                 "body": 201
             }
 
-        except self.Platform.SessionExistError:
+        except self.Platform.exceptions.SessionExistError:
             return {
                 "body": 200
             }
             
-        except self.Platform.TooManyRequests:
+        except self.Platform.exceptions.TooManyRequests:
             raise TooManyRequests()
     
     def validation(self, code: str, **kwargs) -> dict:
@@ -118,16 +114,16 @@ class TwoFactor:
                 "grant": result
             }
 
-        except self.Platform.RegisterAccountError:
+        except self.Platform.exceptions.RegisterAccountError:
             return {
                 "body": 202,
                 "initialization_url": f"/platforms/{self.platform_name}/protocols/twofactor/register"
             }
 
-        except self.Platform.InvalidCodeError:
+        except self.Platform.exceptions.InvalidCodeError:
             raise Forbidden()
 
-        except self.Platform.TooManyRequests:
+        except self.Platform.exceptions.TooManyRequests:
             raise TooManyRequests()
 
     def registration(self, first_name: str, last_name: str) -> dict:
@@ -140,21 +136,28 @@ class TwoFactor:
                 "grant": result
             }
 
-        except self.Platform.InvalidCodeError:
+        except self.Platform.exceptions.InvalidCodeError:
             raise Forbidden()
 
-        except self.Platform.TooManyRequests:
+        except self.Platform.exceptions.TooManyRequests:
             raise TooManyRequests()
 
-    def invalidation(self, token: str, **kwargs) -> None:
+    def invalidation(self, token: str) -> None:
         """
         """
         try:
-            self.Methods = self.Platform.Methods(identifier = token)  
-
-            asyncio.run(self.Methods.invalidate())
+            asyncio.run(self.Methods.invalidate(token=token))
 
             return None
-            
+
+        except RuntimeError:
+            import nest_asyncio
+            nest_asyncio.apply()
+
+            asyncio.run(self.Methods.invalidate(token=token))
+
+            return None
+
         except Exception as error:
             logger.exception(error)
+            raise error

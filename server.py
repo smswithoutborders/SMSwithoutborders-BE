@@ -1,7 +1,7 @@
 import logging
 import argparse
-import ssl
 import os
+import ssl
 
 from utils.SSL import isSSL
 from Configs import baseConfig
@@ -17,6 +17,8 @@ from flask_cors import CORS
 
 from src.api_v2 import v2
 
+from SwobThirdPartyPlatforms import base_dir
+
 app = Flask(__name__)
 
 CORS(
@@ -29,7 +31,9 @@ app.register_blueprint(v2, url_prefix="/v2")
 
 @app.route('/public/<path:path>')
 def send_report(path):
-    return send_from_directory('logos', path)
+    platform_name = path.split("-")[0]
+    logo_path = os.path.join(base_dir, platform_name)
+    return send_from_directory(logo_path, path)
 
 checkSSL = isSSL(path_crt_file=SSL["CERTIFICATE"], path_key_file=SSL["KEY"], path_pem_file=SSL["PEM"])
 

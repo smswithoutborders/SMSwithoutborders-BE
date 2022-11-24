@@ -8,7 +8,7 @@ RUN apt-get install build-essential python3-dev default-libmysqlclient-dev -y
 
 COPY . .
 
-RUN pip install -r requirements.txt
+RUN pip install -U -r requirements.txt
 
 FROM base as production
 CMD echo "[*] Starting Production server ..." && \

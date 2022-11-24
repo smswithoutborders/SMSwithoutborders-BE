@@ -25,7 +25,6 @@ from datetime import datetime
 from datetime import timedelta
 
 from src.models.grants import Grant_Model
-from src.models.platforms import Platform_Model
 from src.models.users import User_Model
 from src.models.sessions import Session_Model
 from src.models._2FA import OTP_Model
@@ -253,8 +252,7 @@ async def recovery_check(user_id):
     """
     """
     try:
-        originalUrl = request.host_url
-        Platform = Platform_Model()
+        originUrl = request.headers.get("Origin")
         Grant = Grant_Model()
         data = Data()
 
@@ -294,13 +292,13 @@ async def recovery_check(user_id):
         wallets = Grant.find_all(user_id=user_id)
 
         for wallet in wallets:
-            platform = Platform.find(platform_id=wallet["platformId"])
-            grant = Grant.find(user_id=user_id, platform_id=platform.id)
-            d_grant = Grant.decrypt(platform_name=platform.name, grant=grant)
+            grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
+            d_grant = Grant.decrypt(grant=grant)
 
             Grant.purge(
-                originalUrl=originalUrl,
-                platform_name=platform.name,
+                originUrl=originUrl,
+                identifier="",
+                platform_name=wallet["platformId"],
                 token=d_grant["token"]
             )
 
@@ -695,7 +693,6 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
         first_name = request.json.get("first_name")
         last_name = request.json.get("last_name")
 
-        Platform = Platform_Model()
         Grant = Grant_Model()
 
         if protocol == "oauth2":
@@ -735,13 +732,10 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
             initialization_url = result.get("initialization_url") or ""
             grant = result.get("grant")
 
-            platform_result = Platform.find(platform_name=platform)
-
             if grant:
                 Grant.store(
                     user_id=user_id,
-                    platform_id=platform_result.id,
-                    platform_name=platform_result.name,
+                    platform_id=platform.lower(),
                     grant=grant
                 )
           
@@ -762,9 +756,8 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
             except Unauthorized:
                 raise Forbidden()
 
-            platform_result = Platform.find(platform_name=platform)
-            grant = Grant.find(user_id=user["id"], platform_id=platform_result.id)
-            d_grant = Grant.decrypt(platform_name=platform_result.name, grant=grant)
+            grant = Grant.find(user_id=user["id"], platform_id=platform.lower())
+            d_grant = Grant.decrypt(grant=grant)
             
             Protocol.invalidation(token=d_grant["token"])
 
@@ -1006,8 +999,7 @@ async def update_password(user_id):
             logger.error("no new_password")
             raise BadRequest()
 
-        originalUrl = request.host_url
-        Platform = Platform_Model()
+        originUrl = request.headers.get("Origin")
         Grant = Grant_Model()
         Session = Session_Model()
         User = User_Model()
@@ -1040,13 +1032,13 @@ async def update_password(user_id):
         wallets = Grant.find_all(user_id=user["id"])
 
         for wallet in wallets:
-            platform = Platform.find(platform_id=wallet["platformId"])
-            grant = Grant.find(user_id=user_id, platform_id=platform.id)
-            d_grant = Grant.decrypt(platform_name=platform.name, grant=grant)
+            grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
+            d_grant = Grant.decrypt(grant=grant)
 
             Grant.purge(
-                originalUrl=originalUrl,
-                platform_name=platform.name,
+                originUrl=originUrl,
+                identifier="",
+                platform_name=wallet["platformId"],
                 token=d_grant["token"]
             )
 
@@ -1255,8 +1247,7 @@ async def delete_account(user_id):
             logger.error("no password")
             raise BadRequest()
 
-        originalUrl = request.host_url
-        Platform = Platform_Model()
+        originUrl = request.headers.get("Origin")
         Grant = Grant_Model()
         Session = Session_Model()
         User = User_Model()
@@ -1287,13 +1278,13 @@ async def delete_account(user_id):
         wallets = Grant.find_all(user_id=user["id"])
 
         for wallet in wallets:
-            platform = Platform.find(platform_id=wallet["platformId"])
-            grant = Grant.find(user_id=user_id, platform_id=platform.id)
-            d_grant = Grant.decrypt(platform_name=platform.name, grant=grant)
+            grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
+            d_grant = Grant.decrypt(grant=grant)
 
             Grant.purge(
-                originalUrl=originalUrl,
-                platform_name=platform.name,
+                originUrl=originUrl,
+                identifier="",
+                platform_name=wallet["platformId"],
                 token=d_grant["token"]
             )
 
