@@ -8,6 +8,7 @@ RUN apt-get install build-essential python3-dev default-libmysqlclient-dev -y
 
 COPY . .
 
+RUN pip install --no-cache-dir wheel
 RUN pip install --no-cache-dir --force-reinstall -r requirements.txt
 
 FROM base as production
