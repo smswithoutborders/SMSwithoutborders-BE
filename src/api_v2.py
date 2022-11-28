@@ -2,13 +2,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 # configurations
-from Configs import baseConfig
-config = baseConfig()
-api = config["API"]
-cookie_name = api['COOKIE_NAME']
-enable_otp_counter = eval(config["OTP"]["ENABLE"])
-recaptcha = config["RECAPTCHA"]
-ENABLE_RECAPTCHA = recaptcha["ENABLE_RECAPTCHA"]
+from settings import Configurations
+cookie_name = Configurations.COOKIE_NAME
+ENABLE_RECAPTCHA = Configurations.ENABLE_RECAPTCHA
+enable_otp_counter = Configurations.ENABLE_OTP
 
 from flask import Blueprint
 from flask import request

@@ -1,9 +1,4 @@
 import os
-from Configs import baseConfig
-
-config = baseConfig()
-
-SSL = config["SSL_API"]
 
 def isSSL(path_crt_file: str, path_key_file: str, path_pem_file: str) -> dict:
     """
@@ -21,9 +16,9 @@ def isSSL(path_crt_file: str, path_key_file: str, path_pem_file: str) -> dict:
             error = "pem_file file not found at '%s'" % path_pem_file
             raise FileNotFoundError(error)
         else:
-            privateKey = open(SSL["KEY"], "r").read()
-            certificate = open(SSL["CERTIFICATE"], "r").read()
-            pem = open(SSL["PEM"], "r")
+            privateKey = open(path_key_file, "r").read()
+            certificate = open(path_crt_file, "r").read()
+            pem = open(path_pem_file, "r")
             ca = [pem.read()]
 
             return {"credentials": {"key": privateKey, "cert": certificate, "ca": ca}}

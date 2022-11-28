@@ -1,24 +1,18 @@
 import logging
-logger = logging.getLogger(__name__)
-
-from Configs import baseConfig
-
-config = baseConfig()
-
-recaptcha = config["RECAPTCHA"]
-ENABLE_RECAPTCHA = recaptcha["ENABLE_RECAPTCHA"]
-SECRET_KEY = recaptcha["SECRET_KEY"]
-
-api = config["API"]
-ENABLE_BLOCKING = eval(api["ENABLE_BLOCKING"])
-ATTEMPTS = int(api["SHORT_BLOCK_ATTEMPTS"])
-BLOCKS = int(api["LONG_BLOCK_ATTEMPTS"])
-ATTEMPTS_TIME = int(api["SHORT_BLOCK_DURATION"]) * 60000
-BLOCKS_TIME = int(api["LONG_BLOCK_DURATION"]) * 60000
-
 import requests
 from datetime import datetime
 from datetime import timedelta
+
+logger = logging.getLogger(__name__)
+
+from settings import Configurations
+ENABLE_RECAPTCHA = Configurations.ENABLE_RECAPTCHA
+SECRET_KEY = Configurations.RECAPTCHA_SECRET_KEY
+ENABLE_BLOCKING = Configurations.ENABLE_BLOCKING
+ATTEMPTS = Configurations.SHORT_BLOCK_ATTEMPTS
+BLOCKS = Configurations.LONG_BLOCK_ATTEMPTS
+ATTEMPTS_TIME = Configurations.SHORT_BLOCK_DURATION
+BLOCKS_TIME = Configurations.LONG_BLOCK_DURATION
 
 from peewee import DatabaseError
 

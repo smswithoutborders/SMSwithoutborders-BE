@@ -124,9 +124,11 @@ def GetKeys(user: str, password: str, database: str, host: str) -> None:
 def main():
     """
     """
-    from Configs import baseConfig
-    config = baseConfig()
-    db = config["DATABASE"]
+    from settings import Configurations
+
+    db_name = Configurations.MYSQL_DATABASE
+    db_host = Configurations.MYSQL_HOST
+    db_user = Configurations.MYSQL_USER
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--setkeys", help="Set shared-key and hashing-salt values", action="store_true")
@@ -134,9 +136,9 @@ def main():
     args = parser.parse_args()
 
     try:
-        host = input("Host [default = '%s']: " % db["MYSQL_HOST"]) or db["MYSQL_HOST"]
-        user = input("Username [default = '%s']: " % db["MYSQL_USER"]) or db["MYSQL_USER"]
-        database = input("Database [default = '%s']: " % db["MYSQL_DATABASE"]) or db["MYSQL_DATABASE"]
+        host = input("Host [default = '%s']: " % db_host) or db_host
+        user = input("Username [default = '%s']: " % db_user) or db_user
+        database = input("Database [default = '%s']: " % db_name) or db_name
         password = getpass()
 
         if DatabaseExists(user=user, password=password, database=database, host=host):

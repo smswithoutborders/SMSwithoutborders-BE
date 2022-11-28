@@ -1,14 +1,6 @@
 import logging
-import os
-
-from Configs import baseConfig
-config = baseConfig()
-platforms_path = config["PLATFORMS_PATH"]
-
-import importlib.util       
 import json
 
-from peewee import IntegrityError
 from peewee import DatabaseError
 
 from src.schemas.wallets import Wallets
@@ -42,25 +34,29 @@ class Grant_Model:
         logger.debug("Storing %s grant for %s ..." % (platformName, user_id))
 
         try:
-            self.Wallets.create(
-                userId=user_id, 
-                platformId=platform_id,
-                username=data.encrypt(json.dumps(grant["profile"]["name"]))["e_data"],
-                token=data.encrypt(grant["token"])["e_data"],
-                uniqueId=data.encrypt(json.dumps(grant["profile"]["unique_id"]))["e_data"],
-                uniqueIdHash=data.hash(grant["profile"]["unique_id"]),
-                iv=data.iv
-            )
+            self.Wallets.get(self.Wallets.uniqueIdHash == data.hash(grant["profile"]["unique_id"]))
 
-        except IntegrityError as error:
+        except self.Wallets.DoesNotExist:
+            try:
+                self.Wallets.create(
+                    userId=user_id, 
+                    platformId=platform_id,
+                    username=data.encrypt(json.dumps(grant["profile"]["name"]))["e_data"],
+                    token=data.encrypt(grant["token"])["e_data"],
+                    uniqueId=data.encrypt(json.dumps(grant["profile"]["unique_id"]))["e_data"],
+                    uniqueIdHash=data.hash(grant["profile"]["unique_id"]),
+                    iv=data.iv
+                )
+
+                logger.info("- Successfully Stored %s grant for %s" % (platformName, user_id))
+
+            except DatabaseError as error:
+                logger.error("Failed storing %s grant for %s" % (platformName, user_id))
+                raise InternalServerError(error)
+
+        else:
             logger.error("user %s already has %s grant" % (user_id, platformName))
             raise Conflict()
-
-        except DatabaseError as error:
-            logger.error("Failed storing %s grant for %s" % (platformName, user_id))
-            raise InternalServerError(error)
-
-        logger.info("- Successfully Stored %s grant for %s" % (platformName, user_id))
 
     def decrypt(self, grant, refresh: bool = False) -> dict:
         """

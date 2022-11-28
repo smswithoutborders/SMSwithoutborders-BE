@@ -4,12 +4,15 @@ import os
 import ssl
 
 from utils.SSL import isSSL
-from Configs import baseConfig
 
-config = baseConfig()
-api = config["API"]
-SSL = config["SSL_API"]
-DATABASE = config["DATABASE"]
+from settings import Configurations
+ssl_cert = Configurations.SSL_CERTIFICATE
+ssl_port = Configurations.SSL_PORT
+ssl_key = Configurations.SSL_KEY
+ssl_pem = Configurations.SSL_PEM
+api_host = Configurations.HOST
+api_port = Configurations.PORT
+api_origins = Configurations.ORIGINS
 
 from flask import Flask
 from flask import send_from_directory
@@ -23,7 +26,7 @@ app = Flask(__name__)
 
 CORS(
     app,
-    origins=api["ORIGINS"],
+    origins=api_origins,
     supports_credentials=True,
 )
 
@@ -35,7 +38,7 @@ def send_report(path):
     logo_path = os.path.join(base_dir, platform_name)
     return send_from_directory(logo_path, path)
 
-checkSSL = isSSL(path_crt_file=SSL["CERTIFICATE"], path_key_file=SSL["KEY"], path_pem_file=SSL["PEM"])
+checkSSL = isSSL(path_crt_file=ssl_cert, path_key_file=ssl_key, path_pem_file=ssl_pem)
 
 if __name__ == "__main__":
 
@@ -53,10 +56,10 @@ if __name__ == "__main__":
 
     if checkSSL:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        context.load_cert_chain(SSL["CERTIFICATE"], SSL["KEY"])
+        context.load_cert_chain(ssl_cert, ssl_key)
 
-        app.logger.info("Running on secure port: %s" % SSL['PORT'])
-        app.run(host=api["HOST"], port=SSL["PORT"], ssl_context=context)
+        app.logger.info("Running on secure port: %s" % ssl_port)
+        app.run(host=api_host, port=ssl_port, ssl_context=context)
     else:
-        app.logger.info("Running on un-secure port: %s" % api['PORT'])
-        app.run(host=api["HOST"], port=api["PORT"])
+        app.logger.info("Running on un-secure port: %s" % api_port)
+        app.run(host=api_host, port=api_port)

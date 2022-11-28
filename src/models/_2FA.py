@@ -1,23 +1,19 @@
 import logging
-logger = logging.getLogger(__name__)
-
-from Configs import baseConfig
-
-config = baseConfig()
-twilio = config["TWILIO"]
-otp = config["OTP"]
 
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 
-account_sid = twilio["ACCOUNT_SID"]
-auth_token = twilio["AUTH_TOKEN"]
-service_sid = twilio["SERVICE_SID"]
+logger = logging.getLogger(__name__)
 
-duration_1 = eval(otp["FIRST_RESEND_DURATION"])
-duration_2 = eval(otp["SECOND_RESEND_DURATION"])
-duration_3 = eval(otp["THIRD_RESEND_DURATION"])
-duration_4 = eval(otp["FOURTH_RESEND_DURATION"])
+# configurations
+from settings import Configurations
+twilio_account_sid = Configurations.TWILIO_ACCOUNT_SID
+twilio_auth_token = Configurations.TWILIO_AUTH_TOKEN
+twilio_service_sid = Configurations.TWILIO_SERVICE_SID
+duration_1 = Configurations.FIRST_RESEND_DURATION
+duration_2 = Configurations.SECOND_RESEND_DURATION
+duration_3 = Configurations.THIRD_RESEND_DURATION
+duration_4 = Configurations.FOURTH_RESEND_DURATION
 
 from src.schemas.svretries import Svretries
 
@@ -34,7 +30,7 @@ class OTP_Model:
     def __init__(self, phone_number:str) -> None:
         """
         """
-        self.client = Client(account_sid, auth_token)
+        self.client = Client(twilio_account_sid, twilio_auth_token)
         self.phone_number = phone_number
         self.Svretries = Svretries
 
@@ -46,7 +42,7 @@ class OTP_Model:
 
             verification = self.client.verify \
                         .v2 \
-                        .services(service_sid) \
+                        .services(twilio_service_sid) \
                         .verifications \
                         .create(to=self.phone_number, channel='sms')
 
@@ -65,7 +61,7 @@ class OTP_Model:
 
             verification_check = self.client.verify \
                         .v2 \
-                        .services(service_sid) \
+                        .services(twilio_service_sid) \
                         .verification_checks \
                         .create(to=self.phone_number, code=code)
 

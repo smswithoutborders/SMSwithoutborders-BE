@@ -3,15 +3,11 @@ from peewee import DatabaseError
 
 from configurationHelper import DatabaseExists, CreateDatabase
 
-from Configs import baseConfig
-
-config = baseConfig()
-database = config["DATABASE"]
-
-db_name = database["MYSQL_DATABASE"]
-db_host = database["MYSQL_HOST"]
-db_password = database["MYSQL_PASSWORD"]
-db_user = database["MYSQL_USER"]
+from settings import Configurations
+db_name = Configurations.MYSQL_DATABASE
+db_host = Configurations.MYSQL_HOST
+db_password = Configurations.MYSQL_PASSWORD
+db_user = Configurations.MYSQL_USER
 
 def create_database_if_not_exits(user: str, password: str, database: str, host: str) -> None:
     """

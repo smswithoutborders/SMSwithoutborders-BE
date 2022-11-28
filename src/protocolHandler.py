@@ -1,9 +1,6 @@
 import logging
 import asyncio
 
-from Configs import baseConfig
-config = baseConfig()
-
 from SwobThirdPartyPlatforms import ImportPlatform
 from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
 
