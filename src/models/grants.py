@@ -41,9 +41,9 @@ class Grant_Model:
                 self.Wallets.create(
                     userId=user_id, 
                     platformId=platform_id,
-                    username=data.encrypt(json.dumps(grant["profile"]["name"]))["e_data"],
+                    username=data.encrypt(grant["profile"]["name"])["e_data"],
                     token=data.encrypt(grant["token"])["e_data"],
-                    uniqueId=data.encrypt(json.dumps(grant["profile"]["unique_id"]))["e_data"],
+                    uniqueId=data.encrypt(grant["profile"]["unique_id"])["e_data"],
                     uniqueIdHash=data.hash(grant["profile"]["unique_id"]),
                     iv=data.iv
                 )
@@ -66,14 +66,14 @@ class Grant_Model:
         data = self.Data()
 
         iv = grant.iv
-        username = data.decrypt(data=grant.username, iv=iv).encode("utf-8")
+        username = data.decrypt(data=grant.username, iv=iv)
         token = data.decrypt(data=grant.token, iv=iv)
-        uniqueId = data.decrypt(data=grant.uniqueId, iv=iv).encode("utf-8")
+        uniqueId = data.decrypt(data=grant.uniqueId, iv=iv)
 
         decrypted_grant = {
-            "username":json.loads(username) if username else username,
+            "username":username,
             "token":json.loads(token),
-            "uniqueId":json.loads(uniqueId)
+            "uniqueId":uniqueId
         }
 
         logger.info("- Successfully decrypted grant")
