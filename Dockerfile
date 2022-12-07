@@ -11,6 +11,9 @@ COPY . .
 RUN pip install --no-cache-dir wheel
 RUN pip install --no-cache-dir --force-reinstall -r requirements.txt
 
+RUN usermod -u 1000 www-data
+RUN usermod -G root www-data
+
 FROM base as production
 CMD echo "[*] Starting Production server ..." && \
     make dummy-user-inject && \
