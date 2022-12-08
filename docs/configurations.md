@@ -5,12 +5,11 @@
 1. [Requirements](#requirements)
 2. [Dependencies](#dependencies)
 3. [Installation](#installation)
-4. [Setup](#setup)
-5. [Configuration Options](#Configuration-Options)
-6. [How to use](#how-to-use)
-7. [Docker](#docker)
-8. [Logger](#logger)
-9. [References](#references)
+4. [Configuration Options](#Configuration-Options)
+5. [How to use](#how-to-use)
+6. [Docker](#docker)
+7. [Logger](#logger)
+8. [References](#references)
 
 ## Requirements
 
@@ -61,10 +60,6 @@ $ python3 -m venv venv
 $ . venv/bin/activate
 $ pip install -r requirements.txt
 ```
-
-## Setup
-
-All configuration files are found in the **[configs](../configs)** directory.
 
 ### Set Keys
 
