@@ -20,22 +20,10 @@
 
 ## Dependencies
 
-On Ubuntu **libmysqlclient-dev** is required
+On Ubuntu
 
 ```bash
-$ sudo apt install python3-dev libmysqlclient-dev
-```
-
-Install `GNU Make`
-
-```bash
-$ sudo apt install make
-```
-
-If using apache2 wsgi on Ubuntu
-
-```bash
-$ sudo apt install libapache2-mod-wsgi-py3
+$ sudo apt install python3-dev libmysqlclient-dev apache2 apache2-dev make libapache2-mod-wsgi-py3
 ```
 
 ## Linux Environment Variables

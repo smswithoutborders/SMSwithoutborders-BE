@@ -4,7 +4,7 @@ FROM python:3.9 as base
 WORKDIR /smswithoutborders-backend
 
 RUN apt-get update
-RUN apt-get install build-essential python3-dev default-libmysqlclient-dev -y
+RUN apt-get install build-essential apache2 apache2-dev python3-dev default-libmysqlclient-dev -y
 
 COPY . .
 
