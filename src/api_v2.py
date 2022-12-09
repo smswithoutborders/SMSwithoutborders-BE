@@ -63,9 +63,6 @@ def signup():
             if not "phone_number" in request.json or not request.json["phone_number"]:
                 logger.error("no phone_number")
                 raise BadRequest()
-            elif not "name" in request.json or not request.json["name"]:
-                logger.error("no name")
-                raise BadRequest()
             elif not "country_code" in request.json or not request.json["country_code"]:
                 logger.error("no country_code")
                 raise BadRequest()
