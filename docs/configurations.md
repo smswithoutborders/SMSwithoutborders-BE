@@ -33,6 +33,8 @@ Variables used for the Project:
 - MYSQL_USER=STRING
 - MYSQL_PASSWORD=STRING
 - MYSQL_DATABASE=STRING
+- SHARED_KEY=PATH
+- HASHING_SALT=PATH
 - HOST=STRING
 - PORT=STRING
 - SSL_SERVER_NAME=STRING
@@ -80,6 +82,14 @@ $ docker exec -it smswithoutborders-backend make set-keys
 ```
 
 > See current shared-key and hashing-salt with the `make get-keys command`
+
+### Keys file format
+
+- Use the SHARED_KEY and HASHING_SALT environment variables to point to your key files.
+- Key should be on first line in your key files.
+- Key files should end with the suffix `.key`
+
+> NOTE: SHARED_KEY and HASHING_SALT environment variables must be provided else defaults will be used.
 
 ### Inject dummy data
 

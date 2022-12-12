@@ -29,6 +29,9 @@ class Configurations(baseConfig):
     MYSQL_USER = os.environ.get("MYSQL_USER")
     MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD")
     MYSQL_DATABASE = os.environ.get("MYSQL_DATABASE")
+    
+    SHARED_KEY = os.environ.get("SHARED_KEY")
+    HASHING_SALT = os.environ.get("HASHING_SALT")
 
     COOKIE_NAME = "SWOB"
     COOKIE_MAXAGE = 7200000 #ms 2hrs

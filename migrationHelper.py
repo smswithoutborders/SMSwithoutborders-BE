@@ -8,6 +8,7 @@ from peewee import CharField
 from peewee import OperationalError
 
 from src.schemas.db_connector import db
+from src.schemas.wallets import Wallets
 
 migrator = MySQLMigrator(db)
 
@@ -18,9 +19,31 @@ def migrate_wallets() -> None:
         logging.debug("Starting wallets schema migration ...")
         migrate(
             migrator.drop_constraint('wallets', 'wallets_ibfk_2'),
-            migrator.drop_index('wallets', 'wallets_platformId'),
+            migrator.drop_index('wallets', 'platformId'),
             migrator.alter_column_type('wallets', 'platformId', CharField()),
         )
+
+        wallet_update_gmail = Wallets.update(
+            platformId = "gmail"
+        ).where(
+            Wallets.platformId == 1
+        )
+
+        wallet_update_twitter = Wallets.update(
+            platformId = "twitter"
+        ).where(
+            Wallets.platformId == 2
+        )
+
+        wallet_update_telegram = Wallets.update(
+            platformId = "telegram"
+        ).where(
+            Wallets.platformId == 3
+        )
+
+        wallet_update_gmail.execute()
+        wallet_update_twitter.execute()
+        wallet_update_telegram.execute()
 
         logging.debug("- Successfully migrated wallets schema")
 
@@ -48,7 +71,8 @@ def migrate_sessions() -> None:
         logging.debug("Starting session schema migration ...")
         migrate(
             migrator.alter_column_type('sessions', 'type', CharField()),
-            migrator.drop_not_null('sessions', 'type')
+            migrator.drop_not_null('sessions', 'type'),
+            migrator.drop_column('sessions', 'svid')
         )
 
         logging.debug("- Successfully migrated session schema")

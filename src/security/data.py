@@ -1,10 +1,16 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from src.schemas.credentials import Credentials
-creds = Credentials.get(Credentials.id == 1)
-e_key = creds.shared_key
-salt = creds.hashing_salt
+from settings import Configurations
+
+if Configurations.SHARED_KEY and Configurations.HASHING_SALT:
+    e_key = open(Configurations.SHARED_KEY, "r").readline().strip()
+    salt = open(Configurations.HASHING_SALT, "r").readline().strip()
+else:
+    from src.schemas.credentials import Credentials
+    creds = Credentials.get(Credentials.id == 1)
+    e_key = creds.shared_key
+    salt = creds.hashing_salt
 
 import string
 import hashlib

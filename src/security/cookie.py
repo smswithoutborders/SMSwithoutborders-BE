@@ -1,9 +1,14 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from src.schemas.credentials import Credentials
-creds = Credentials.get(Credentials.id == 1)
-e_key = creds.shared_key
+from settings import Configurations
+
+if Configurations.SHARED_KEY and Configurations.HASHING_SALT:
+    e_key = open(Configurations.SHARED_KEY, "r").readline().strip()
+else:
+    from src.schemas.credentials import Credentials
+    creds = Credentials.get(Credentials.id == 1)
+    e_key = creds.shared_key
 
 from base64 import b64encode, b64decode
 from Crypto.Cipher import AES
