@@ -7,7 +7,8 @@ logger = logging.getLogger(__name__)
 from settings import Configurations
 
 secure = Configurations.SECURE_COOKIE
-hour = Configurations.COOKIE_MAXAGE
+cookie_maxage = Configurations.COOKIE_MAXAGE
+session_maxage = Configurations.SESSION_MAXAGE
 
 from peewee import DatabaseError
 
@@ -22,6 +23,13 @@ class Session_Model:
         """
         """
         self.Sessions = Sessions
+        self.cookie_data = {
+            "maxAge": cookie_maxage,
+            "expires": str(datetime.now() + timedelta(milliseconds=cookie_maxage)),
+            "secure": secure,
+            "httpOnly": True,
+            "sameSite": "lax",
+        }
 
     def create(self, unique_identifier: str, user_agent: str, status: str = None, type: str = None) -> dict:
         """
@@ -37,27 +45,19 @@ class Session_Model:
             dict
         """
         try:
-            expires = datetime.now() + timedelta(milliseconds=hour)
-
-            data = {
-                "maxAge": hour,
-                "secure": secure,
-                "httpOnly": True,
-                "sameSite": "lax",
-            }
-
-            logger.debug("Secure cookie: %s" % secure)
-            logger.debug("Cookie maxAge: %s" % hour)
+            expires = datetime.now() + timedelta(milliseconds=session_maxage)
 
             logger.debug("creating session for %s ..." % unique_identifier)
+
             session = self.Sessions.create(
                 unique_identifier=unique_identifier,
                 user_agent=user_agent,
                 expires=expires,
-                data=json.dumps(data),
+                data=json.dumps(self.cookie_data),
                 status=status,
                 type=type
             )
+
             logger.info(
                 "- SUCCESSFULLY CREATED SESSION %s FOR %s" % (str(session), unique_identifier) 
             )
@@ -119,6 +119,14 @@ class Session_Model:
                 logger.error("Invalid cokkie: %s" % cookie)
                 raise Unauthorized()
 
+            else:
+                cookie_expire = datetime.strptime(json.loads(cookie)["expires"], '%Y-%m-%d %H:%M:%S.%f')
+                cookie_age = cookie_expire.timestamp() - datetime.now().timestamp()
+
+                if cookie_age <= 0:
+                    logger.error("Expired cookie")
+                    raise Unauthorized()
+
             logger.info("SESSION %s FOUND" % sid)
             return str(result[0]["unique_identifier"])
 
@@ -167,24 +175,11 @@ class Session_Model:
                 logger.error("No session %s found" % sid)
                 raise Unauthorized()
 
-            expires = datetime.now() + timedelta(milliseconds=hour)
-
-            data = {
-                "maxAge": hour,
-                "secure": secure,
-                "httpOnly": True,
-                "sameSite": "lax",
-            }
-
-            logger.debug(f"Secure cookie: {secure}")
-            logger.debug(f"Cookie maxAge: {hour}")
-
             logger.debug("updating session %s for user %s ..." % (sid, unique_identifier))
 
             upd_session = (
                 self.Sessions.update(
-                    expires=expires,
-                    data=json.dumps(data),
+                    data=json.dumps(self.cookie_data),
                     status=status
                 )
                 .where(
@@ -201,7 +196,7 @@ class Session_Model:
             return {
                 "sid": sid,
                 "uid": unique_identifier,
-                "data": json.dumps(data),
+                "data": json.dumps(self.cookie_data),
                 "type": type
             }
 

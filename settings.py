@@ -34,7 +34,8 @@ class Configurations(baseConfig):
     HASHING_SALT = os.environ.get("HASHING_SALT")
 
     COOKIE_NAME = "SWOB"
-    COOKIE_MAXAGE = 7200000 #ms 2hrs
+    COOKIE_MAXAGE = os.environ.get("COOKIE_MAXAGE") or 900000 #ms 15mins
+    SESSION_MAXAGE = os.environ.get("SESSION_MAXAGE") or 2700000 #ms 45mins
 
     ENABLE_BLOCKING = True
     SHORT_BLOCK_ATTEMPTS = 5
