@@ -10,7 +10,7 @@ from src.security.data import Data
 
 logger = logging.getLogger(__name__)
 
-def create(user_id: str, phone_number: str, country_code: str, name: str, password: str) -> None:
+def create(phone_number: str, country_code: str, name: str, password: str) -> None:
     """
     """
     try:
@@ -40,17 +40,14 @@ def create(user_id: str, phone_number: str, country_code: str, name: str, passwo
             logger.error(error)
             sys.exit(1)
 
-        logger.info("- Successfully found verified users: %s" % phone_number_hash)
-
         # check for no user
         if len(result) < 1:
-            logger.debug("creating user '%s' ..." % phone_number_hash)
+            logger.info("creating user '%s' ..." % phone_number_hash)
 
             data = Data()
             password_hash = data.hash(password)
 
             new_user = Users.create(
-                id = user_id,
                 password = password_hash
             )
 
@@ -63,12 +60,20 @@ def create(user_id: str, phone_number: str, country_code: str, name: str, passwo
                 iv = data.iv
             )
 
-            logger.info("- User '%s' successfully created" % phone_number_hash)
+            logger.info("- User '%s' successfully created \n" % phone_number_hash)
+            logger.info("- User ID = '%s'" % new_user.id)
+            logger.info("- Password = '%s'" % password)
+            logger.info("- Name = '%s'" % name)
+            logger.info("- Phone NUmber = '%s%s'" % (country_code, phone_number))
 
             return None
         else:
-            error = "user '%s' already has an acount" % phone_number_hash
+            error = "user '%s' already has an acount \n" % phone_number_hash
             logger.error(error)
+            logger.info("- User ID = '%s'" % result[0]["userId"])
+            logger.info("- Password = '%s'" % password)
+            logger.info("- Name = '%s'" % name)
+            logger.info("- Phone NUmber = '%s%s'" % (country_code, phone_number))
             return None
             
     except DatabaseError as err:
@@ -77,7 +82,6 @@ def create(user_id: str, phone_number: str, country_code: str, name: str, passwo
 def main():
     """
     """
-    user_id="dead3662-5f78-11ed-b8e7-6d06c3aaf3c6"
     phone_number="123456789"
     country_code="+237"
     name="dummy_user"
@@ -91,7 +95,6 @@ def main():
         if args.user:
 
             create(
-                user_id=user_id,
                 phone_number=phone_number,
                 country_code=country_code,
                 name=name,
