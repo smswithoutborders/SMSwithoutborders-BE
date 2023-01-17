@@ -1,5 +1,7 @@
+import hashlib
+import hmac
+import re
 import logging
-logger = logging.getLogger(__name__)
 
 from settings import Configurations
 
@@ -12,15 +14,14 @@ else:
     e_key = creds.shared_key
     salt = creds.hashing_salt
 
-import string
-import hashlib
-import hmac
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from Crypto import Random
 
 from werkzeug.exceptions import InternalServerError
 from werkzeug.exceptions import Unauthorized
+
+logger = logging.getLogger(__name__)
 
 class Data:
     """
@@ -99,7 +100,7 @@ class Data:
                 iv_bytes = iv.encode("utf8")
                 cipher = AES.new(self.key, AES.MODE_CBC, iv_bytes)
                 ciphertext = cipher.decrypt(str_data).decode("utf-8")
-                cleared_text = ''.join(c for c in ciphertext if c in string.printable)
+                cleared_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\xff]', '', ciphertext)
 
                 return cleared_text
         
