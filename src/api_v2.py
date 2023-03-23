@@ -16,6 +16,7 @@ from src.protocolHandler import OAuth2, TwoFactor
 
 from src.security.cookie import Cookie
 from src.security.data import Data
+from src.security.password_policy import password_check
 
 import json
 from datetime import datetime
@@ -45,6 +46,14 @@ def before_request():
 @v2.after_request
 def after_request(response):
     db.close()
+    
+    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubdomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = "script-src 'self'; object-src 'self'"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Permissions-Policy"] = "accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), clipboard-read=(), clipboard-write=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(), gamepad=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), speaker=(), speaker-selection=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()"
+
     return response
 
 @v2.route("/signup", methods=["POST", "PUT"])
@@ -76,6 +85,8 @@ def signup():
             name = request.json["name"]
             country_code = request.json["country_code"]
             password = request.json["password"]
+
+            password_check(password=password)
 
             user_id = User.create(
                 phone_number=phone_number,
