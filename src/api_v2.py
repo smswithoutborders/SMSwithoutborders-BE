@@ -16,6 +16,7 @@ from src.protocolHandler import OAuth2, TwoFactor
 
 from src.security.cookie import Cookie
 from src.security.data import Data
+from src.security.password_policy import password_check
 
 import json
 from datetime import datetime
@@ -76,6 +77,8 @@ def signup():
             name = request.json["name"]
             country_code = request.json["country_code"]
             password = request.json["password"]
+
+            password_check(password=password)
 
             user_id = User.create(
                 phone_number=phone_number,
