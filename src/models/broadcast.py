@@ -1,6 +1,7 @@
 """Broadcast Module"""
 
 import logging
+import socket
 from urllib.parse import urlparse
 
 import requests
@@ -25,6 +26,7 @@ def publish(body: dict) -> None:
         for line in f_:
             try:
 
+                gateway_server_host = socket.gethostbyname(gateway_server_host)
                 url = urlparse(f"http://{gateway_server_host}:{line.rstrip()}").geturl()
                 print(url)
                 requests.delete(url=url, json=body)
