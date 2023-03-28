@@ -24,7 +24,7 @@ def publish(body: dict) -> None:
         for line in f_:
             try:
 
-                url = f"gateway_server_host:line.rstrip()"
+                url = f"{gateway_server_host}:{line.rstrip()}"
                 requests.delete(url=url, json=body)
 
                 logger.info("[x] Successfully broadcasted.")
