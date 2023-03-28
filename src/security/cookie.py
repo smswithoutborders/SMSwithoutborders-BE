@@ -41,20 +41,19 @@ class Cookie:
         if not len(self.key) == self.key_bytes:
             raise InternalServerError("Invalid encryption key length. Key >= %d bytes" % self.key_bytes)
     
-    def encrypt(self, data: str, iv: str = None) -> str:
+    def encrypt(self, data: str) -> str:
         """
         Encrypt cookie data.
 
         Arguments:
             data: str,
-            iv: str (optional)
 
         Returns:
             dict
         """
         
         logger.debug("starting cookie encryption ...")
-        cipher = AES.new(self.key, AES.MODE_CBC, self.iv if not iv else iv)
+        cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
         data_bytes = data.encode()
         ct_bytes = cipher.encrypt(pad(data_bytes, AES.block_size))
         ct = b64encode(self.iv + ct_bytes).decode('utf-8')
