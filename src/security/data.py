@@ -48,13 +48,12 @@ class Data:
         if not len(self.key) == self.key_bytes:
             raise InternalServerError("Invalid encryption key length. Key >= %d bytes" % self.key_bytes)
     
-    def encrypt(self, data: str, iv: str = None) -> dict:
+    def encrypt(self, data: str) -> dict:
         """
         Encrypt data.
 
         Arguments:
             data: str,
-            iv: str (optional)
 
         Returns:
             dict
@@ -68,8 +67,7 @@ class Data:
             return result        
         else:
             data_bytes = data.encode("utf-8")
-            iv_bytes = None if not iv else iv.encode("utf-8")
-            cipher = AES.new(self.key, AES.MODE_CBC, self.iv if not iv_bytes else iv_bytes)
+            cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
             ct_bytes = cipher.encrypt(pad(data_bytes, 16))
             ct_iv = cipher.iv.decode("utf-8")
             ct = ct_bytes.hex()
