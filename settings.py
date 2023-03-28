@@ -56,6 +56,7 @@ class Configurations(baseConfig):
     TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
     TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
     TWILIO_SERVICE_SID = os.environ.get("TWILIO_SERVICE_SID")
+    GATEWAY_SERVER_HOST = os.environ.get("GATEWAY_SERVER_HOST")
 
     ENABLE_RECAPTCHA = False if (os.environ.get("ENABLE_RECAPTCHA") or "False").lower() == "false" else True if (os.environ.get("ENABLE_RECAPTCHA") or "False").lower() == "true" else False
     RECAPTCHA_SECRET_KEY = os.environ.get("RECAPTCHA_SECRET_KEY")
