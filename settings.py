@@ -59,3 +59,6 @@ class Configurations(baseConfig):
 
     ENABLE_RECAPTCHA = False if (os.environ.get("ENABLE_RECAPTCHA") or "False").lower() == "false" else True if (os.environ.get("ENABLE_RECAPTCHA") or "False").lower() == "true" else False
     RECAPTCHA_SECRET_KEY = os.environ.get("RECAPTCHA_SECRET_KEY")
+
+    BROADCAST_WHITELIST = os.environ.get("BROADCAST_WHITELIST")
+    

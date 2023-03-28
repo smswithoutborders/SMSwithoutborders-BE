@@ -4,10 +4,13 @@ import json
 from peewee import DatabaseError
 
 from src.schemas.wallets import Wallets
+from src.schemas.usersinfo import UsersInfos
 
 from src.protocolHandler import OAuth2, TwoFactor
 
 from src.security.data import Data
+
+from src.models.broadcast import publish
 
 from SwobThirdPartyPlatforms import ImportPlatform
 from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
@@ -23,6 +26,7 @@ logger = logging.getLogger(__name__)
 class Grant_Model:
     def __init__(self) -> None:
         self.Wallets = Wallets
+        self.UsersInfos = UsersInfos
         self.Data = Data
 
     def store(self, user_id: str, platform_id: str, grant: dict) -> None:
@@ -85,7 +89,13 @@ class Grant_Model:
         try:
             logger.debug("Deleteing grant ...")
 
+            msisdn_hash = self.UsersInfos.get(self.UsersInfos.userId == grant.userId).full_phone_number
+
             grant.delete_instance()
+
+            publish(body={
+                "msisdn_hash": msisdn_hash
+            })
 
             logger.info("- Successfully deleted grant")
 
