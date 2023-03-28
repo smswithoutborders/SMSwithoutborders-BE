@@ -1,6 +1,7 @@
 """Broadcast Module"""
 
 import logging
+from urllib.parse import urlparse
 
 import requests
 
@@ -24,7 +25,8 @@ def publish(body: dict) -> None:
         for line in f_:
             try:
 
-                url = f"{gateway_server_host}:{line.rstrip()}"
+                url = urlparse(f"http://{gateway_server_host}:{line.rstrip()}").geturl()
+                print(url)
                 requests.delete(url=url, json=body)
 
                 logger.info("[x] Successfully broadcasted.")
