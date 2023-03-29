@@ -2,6 +2,7 @@ import logging
 import argparse
 import os
 import ssl
+import json
 
 from utils.SSL import isSSL
 
@@ -26,7 +27,7 @@ app = Flask(__name__)
 
 CORS(
     app,
-    origins=api_origins,
+    origins=json.loads(api_origins),
     supports_credentials=True,
 )
 

@@ -9,7 +9,6 @@ import requests
 from settings import Configurations
 
 white_list = Configurations.BROADCAST_WHITELIST
-gateway_server_host = Configurations.HOST
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +25,8 @@ def publish(body: dict) -> None:
         for line in f_:
             try:
 
-                url = urlparse(f"https://{gateway_server_host}:{line.rstrip()}").geturl()
-                requests.delete(url=url, json=body, verify=False)
+                url = urlparse(line.rstrip()).geturl()
+                requests.delete(url=url, json=body)
 
                 logger.info("[x] Successfully broadcasted.")
             
