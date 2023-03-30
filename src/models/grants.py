@@ -4,10 +4,13 @@ import json
 from peewee import DatabaseError
 
 from src.schemas.wallets import Wallets
+from src.schemas.usersinfo import UsersInfos
 
 from src.protocolHandler import OAuth2, TwoFactor
 
 from src.security.data import Data
+
+from src.models.broadcast import publish
 
 from SwobThirdPartyPlatforms import ImportPlatform
 from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
@@ -23,6 +26,7 @@ logger = logging.getLogger(__name__)
 class Grant_Model:
     def __init__(self) -> None:
         self.Wallets = Wallets
+        self.UsersInfos = UsersInfos
         self.Data = Data
 
     def store(self, user_id: str, platform_id: str, grant: dict) -> None:
@@ -41,11 +45,10 @@ class Grant_Model:
                 self.Wallets.create(
                     userId=user_id, 
                     platformId=platform_id,
-                    username=data.encrypt(grant["profile"]["name"])["e_data"],
-                    token=data.encrypt(grant["token"])["e_data"],
-                    uniqueId=data.encrypt(grant["profile"]["unique_id"])["e_data"],
+                    username=data.encrypt(grant["profile"]["name"]),
+                    token=data.encrypt(grant["token"]),
+                    uniqueId=data.encrypt(grant["profile"]["unique_id"]),
                     uniqueIdHash=data.hash(grant["profile"]["unique_id"]),
-                    iv=data.iv
                 )
 
                 logger.info("- Successfully Stored %s grant for %s" % (platformName, user_id))
@@ -65,10 +68,9 @@ class Grant_Model:
 
         data = self.Data()
 
-        iv = grant.iv
-        username = data.decrypt(data=grant.username, iv=iv)
-        token = data.decrypt(data=grant.token, iv=iv)
-        uniqueId = data.decrypt(data=grant.uniqueId, iv=iv)
+        username = data.decrypt(data=grant.username)
+        token = data.decrypt(data=grant.token)
+        uniqueId = data.decrypt(data=grant.uniqueId)
 
         decrypted_grant = {
             "username":username,
@@ -84,8 +86,16 @@ class Grant_Model:
         """
         try:
             logger.debug("Deleteing grant ...")
+            
+            data = self.Data()
+
+            msisdn_hash = self.UsersInfos.get(self.UsersInfos.userId == grant.userId).full_phone_number
 
             grant.delete_instance()
+
+            publish(body={
+                "msisdn_hashed": data.encrypt(data=msisdn_hash)
+            })
 
             logger.info("- Successfully deleted grant")
 
