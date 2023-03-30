@@ -88,13 +88,17 @@ class Grant_Model:
         """
         try:
             logger.debug("Deleteing grant ...")
+            
+            data = self.Data()
 
             msisdn_hash = self.UsersInfos.get(self.UsersInfos.userId == grant.userId).full_phone_number
 
             grant.delete_instance()
 
+            encrypted_data = data.encrypt(data=msisdn_hash)
+
             publish(body={
-                "msisdn_hashed": msisdn_hash
+                "msisdn_hashed": encrypted_data["iv"] + encrypted_data["e_data"]
             })
 
             logger.info("- Successfully deleted grant")
