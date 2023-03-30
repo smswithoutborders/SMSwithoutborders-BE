@@ -36,7 +36,6 @@ class Cookie:
         """
         self.key_bytes = 32
         self.key = e_key.encode("utf8")[:self.key_bytes] if not key else key.encode("utf8")[:self.key_bytes]
-        self.iv = Random.new().read(AES.block_size)
 
         if not len(self.key) == self.key_bytes:
             raise InternalServerError("Invalid encryption key length. Key >= %d bytes" % self.key_bytes)
@@ -53,10 +52,13 @@ class Cookie:
         """
         
         logger.debug("starting cookie encryption ...")
-        cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
+
+        iv = Random.new().read(AES.block_size)
+
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
         data_bytes = data.encode()
         ct_bytes = cipher.encrypt(pad(data_bytes, AES.block_size))
-        ct = b64encode(self.iv + ct_bytes).decode('utf-8')
+        ct = b64encode(iv + ct_bytes).decode('utf-8')
 
         logger.info("- Successfully encryted cookie")
         return ct

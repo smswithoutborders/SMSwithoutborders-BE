@@ -45,11 +45,10 @@ class Grant_Model:
                 self.Wallets.create(
                     userId=user_id, 
                     platformId=platform_id,
-                    username=data.encrypt(grant["profile"]["name"])["e_data"],
-                    token=data.encrypt(grant["token"])["e_data"],
-                    uniqueId=data.encrypt(grant["profile"]["unique_id"])["e_data"],
+                    username=data.encrypt(grant["profile"]["name"]),
+                    token=data.encrypt(grant["token"]),
+                    uniqueId=data.encrypt(grant["profile"]["unique_id"]),
                     uniqueIdHash=data.hash(grant["profile"]["unique_id"]),
-                    iv=data.iv
                 )
 
                 logger.info("- Successfully Stored %s grant for %s" % (platformName, user_id))
@@ -69,10 +68,9 @@ class Grant_Model:
 
         data = self.Data()
 
-        iv = grant.iv
-        username = data.decrypt(data=grant.username, iv=iv)
-        token = data.decrypt(data=grant.token, iv=iv)
-        uniqueId = data.decrypt(data=grant.uniqueId, iv=iv)
+        username = data.decrypt(data=grant.username)
+        token = data.decrypt(data=grant.token)
+        uniqueId = data.decrypt(data=grant.uniqueId)
 
         decrypted_grant = {
             "username":username,
@@ -95,10 +93,8 @@ class Grant_Model:
 
             grant.delete_instance()
 
-            encrypted_data = data.encrypt(data=msisdn_hash)
-
             publish(body={
-                "msisdn_hashed": encrypted_data["iv"] + encrypted_data["e_data"]
+                "msisdn_hashed": data.encrypt(data=msisdn_hash)
             })
 
             logger.info("- Successfully deleted grant")
