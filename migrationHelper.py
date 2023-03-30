@@ -21,9 +21,9 @@ def migrate_wallets() -> None:
         wallets = Wallets.select()
 
         for wallet in wallets.iterator():
-            wallet.username = (wallet.iv or "") + wallet.username
-            wallet.token = (wallet.iv or "") + wallet.token
-            wallet.uniqueId = (wallet.iv or "") + wallet.uniqueId
+            wallet.username = (wallet.iv or "") + wallet.username if wallet.username else None
+            wallet.token = (wallet.iv or "") + wallet.token if wallet.token else None
+            wallet.uniqueId = (wallet.iv or "") + wallet.uniqueId if wallet.uniqueId else None
 
             wallet.save()
 
@@ -41,8 +41,8 @@ def migrate_usersinfo() -> None:
         user_infos = UsersInfos.select()
 
         for user_info in user_infos.iterator():
-            user_info.name = (user_info.iv or "") + user_info.name
-            user_info.country_code = (user_info.iv or "") + user_info.country_code
+            user_info.name = (user_info.iv or "") + user_info.name if user_info.name else None
+            user_info.country_code = (user_info.iv or "") + user_info.country_code if user_info.country_code else None
 
             user_info.save()
 
