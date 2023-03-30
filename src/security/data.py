@@ -14,14 +14,16 @@ from settings import Configurations
 
 if Configurations.SHARED_KEY and Configurations.HASHING_SALT:
     e_key = open(Configurations.SHARED_KEY, "r", encoding="utf-8").readline().strip()
-    salt = open(Configurations.HASHING_SALT, "r", encoding="utf-8").readline().strip()
+    h_salt = open(Configurations.HASHING_SALT, "r", encoding="utf-8").readline().strip()
 else:
     from src.schemas.credentials import Credentials
+
     creds = Credentials.get(Credentials.id == 1)
     e_key = creds.shared_key
-    salt = creds.hashing_salt
+    h_salt = creds.hashing_salt
 
 logger = logging.getLogger(__name__)
+
 
 class Data:
     """
@@ -29,23 +31,30 @@ class Data:
 
     Attributes:
         key: str (optional)
-    
+
     Methods:
         encrypt(data: str, iv: str = None) -> dict,
         decrypt(data: str, iv: str) -> str,
         hash(data: str, salt: str = None) -> str
     """
-    def __init__(self, key:str = None) -> None:
+
+    def __init__(self, key: str = None) -> None:
         """
         Arguments:
             key: str (optional)
         """
         self.key_bytes = 32
-        self.key = e_key.encode("utf8")[:self.key_bytes] if not key else key.encode("utf8")[:self.key_bytes]
-        self.salt = salt.encode("utf-8")
+        self.key = (
+            e_key.encode("utf8")[: self.key_bytes]
+            if not key
+            else key.encode("utf8")[: self.key_bytes]
+        )
+        self.salt = h_salt.encode("utf-8")
 
         if not len(self.key) == self.key_bytes:
-            raise InternalServerError("Invalid encryption key length. Key >= %d bytes", self.key_bytes)
+            raise InternalServerError(
+                f"Invalid encryption key length. Key >= {self.key_bytes} bytes"
+            )
 
     def encrypt(self, data: str) -> dict:
         """
@@ -83,7 +92,7 @@ class Data:
 
         Arguments:
             data: str,
-        
+
         Returns:
             str
         """
@@ -101,13 +110,15 @@ class Data:
             iv_bytes = iv.encode("utf8")
             cipher = AES.new(self.key, AES.MODE_CBC, iv_bytes)
             ciphertext = cipher.decrypt(str_data).decode("utf-8")
-            cleared_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\xff]', '', ciphertext)
+            cleared_text = re.sub(
+                r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\xff]", "", ciphertext
+            )
 
             return cleared_text
 
         except (ValueError, KeyError) as error:
             logger.exception(error)
-            raise Unauthorized()
+            raise Unauthorized() from error
 
     def hash(self, data: str, salt: str = None) -> str:
         """
@@ -121,6 +132,12 @@ class Data:
             str
         """
         logger.debug("starting data hashing ...")
-        hash_data = hmac.new(self.salt if not salt else salt, data.encode("utf-8"), hashlib.sha512)
+
+        hash_data = hmac.new(
+            self.salt if not salt else salt.encode("utf-8"),
+            data.encode("utf-8"),
+            hashlib.sha512,
+        )
         logger.info("- Successfully hashed data")
+
         return str(hash_data.hexdigest())
