@@ -94,7 +94,7 @@ class Grant_Model:
             grant.delete_instance()
 
             publish(body={
-                "msisdn_hash": msisdn_hash
+                "msisdn_hashed": msisdn_hash
             })
 
             logger.info("- Successfully deleted grant")
