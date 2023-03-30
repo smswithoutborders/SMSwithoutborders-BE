@@ -21,14 +21,18 @@ def publish(body: dict) -> None:
     return: None
     """
 
-    with open(white_list, "r", encoding='UTF-8') as f_:
-        for line in f_:
-            try:
+    with open(white_list, "r", encoding='UTF-8') as file_:
+        for line in file_:
+            if line:
+                try:
 
-                url = urlparse(line.rstrip()).geturl()
-                requests.delete(url=url, json=body)
+                    url = urlparse(line.rstrip()).geturl()
+                    res = requests.delete(url=url, json=body, timeout=30)
 
-                logger.info("[x] Successfully broadcasted.")
-            
-            except Exception as error:
-                logger.exception(error)
+                    logger.debug("[*] Broadcast Response:")
+                    logger.debug(res.content)
+
+                    logger.info("[x] Successfully broadcasted.")
+
+                except Exception as error:
+                    logger.exception(error)
