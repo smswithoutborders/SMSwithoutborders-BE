@@ -49,6 +49,7 @@ Variables used for the Project:
 - TWILIO_SERVICE_SID=STRING
 - ENABLE_RECAPTCHA=BOOLEAN
 - RECAPTCHA_SECRET_KEY=STRING
+- BROADCAST_WHITELIST
 - MODE=STRING
 
 ## Installation
@@ -164,6 +165,7 @@ $ MYSQL_HOST= \
   TWILIO_SERVICE_SID= \
   ENABLE_RECAPTCHA= \
   RECAPTCHA_SECRET_KEY= \
+  BROADCAST_WHITELIST= \
   MODE=production \
   python3 server.py
 ```
@@ -188,6 +190,7 @@ $ MYSQL_HOST= \
   TWILIO_SERVICE_SID= \
   ENABLE_RECAPTCHA= \
   RECAPTCHA_SECRET_KEY= \
+  BROADCAST_WHITELIST= \
   MODE=production \
   mod_wsgi-express start-server wsgi_script.py \
   --user www-data \
@@ -236,6 +239,7 @@ $ docker run -d -p 9000:9000 \
   --env 'TWILIO_SERVICE_SID=' \
   --env 'ENABLE_RECAPTCHA=' \
   --env 'RECAPTCHA_SECRET_KEY=' \
+  --env 'BROADCAST_WHITELIST=' \
   smswithoutborders-backend
 ```
 
@@ -261,6 +265,7 @@ $ docker run -d -p 9000:9000 \
   --env 'TWILIO_SERVICE_SID=' \
   --env 'ENABLE_RECAPTCHA=' \
   --env 'RECAPTCHA_SECRET_KEY=' \
+  --env 'BROADCAST_WHITELIST=' \
   --env 'MODE=production' \
   smswithoutborders-backend
 ```
