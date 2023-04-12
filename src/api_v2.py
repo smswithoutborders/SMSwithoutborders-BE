@@ -695,8 +695,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
         scope = request.json.get("scope")
         phone_number = request.json.get("phone_number")
         code_verifier = request.json.get("code_verifier")
-        first_name = request.json.get("first_name")
-        last_name = request.json.get("last_name")
+        password = request.json.get("password")
 
         Grant = Grant_Model()
 
@@ -720,10 +719,13 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
             })
 
         elif method.lower() == "put":      
-            if action == "register":
-                result = Protocol.registration(
-                    first_name=first_name,
-                    last_name=last_name
+            if action == "password":
+                if not password:
+                    logger.error("No password")
+                    raise BadRequest()
+                
+                result = Protocol.password_validation(
+                    password=password
                 )
 
             else:
