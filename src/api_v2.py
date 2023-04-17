@@ -271,7 +271,7 @@ async def recovery_check(user_id):
         elif not request.headers.get("User-Agent"):
             logger.error("no user agent")
             raise BadRequest()
-
+        
         e_cookie = request.cookies.get(cookie_name)
         d_cookie = cookie.decrypt(e_cookie)
         json_cookie = json.loads(d_cookie)
@@ -284,6 +284,8 @@ async def recovery_check(user_id):
         user_agent = request.headers.get("User-Agent")
 
         new_password = request.json["new_password"]
+
+        password_check(password=new_password)
 
         Session.find(
             sid=sid,
@@ -1023,6 +1025,8 @@ async def update_password(user_id):
 
         password = request.json["password"]
         new_password = request.json["new_password"]
+
+        password_check(password=new_password)
     
         Session.find(
             sid=sid,
