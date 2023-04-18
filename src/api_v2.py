@@ -16,7 +16,7 @@ from src.protocolHandler import OAuth2, TwoFactor
 
 from src.security.cookie import Cookie
 from src.security.data import Data
-from src.security.password_policy import password_check
+from src.security.password_policy import check_password_policy
 
 import json
 from datetime import datetime
@@ -86,7 +86,7 @@ def signup():
             country_code = request.json["country_code"]
             password = request.json["password"]
 
-            password_check(password=password)
+            check_password_policy(password=password)
 
             user_id = User.create(
                 phone_number=phone_number,
@@ -285,7 +285,7 @@ async def recovery_check(user_id):
 
         new_password = request.json["new_password"]
 
-        password_check(password=new_password)
+        check_password_policy(password=new_password)
 
         Session.find(
             sid=sid,
@@ -1026,7 +1026,7 @@ async def update_password(user_id):
         password = request.json["password"]
         new_password = request.json["new_password"]
 
-        password_check(password=new_password)
+        check_password_policy(password=new_password)
     
         Session.find(
             sid=sid,
