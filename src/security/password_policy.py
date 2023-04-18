@@ -14,7 +14,6 @@ def check_password_policy(password) -> bool:
     - Length: Passwords should be at least 8 characters long.
     - Complexity: Passwords should include a combination of uppercase and lowercase letters, numbers, and relevant special characters.
     - Frequency: Passwords should not have been previously compromised in a data breach.
-    - Reuse: Passwords should not be reused across different accounts.
     
     Args:
         password (str): The password to check.
