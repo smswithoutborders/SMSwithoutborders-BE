@@ -1,0 +1,24 @@
+{
+  "plugins": ["plugins/markdown"],
+  "recurseDepth":10,
+  "source": {
+    "include": ["src"],
+    "exclude": ["node_modules"],
+    "includePattern": ".+\\.js(doc|x)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+
+  "templates": {
+    "cleverLinks": true,
+    "monospaceLinks": true
+  },
+
+  "opts": {
+    "template": "node_modules/docdash",
+    "encoding": "utf8",
+    "destination": "build",
+    "recurse": true,
+    "tutorials": "./tutorials",
+    "readme": "./README.md"
+  }
+}

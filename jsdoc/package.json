@@ -1,0 +1,19 @@
+{
+  "name": "jsdoc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "compile": "jsdoc -c jsdoc.json --verbose",
+    "export": "jsdoc2md src/index.js",
+    "pandoc": "pandoc jsdoc/*.html -o output.md --include-in-header=jsdoc/fonts/*.woff --include-in-header=jsdoc/scripts/*.js --include-in-header=jsdoc/styles/*.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "docdash": "^2.0.1",
+    "jsdoc": "^4.0.2",
+    "jsdoc-to-markdown": "^8.0.0"
+  }
+}
