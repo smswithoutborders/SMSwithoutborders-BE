@@ -3,7 +3,14 @@
 % You can adapt this file completely to your liking, but it should at least
 % contain the root `toctree` directive.
 
-# Welcome to swob-backend-docs's documentation!
+<!-- # Welcome to swob-backend-docs's documentation! -->
+```{include} ../../README.md
+:relative-images:
+```
+
+```{warning}
+This documentation is in progress
+```
 
 ```{toctree}
 :caption: 'Contents:'
