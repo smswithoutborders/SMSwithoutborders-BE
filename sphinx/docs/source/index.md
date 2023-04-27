@@ -12,9 +12,15 @@
 This documentation is in progress
 ```
 
+For further info, check out {doc}`usage`.
+
+To install, see {ref}`Installation`.
+
 ```{toctree}
 :caption: 'Contents:'
 :maxdepth: 2
+
+usage
 ```
 
 # Indices and tables
