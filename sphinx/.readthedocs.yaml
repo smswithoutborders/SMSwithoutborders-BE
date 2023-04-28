@@ -14,16 +14,24 @@ build:
     # nodejs: "19"
     # rust: "1.64"
     # golang: "1.19"
+  commands:
+    - sudo apt update && sudo apt install make mysql-server -y && sudo service mysql start
+    - sudo mysql -u root < setup.sql
+    - echo -e "MYSQL_HOST=localhost\nMYSQL_USER=swob-user\nMYSQL_PASSWORD=swob-password\nMYSQL_DATABASE=swob-database" > .env
+    - pip install -r requirements.txt && pip install -r sphinx/requirements.txt
+    - cd sphinx && make extract-docs && cd ..
+  jobs:
+    post_build:
+      - sudo service mysql stop
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
-  configuration: docs/source/ conf.py
-
+  configuration: sphinx/docs/source/conf.py
 # If using Sphinx, optionally build your docs in additional formats such as PDF
 # formats:
 #    - pdf
 
 # Optionally declare the Python requirements required to build your docs
-python:
-  install:
-    - requirements: ../requirements.txt requirements.txt
+# python:
+#   install:
+#     - requirements: ../requirements.txt requirements.txt
