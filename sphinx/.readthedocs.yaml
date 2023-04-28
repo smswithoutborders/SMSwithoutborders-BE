@@ -30,6 +30,8 @@ build:
   #   - pip install -r requirements.txt && pip install -r sphinx/requirements.txt
   #   - cd sphinx && make extract-docs && cd ..
   jobs:
+    post_checkout:
+      - echo "Just a test, carry on ..."
     pre_create_environment:
       - sudo apt update && sudo apt install python3-dev libmysqlclient-dev apache2 apache2-dev libapache2-mod-wsgi-py3 make mysql-server -y
     post_install:
