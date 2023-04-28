@@ -15,7 +15,7 @@ build:
     # rust: "1.64"
     # golang: "1.19"
   commands:
-    - sudo apt update && sudo apt install make mysql-server -y && sudo service mysql start
+    - sudo apt update && sudo apt install python3-dev libmysqlclient-dev apache2 apache2-dev libapache2-mod-wsgi-py3 make mysql-server -y && sudo service mysql start
     - sudo mysql -u root < setup.sql
     - echo -e "MYSQL_HOST=localhost\nMYSQL_USER=swob-user\nMYSQL_PASSWORD=swob-password\nMYSQL_DATABASE=swob-database" > .env
     - pip install -r requirements.txt && pip install -r sphinx/requirements.txt
