@@ -21,6 +21,7 @@ To install, see {ref}`Installation`.
 :maxdepth: 2
 
 usage
+modules
 ```
 
 # Indices and tables
