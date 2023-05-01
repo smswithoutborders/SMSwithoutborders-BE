@@ -37,7 +37,7 @@ build:
     # post_install:
     # - service mysql start
     pre_install:
-      - pip install dotenv
+      - pip install python-dotenv
     # - echo -e "MYSQL_HOST=localhost\nMYSQL_USER=swob-user\nMYSQL_PASSWORD=swob-password\nMYSQL_DATABASE=swob-database" > .env
     # - mysql -u root < sphinx/setup.sql
     # - cd sphinx && make extract-docs && cd ..
