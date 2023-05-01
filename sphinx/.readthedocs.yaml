@@ -5,16 +5,16 @@
 # Required
 version: 2
 
-mysql:
-  image: my-mysql-image
-  environment:
-    MYSQL_ROOT_PASSWORD: mysecretpassword
-    MYSQL_USER: myuser
-    MYSQL_PASSWORD: mypassword
-    MYSQL_DATABASE: mydatabase
-  command: mysqld --bind-address=0.0.0.0 --skip-networking=0
-  ports:
-    - '3306:3306'
+# mysql:
+#   image: my-mysql-image
+#   environment:
+#     MYSQL_ROOT_PASSWORD: mysecretpassword
+#     MYSQL_USER: myuser
+#     MYSQL_PASSWORD: mypassword
+#     MYSQL_DATABASE: mydatabase
+#   command: mysqld --bind-address=0.0.0.0 --skip-networking=0
+#   ports:
+#     - '3306:3306'
 
 # Set the version of Python and other tools you might need
 build:
@@ -49,8 +49,37 @@ build:
       - service mysql start
     pre_install:
       - pip install python-dotenv
+      - cd sphinx
       - echo -e "MYSQL_HOST=localhost\nMYSQL_USER=swob-user\nMYSQL_PASSWORD=swob-password\nMYSQL_DATABASE=swob-database" > .env
-      - mysql -u root < sphinx/setup.sql
+      - cd ..
+      # - mysql -u root < sphinx/setup.sql
+      # # get docker
+      # - curl -fsSL https://get.docker.com -o get-docker.sh
+
+      # # install docker
+      # - sh get-docker.sh
+
+      # # create docker group
+      # - groupadd docker
+
+      # # add user to group so as to run commands without root privileges
+      # - usermod -aG docker $USER
+
+      # # restart for changes to take effect
+      # - systemctl reboot
+
+      # # start docker daemon
+      # - systemctl --user start docker.service
+
+      # # download latest MySQL docker image
+      # - docker pull mysql
+
+      # # start MySQL docker container
+      # docker run --name mysql-container -e MYSQL_ROOT_PASSWORD=mypassword -d mysql
+
+      # # run sql script
+      # - docker exec -i mysql-container mysql -u root -pmypassword < /path/to/sql-script.sql
+
     # - cd sphinx && make extract-docs && cd ..
     # post_build:
     # - service mysql stop
