@@ -6,6 +6,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+from pathlib import Path
+from dotenv import load_dotenv
+import sys
+import os
 project = 'swob-backend-docs'
 copyright = '2023, Mofor Emmanuel'
 author = 'Mofor Emmanuel'
@@ -15,8 +19,6 @@ release = '1.0.0'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 # add src folder
-import os
-import sys
 # sys.path.insert(0, os.path.relpath('../../../src/'))
 
 # Add the parent directory of "src" to the Python path
@@ -27,21 +29,23 @@ sys.path.insert(0, os.path.abspath('../../..'))
 sys.path.insert(0, os.path.abspath('../../../src'))
 # sys.path.insert(0, os.path.abspath('../../../src/models'))
 
+# include private modules
+sys.path.insert(0, os.path.abspath('../../../src/models/_2FA.py'))
+
 # env files needed for swob
-from dotenv import load_dotenv
-from pathlib import Path
 
 dotenv_path = Path('../../.env')
 load_dotenv(dotenv_path=dotenv_path)
 
 extensions = [
     "myst_parser",
-    "sphinx.ext.duration", # show build time
-    "sphinx.ext.autosectionlabel", # generate targets for every subheading in every document
-    "sphinx.ext.autodoc", # auto gen docs from code
-    "sphinx.ext.napoleon", # for other docstring formats
-    "sphinx.ext.viewcode", #
-    # "sphinx.ext.autosummary", # doc of all code
+    "sphinx.ext.duration",  # show build time
+    # generate targets for every subheading in every document
+    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.autodoc",  # auto gen docs from code
+    "sphinx.ext.napoleon",  # for other docstring formats
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autosummary",  # doc of all code
 ]
 
 # attempt  to showing __init__ docs
@@ -54,22 +58,22 @@ extensions = [
 # }
 
 autodoc_default_options = {
-    "members": True,
+    "members": True,  # include class members
     "member-order": "bysource",
     "special-members": "__init__",
     "undoc-members": True,
+    # "private-members": True,
     "exclude-members": "__weakref__",
-    "inherited-members": True,
+    # "inherited-members": True,
     "show-inheritance": True,
-    # "private-members": False,
     # "imported-members": False,
     "ignore-module-all": False,
     # "exclude-protected": False,
-    "members": True,  # include class members
+    "exclude-private": False,
 }
 
 templates_path = ['_templates']
-exclude_patterns = ['_2FA.py']
+exclude_patterns = ['']
 
 
 # -- Options for HTML output -------------------------------------------------
