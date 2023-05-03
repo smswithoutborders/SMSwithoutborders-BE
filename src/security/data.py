@@ -13,8 +13,10 @@ from werkzeug.exceptions import Unauthorized
 from settings import Configurations
 
 if Configurations.SHARED_KEY and Configurations.HASHING_SALT:
-    e_key = open(Configurations.SHARED_KEY, "r", encoding="utf-8").readline().strip()
-    h_salt = open(Configurations.HASHING_SALT, "r", encoding="utf-8").readline().strip()
+    e_key = open(Configurations.SHARED_KEY, "r",
+                 encoding="utf-8").readline().strip()
+    h_salt = open(Configurations.HASHING_SALT, "r",
+                  encoding="utf-8").readline().strip()
 else:
     from src.schemas.credentials import Credentials
 
@@ -27,21 +29,22 @@ logger = logging.getLogger(__name__)
 
 class Data:
     """
-    Encrypt, decrypt and hash data.
+    This class provides methods to encrypt, decrypt and hash data.
 
     Attributes:
-        key: str (optional)
-
-    Methods:
-        encrypt(data: str, iv: str = None) -> dict,
-        decrypt(data: str, iv: str) -> str,
-        hash(data: str, salt: str = None) -> str
+        key_bytes (int): Length of the encryption key in bytes.
+        key (bytes): Encryption key used for encrypting and decrypting data.
+        salt (bytes): Hashing salt used for hashing data.
     """
 
     def __init__(self, key: str = None) -> None:
         """
-        Arguments:
-            key: str (optional)
+        Constructor method for the Data class.
+
+        Args:
+            key (str): The encryption key to use. If not provided, a default key will be used.
+        Raises:
+            InternalServerError: If an invalid encryption key is provided.
         """
         self.key_bytes = 32
         self.key = (
@@ -58,13 +61,14 @@ class Data:
 
     def encrypt(self, data: str) -> dict:
         """
-        Encrypt data.
+        Encrypts the given data using AES-256-CBC encryption.
 
-        Arguments:
-            data: str,
+        Args:
+            data (str): The data to be encrypted.
 
         Returns:
-            dict
+            str: Encrypted data, with initialization vector (IV) prepended.
+            None: If no data to encrypt.
         """
         logger.debug("starting data encryption ...")
 
@@ -88,13 +92,17 @@ class Data:
 
     def decrypt(self, data: str) -> str:
         """
-        Decrypt data.
+        Decrypts the given data using AES-256-CBC encryption.
 
-        Arguments:
-            data: str,
+        Args:
+            data (str): The data to be decrypted.
 
         Returns:
-            str
+            str: Decrypted data.
+            None: If no data to decrypt.
+
+        Raises:
+            Unauthorized: If an error occurs while decrypting the data.
         """
         try:
             logger.debug("starting data decryption ...")
@@ -122,14 +130,15 @@ class Data:
 
     def hash(self, data: str, salt: str = None) -> str:
         """
-        Hash data.
+        Hashes the given data using HMAC-SHA512 hashing algorithm.
 
-        Arguments:
-            data: str,
-            salt: str (optional)
+        Args:
+            data (str): The data to be hashed.
+            salt (Optional[str]): The salt to be used in hashing the data. If not provided, 
+                                  the salt from the object's attributes will be used.
 
         Returns:
-            str
+            str: The hashed data.
         """
         logger.debug("starting data hashing ...")
 
