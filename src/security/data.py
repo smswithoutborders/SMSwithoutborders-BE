@@ -86,7 +86,7 @@ class Data:
 
         result = ct_iv + ct
 
-        logger.info("- Successfully encryted data")
+        logger.info("- Successfully encrypted data")
 
         return result
 
