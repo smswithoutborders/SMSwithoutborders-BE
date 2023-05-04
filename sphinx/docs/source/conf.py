@@ -72,6 +72,10 @@ autodoc_default_options = {
     "exclude-private": False,
 }
 
+html_theme_options = {
+    'collapse_navigation': False  # always show full TOC (toctree)
+}
+
 templates_path = ['_templates']
 exclude_patterns = ['']
 
@@ -82,3 +86,6 @@ exclude_patterns = ['']
 # html_theme = 'cloud'
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+# html_logo = 'https://github.com/smswithoutborders/SMSWithoutBorders-Resources/raw/master/multimedia/img/swob_logo_icon.png'
+
+# html_js_files = ['custom.js']
