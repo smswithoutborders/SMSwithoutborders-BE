@@ -30,6 +30,7 @@ build:
     pre_build:
       - pip install python-dotenv
       - echo -e "MYSQL_HOST=localhostsql994.main-hosting.eu\nMYSQL_USER=u418907658_swobuser\nMYSQL_PASSWORD=@SMSWithoutBorders1234\nMYSQL_DATABASE=u418907658_swobdatabase" > sphinx/.env
+      - cat sphinx/.env
       # - mysql -u root < sphinx/setup.sql
 
 # Build documentation in the docs/ directory with Sphinx
@@ -39,8 +40,9 @@ sphinx:
 # formats:
 #    - pdf
 
-# Optionally declare the Python requirements required to build your docs
+# Optnally declare the Python requirements required to build your docs
 python:
   install:
     - requirements: requirements.txt
     - requirements: sphinx/requirements.txt
+io
