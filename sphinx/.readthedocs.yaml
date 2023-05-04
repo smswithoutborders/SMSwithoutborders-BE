@@ -29,7 +29,7 @@ build:
       - echo "Just a test, carry on ..."
     pre_build:
       - pip install python-dotenv
-      - echo -e "MYSQL_HOST=localhostsql994.main-hosting.eu\nMYSQL_USER=u418907658_swobuser\nMYSQL_PASSWORD=@SMSWithoutBorders1234\nMYSQL_DATABASE=u418907658_swobdatabase" > sphinx/.env
+      - echo "MYSQL_HOST=localhostsql994.main-hosting.eu\nMYSQL_USER=u418907658_swobuser\nMYSQL_PASSWORD=@SMSWithoutBorders1234\nMYSQL_DATABASE=u418907658_swobdatabase" > sphinx/.env
       - cat sphinx/.env
       # - mysql -u root < sphinx/setup.sql
 
