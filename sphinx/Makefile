@@ -16,7 +16,14 @@ remove-rst:
 	@echo "Successfully removed generated rst files\n"
 
 extract-docs: get-docs convert-rst remove-rst
-	@echo "Successfully extracted documentation \n"
+	@echo "Successfully extracted documentation and built html \n"
+
+extract-markdown: get-docs convert-rst remove-rst
+	@echo "\nGenerating markdown ..."
+	$(MAKE) -C docs markdown
+	@echo "Copying files ... \n"
+	cp -r docs/build/markdown .
+	@echo "Successfully extracted documentation and built markdown \n"
 
 run:
 	sphinx-autobuild docs/source docs/build/html
