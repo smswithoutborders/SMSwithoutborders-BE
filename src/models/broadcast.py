@@ -1,4 +1,7 @@
-"""Broadcast Module"""
+"""Broadcast Module.
+
+This module provides a function to broadcast a message to a list of URLs defined in a whitelist file.
+"""
 
 import logging
 import socket
@@ -12,13 +15,16 @@ white_list = Configurations.BROADCAST_WHITELIST
 
 logger = logging.getLogger(__name__)
 
+
 def publish(body: dict) -> None:
-    """Publish a broadcast
-    
-    Keyword arguments:
-    body -- content to be published
-    
-    return: None
+    """Publishes a message to a list of URLs defined in a whitelist file.
+
+    Args:
+        body (dict): The message to be broadcasted.
+
+    Raises:
+        Any exceptions raised by the requests module.
+
     """
 
     with open(white_list, "r", encoding='UTF-8') as file_:

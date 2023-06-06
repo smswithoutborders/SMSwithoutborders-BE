@@ -8,12 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 def password_check(password: str) -> bool:
-    """Check if password follows policy
+    """
+    Check if the given password conforms to the password policy.
 
-    Keyword arguments:
-    password -- Password provided
+    Args:
+        password (str): The password to be checked.
 
-    return: str
+    Returns:
+        bool: True if password conforms to policy.
+
+    Raises:
+        BadRequest: If the password length is less than 8.
+
     """
 
     if len(password) < 8:
