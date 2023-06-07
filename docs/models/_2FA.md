@@ -7,7 +7,7 @@ The `OTP_Model` class the provides functionality for OTP (One Time Password) ver
 - [Requirements](#requirements)
 - [Configuration](#configuration)
 - [Class: OTP_Model](#class-otp_model)
-  - [Method: \_\_init\_\_](#method-init)
+  - [Method: \_\_init\_\_](#method-__init__)
   - [Method: verification](#method-verification)
   - [Method: verification_check](#method-verification_check)
   - [Method: check_count](#method-check_count)
@@ -60,7 +60,7 @@ class OTP_Model:
     """
 ```
 
-### Method:  `__init__` <a name='method-init'></a>
+### Method:  `__init__`
 
 ```python
 def __init__(self, phone_number: str) -> None:
@@ -136,7 +136,6 @@ Checks the SMS resend record count for a specific user.
 ***Raises***
 
 - `TooManyRequests`: User has reached the maximum number of verification attempts within a certain timeframe, and may need to wait before attempting again.
-
 
 ### Method: `add_count`
 
