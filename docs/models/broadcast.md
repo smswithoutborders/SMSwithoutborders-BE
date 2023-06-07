@@ -6,7 +6,7 @@ The Broadcast module has a `publish` function which can broadcasts a message to 
 
 - [Requirements](#requirements)
 - [Configuration](#configuration)
-- [Function: publish]()
+- [Function: publish](#function-publish)
 
 ## Requirements
 
