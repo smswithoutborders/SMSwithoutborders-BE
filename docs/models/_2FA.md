@@ -1,13 +1,13 @@
-# OTP Verification Documentation
+# OTP Verification Module
 
-This is a documentation for the `OTP_Model` class that provides functionality for OTP (One Time Password) verification using the Twilio service. The class includes methods for OTP verification, checking the count of OTP resend, adding to the resend count, and deleting a resend record.
+The `OTP_Model` class the provides functionality for OTP (One Time Password) verification using the Twilio service. The class includes methods for OTP verification, checking the count of OTP resend, adding to the resend count, and deleting a resend record.
 
 ## Table of Contents
 
 - [Requirements](#requirements)
 - [Configuration](#configuration)
 - [Class: OTP_Model](#class-otp_model)
-  - [Method: \_\_init\_\_](#method-__init__)
+  - [Method: \_\_init\_\_](#method-init)
   - [Method: verification](#method-verification)
   - [Method: verification_check](#method-verification_check)
   - [Method: check_count](#method-check_count)
@@ -48,7 +48,7 @@ Before using the OTP_Model class, some configurations need to be set. These conf
 
 Ensure that the `settings` module contains the necessary configurations.
 
-## Class: OTP_Model
+## Class: `OTP_Model`
 
 The `OTP_Model` class provides methods for OTP verification using the Twilio service.
 
@@ -60,7 +60,7 @@ class OTP_Model:
     """
 ```
 
-### Method:  \_\_init\_\_
+### Method:  `__init__` <a name='method-init'></a>
 
 ```python
 def __init__(self, phone_number: str) -> None:
@@ -76,7 +76,7 @@ The `OTP_Model` class is initialized with a `phone_number` parameter. The class 
 
 - `None`
 
-### Method: verification
+### Method: `verification`
 
 ```python
 def verification(self) -> SMSObject:
@@ -88,7 +88,11 @@ Sends the OTP verification code to the specified phone number.
 
 - `verification (SMSObject)`: The verification object returned by the Twilio API.
 
-### Method: verification_check
+***Raises***
+
+- `InternalServerError`: An unexpected error occurred with the underlying infrastructure of the server. More likely an issue/bug or glitch with the server's programming.
+
+### Method: `verification_check`
 
 ```python
 def verification_check(self, code: str) -> SMSObject:
@@ -104,7 +108,15 @@ Verifies the OTP code sent to the specified phone number.
 
 `verification_check (SMSObject)`: The verification check object returned by the Twilio API.
 
-### Method: check_count
+***Raises***
+
+- `InternalServerError`: An unexpected error occurred with the underlying infrastructure of the server. More likely an issue/bug or glitch with the server's programming.
+
+- `Forbidden`:
+  - When checking an OTP code using the Twilio Verify API, if the code is wrong, Twilio will raise a TwilioRestException indicating that the verification failed.
+  - Twilio API returns a 403 Forbidden status code. This typically happens when there are issues with the request, such as invalid credentials or insufficient permissions to perform the requested operation. In this case, the Forbidden exception is raised to indicate that the verification check failed due to a forbidden error.
+
+### Method: `check_count`
 
 ```python
 def check_count(self, unique_id: str, user_id: str):
@@ -121,7 +133,12 @@ Checks the SMS resend record count for a specific user.
 
 - `counter (Svretries)`: The SMS resend record for the specified user.
 
-### Method: add_count
+***Raises***
+
+- `TooManyRequests`: User has reached the maximum number of verification attempts within a certain timeframe, and may need to wait before attempting again.
+
+
+### Method: `add_count`
 
 ```python
 def add_count(self, counter) -> str:
@@ -137,7 +154,7 @@ Adds a count to the SMS resend record for the specified user.
 
 - `expires_timestamp (str)`: The timestamp when the count expires.
 
-### Method: delete_count
+### Method: `delete_count`
 
 ```python
 def delete_count(self, counter_id: int):
@@ -148,3 +165,7 @@ Deletes the SMS resend record with the specified ID.
 ***Arguments***:
 
 - `counter_id (int)`: The ID of the SMS resend record to be deleted.
+
+***Raises***
+
+- `Forbidden`: Trying to delete an SMS resend record that does not exist.
