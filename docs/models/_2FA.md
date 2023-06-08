@@ -1,120 +1,100 @@
 # _2FA Module
 
-## OTP_Model
+## `Class`: OTP_Model
 
-<!-- ```python
-class OTP_Model:
-``` -->
+This class implements a model for One-Time Password (OTP) verification using the Twilio Verify API.
 
-Provides functionality for OTP (One Time Password) verification using the Twilio service. The class includes methods for OTP verification, checking the count of OTP resend, adding to the resend count, and deleting a resend record.
+## Attributes
 
-### \_\_init\_\_
+- `client`: An instance of the Twilio Client class used for API communication.
+- `phone_number`: The phone number to send OTPs to.
+- `Svretries`: A reference to the Svretries database model.
 
-<!-- ```python
-OTP_Model(phone_number: str)
-``` -->
+## Methods
 
-**Signature:** `OTP_Model(phone_number: str) -> None`
+### `__init__(self, phone_number: str) -> None` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L34-L42)]
 
-Sets up the Twilio client using the provided account SID and authentication token.
+Initializes an OTP_Model instance.
 
 **Parameters:**
 
-- `phone_number (str)`: The phone number in context for the OTP verification process.
-
-
-**Examples:**
-
-```python
-# Example usage of the method
-otp = OTP_Model(phone_number='+237671234567')
-```
-
-**Properties:**
-
-### client
-
-The Twilio REST Client helper library provided in the Twilio Python SDK.
-
-**Type:** `twilio.rest.Client`
-
-### phone_number
-
-The phone number in context for the OTP verification process.
-
-**Type:** `str`
-
-### Svretries
-
-The OTP resend record
-
-**Type:** `schemas.svretries`
-
-
-## verification
-
-**Signature:** `verification() -> SMSObject`
-
-Starts an OTP verification process using the Twilio Verify API.
-
+- `phone_number` (str): The phone number to send OTPs to.
 
 **Returns:**
 
-The verification object returned by the Twilio API.
+- `None`
+
+**Example:**
+
+```python
+model = OTP_Model("+1234567890")
+```
+
+**Notes:**
+
+- The phone_number parameter should be a string representing the phone number to which OTPs will be sent.
+
+### `verification(self) -> SMSObject` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L44-L65)]
+
+Starts an OTP verification process using the Twilio Verify API.
+
+**Returns:**
+
+- `SMSObject`: The verification object returned by the Twilio API.
 
 **Raises:**
 
 - `InternalServerError`: An unexpected error occurred with the underlying infrastructure of the server. More likely an issue/bug or glitch with the server's programming.
 
-**Examples:**
+**Example:**
 
 ```python
-# Example usage of the function
 otp = OTP_Model(phone_number='+237671234567')
 otp_res = otp.verification()
 ```
 
-## verification_check
-
-**Signature:** `verification_check(code: str) -> SMSObject`
+### `verification_check(self, code: str) -> SMSObject` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L67-L96)]
 
 Verifies the OTP code sent to the specified phone number.
 
+**Parameters:**
+
+- `code` (str): The OTP code to be verified.
 
 **Returns:**
 
-The verification check object returned by the Twilio API.
+- `SMSObject`: The verification check object returned by the Twilio API.
 
 **Raises:**
 
 - `InternalServerError`: An unexpected error occurred with the underlying infrastructure of the server. More likely an issue/bug or glitch with the server's programming.
 
-- `Forbidden`:
-  - When checking an OTP code using the Twilio Verify API, if the code is wrong, Twilio will raise a TwilioRestException indicating that the verification failed.
-  - Twilio API returns a 403 Forbidden status code. This typically happens when there are issues with the request, such as invalid credentials or insufficient permissions to perform the requested operation. In this case, the Forbidden exception is raised to indicate that the verification check failed due to a forbidden error.
+- `Forbidden`: Invalid credentials or insufficient permissions to perform the requested operation
 
 **Examples:**
 
 ```python
-# Example usage of the function
 otp = OTP_Model(phone_number='+237671234567')
 otp_res = otp.verification_check(code='123456')
 ```
 
-## check_count
+**Notes:**
 
-**Signature:** `check_count(unique_id: str, user_id: str)`
+- When checking an OTP code using the Twilio Verify API, if the code is wrong, Twilio will raise a TwilioRestException indicating that the verification failed.
+- Twilio API returns a 403 Forbidden status code. This typically happens when there are issues with the request, such as invalid credentials or insufficient permissions to perform the requested operation. In this case, the Forbidden exception is raised to indicate that the verification check failed due to a forbidden error.
 
-Checks the SMS resend record count for a specific user.
+### `check_count(self, unique_id: str, user_id: str)` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L98-L162)]
 
-**Arguments:**
+Checks for an Svretries instance for a specific user.
+
+**Parameters:**
 
 - `unique_id (str)`: The unique identifier for the SMS resend record.
 - `user_id (str)`: The user identifier.
 
 **Returns:**
 
-The SMS resend record for the specified user.
+An instance of the Svretries database model.
 
 **Raises:**
 
@@ -123,7 +103,6 @@ The SMS resend record for the specified user.
 **Examples:**
 
 ```python
-# Example usage of the function
 otp = OTP_Model(phone_number='+237671234567')
 if enable_otp_counter:
   otp_counter = otp.check_count(
@@ -132,25 +111,21 @@ if enable_otp_counter:
   )
 ```
 
-## add_count
+### `add_count(self, counter) -> str` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L164-L247)]
 
-**Signature:** `add_count(counter) -> str`
+Adds to the count of verification attempts and updates the expiry date for a user's OTP verification.
 
-Checks the SMS resend record count for a specific user.
+**Parameters:**
 
-**Arguments:**
-
-- `counter (Svretries)`: The SMS resend record object.
+- `counter (Svretries)`: An instance of the Svretries database model.
 
 **Returns:**
 
-The timestamp when the count expires.
-
+The timestamp for which the counter (instance) expires.
 
 **Examples:**
 
 ```python
-# Example usage of the function
 otp = OTP_Model(phone_number='+237671234567')
 otp_res = otp.verification()
 
@@ -159,24 +134,21 @@ if otp_res.status == "pending":
     expires = otp.add_count(otp_counter)
 ```
 
-## delete_count
+### `delete_count(self, counter_id: int)` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L249-L275)]
 
-**Signature:** `delete_count(counter_id: int)`
+ Deletes the instance of the Svretries database model with the specified `counter_id`.
 
-Checks the SMS resend record count for a specific user.
+**Parameters:**
 
-**Arguments:**
-
-- `counter_id (int)`: The ID of the SMS resend record to be deleted.
+- `counter_id (int)`: The ID of the Svretries database model instance to be deleted.
 
 **Raises:**
 
-- `Forbidden`: Trying to delete an SMS resend record that does not exist.
+- `Forbidden`: Trying to delete an Svretries model instance that does not exist.
 
 **Examples:**
 
 ```python
-# Example usage of the function
 otp = OTP_Model(phone_number='+237671234567')
 otp_res = otp_check.verification()
 
@@ -193,6 +165,6 @@ if otp_res.status == "approved":
 
 ## See Also
 
-- [Related Function](link_to_related_function)
+<!-- - [Related Function](link_to_related_function) -->
 - [Twilio Client](https://github.com/twilio/twilio-python#use-the-helper-library)
-- [Svretries Record](link_to_Svretries_class)
+- [Svretries Model](link_to_Svretries_class)
