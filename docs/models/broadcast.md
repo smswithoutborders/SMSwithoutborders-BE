@@ -1,45 +1,27 @@
-# Broadcast Module Documentation
+# Broadcast Module
 
 The Broadcast module has a `publish` function which can broadcasts a message to a list of URLs defined in a whitelist file.
 
-## Table Of Contents
+## Functions
 
-- [Requirements](#requirements)
-- [Configuration](#configuration)
-- [Function: publish](#function-publish)
-
-## Requirements
-
-- Python 3.x
-- `settings` module
-- `logging` module
-- `urllib.parse` module
-- `requests` module
-
-The following libraries are imported in the code:
-
-```python
-
-from urllib.parse import urlparse
-from settings import Configurations
-import requests
-import logging
-```
-
-## Configuration
-
-Before using the `publish` function, a configuration needs to be set. This configuration is imported from a settings module. The required configuration is:
-
-- `BROADCAST_WHITELIST`: The [path to a] file that contains the list URLs to be broadcasted to.
-
-## Function: `publish`
-
-```python
-def publish(body: dict) -> None:
-```
+### `publish(body: dict) -> None` [[view source](/src/models/broadcast.py#L19-L44)]
 
 Parses every URL in the list of URLs defined in the whitelist file and broadcasts the message to it.
 
-***Arguments***
+**Parameters:**
 
-- `body (dict)`: A dictionary or json object which serves as the body, [typically the message] of the broadcasting request.
+- `body (dict)`: A dictionary which serves as the body, [typically contains the message] of the broadcast request.
+
+**Returns:**
+
+- `None`
+
+**Example:**
+
+```python
+body = {
+  message: 'Some message to broadcast'
+}
+
+publish(body)
+```

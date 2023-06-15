@@ -12,13 +12,13 @@ This class implements a model for One-Time Password (OTP) verification using the
 
 ## Methods
 
-### `__init__(self, phone_number: str) -> None` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L34-L42)]
+### `__init__(self, phone_number: str) -> None` [[view source](/src/models/_2FA.py#L34-L42)]
 
 Initializes an OTP_Model instance.
 
 **Parameters:**
 
-- `phone_number` (str): The phone number to send OTPs to.
+- `phone_number (str)`: The phone number to send OTPs to.
 
 **Returns:**
 
@@ -34,7 +34,7 @@ model = OTP_Model("+1234567890")
 
 - The phone_number parameter should be a string representing the phone number to which OTPs will be sent.
 
-### `verification(self) -> SMSObject` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L44-L65)]
+### `verification(self) -> SMSObject` [[view source](/src/models/_2FA.py#L44-L65)]
 
 Starts an OTP verification process using the Twilio Verify API.
 
@@ -53,13 +53,13 @@ otp = OTP_Model(phone_number='+237671234567')
 otp_res = otp.verification()
 ```
 
-### `verification_check(self, code: str) -> SMSObject` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L67-L96)]
+### `verification_check(self, code: str) -> SMSObject` [[view source](/src/models/_2FA.py#L67-L96)]
 
 Verifies the OTP code sent to the specified phone number.
 
 **Parameters:**
 
-- `code` (str): The OTP code to be verified.
+- `code (str)`: The OTP code to be verified.
 
 **Returns:**
 
@@ -83,7 +83,7 @@ otp_res = otp.verification_check(code='123456')
 - When checking an OTP code using the Twilio Verify API, if the code is wrong, Twilio will raise a TwilioRestException indicating that the verification failed.
 - Twilio API returns a 403 Forbidden status code. This typically happens when there are issues with the request, such as invalid credentials or insufficient permissions to perform the requested operation. In this case, the Forbidden exception is raised to indicate that the verification check failed due to a forbidden error.
 
-### `check_count(self, unique_id: str, user_id: str)` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L98-L162)]
+### `check_count(self, unique_id: str, user_id: str)` [[view source](/src/models/_2FA.py#L98-L162)]
 
 Checks for an Svretries instance for a specific user.
 
@@ -111,7 +111,7 @@ if enable_otp_counter:
   )
 ```
 
-### `add_count(self, counter) -> str` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L164-L247)]
+### `add_count(self, counter) -> str` [[view source](/src/models/_2FA.py#L164-L247)]
 
 Adds to the count of verification attempts and updates the expiry date for a user's OTP verification.
 
@@ -134,7 +134,7 @@ if otp_res.status == "pending":
     expires = otp.add_count(otp_counter)
 ```
 
-### `delete_count(self, counter_id: int)` [[view source](https://github.com/smswithoutborders/SMSwithoutborders-BE/blob/27ad8d4ed81ef73581515c2b2b17274d0fbaca72/src/models/_2FA.py#L249-L275)]
+### `delete_count(self, counter_id: int)` [[view source](/src/models/_2FA.py#L249-L275)]
 
  Deletes the instance of the Svretries database model with the specified `counter_id`.
 
