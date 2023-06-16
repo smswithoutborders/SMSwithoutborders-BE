@@ -8,7 +8,7 @@ This class provides functionality for storing, decrypting, deleting, finding and
 
 - `Wallets`: A reference to the Wallets database model.
 - `UsersInfos`: A reference to the UsersInfo database model.
-- `Data`: A reference to the Data database model.
+- `Data`: A reference to the Data security utility class.
 
 ### Methods
 
@@ -23,6 +23,8 @@ Initializes an Grant_Model instance.
 **Example:**
 
 ```python
+from src.models.grants import Grant_Model
+
 Grant = Grant_Model()
 ```
 
@@ -37,7 +39,7 @@ Stores the grant for a user and a platform to the database.
 
 **Parameters:**
 
-- `user_id (str)`: The user's identifier for the selected platform.
+- `user_id (str)`: The user's identifier.
 - `platform_id (str)`: The identifier for the selected platform.
 - `grant (dict)`: An object containing user information pertaining to the selected platform.
 
@@ -53,18 +55,25 @@ Stores the grant for a user and a platform to the database.
 **Example:**
 
 ```python
+from src.models.grants import Grant_Model
+from src.models.users import User_Model
 from src.protocolHandler import TwoFactor
 
 Grant = Grant_Model()
-Protocol = TwoFactor(origin='origin_url', platform_name='some 2fa platform')
+User = User_Model()
 
-result = Protocol.validation(code='some code', scope='auth scope', code_verifier='code_verifier')
+Protocol = TwoFactor(origin="http://localhost:18000", platform_name="telegram")
 
-grant = result.get('grant')
+phone_number="+1234567890"
+user = User.find(phone_number=phone_number)
+
+result = Protocol.validation(code="123456", scope="", code_verifier="")
+
+grant = result.get("grant")
 if (grant):
   Grant.store(
-    user_id='some user_id,
-    platform_id='some platform',
+    user_id=user["userId"],
+    platform_id="telegram",
     grant=grant
   )
 ```
@@ -85,8 +94,15 @@ Decrypts a grant information
 **Example:**
 
 ```python
-Grant = Grant_Model()
+from src.models.grants import Grant_Model
+from src.models.users import User_Model
 
+Grant = Grant_Model()
+Users = User_Model()
+
+user = Users.find(phone_number="+1234567890")
+
+grant = Grant.find(user_id=user["userId"], platform_id="telegram")
 d_grant = Grant.decrypt(grant=grant)
 ```
 
@@ -109,11 +125,15 @@ Deletes a grant information
 **Example:**
 
 ```python
+from src.models.grants import Grant_Model
+from src.models.users import User_Model
 from src.protocolHandler import TwoFactor
 
 Grant = Grant_Model()
-Protocol = TwoFactor(origin='origin_url', platform_name='some 2fa platform')
+Users = User_Model()
+Protocol = TwoFactor(origin='http://localhost:18000', platform_name='telegram')
 
+grant = Grant.find(user_id=user["userId"], platform_id="telegram")
 d_grant = Grant.decrypt(grant=grant)
 
 Protocol.invalidation(token=d_grant["token"])
@@ -142,8 +162,14 @@ Finds a grant information in the database for a given user and platform.
 **Example:**
 
 ```python
+from src.models.grants import Grant_Model
+from src.models.users import User_Model
+
+Users = User_Model()
 Grant = Grant_Model()
-grant = Grant.find( user_id='some user_id', platform_id='some platform_id')
+
+user = Users.find(phone_number="+1234567890")
+grant = Grant.find( user_id=user["userId"], platform_id="telegram)
 ```
 
 ### `find_all(self, user_id: str) -> GrantObject` [[view source](/src/models/grants.py#186-216)]
@@ -165,8 +191,14 @@ Finds grant information of all platforms for a given user.
 **Example:**
 
 ```python
+from src.models.grants import Grant_Model
+from src.models.users import User_Model
+
 Grant = Grant_Model()
-wallets = Grant.find_all(user_id='some user_id')
+Users = User_Model()
+
+user = Users.find(phone_number="+1234567890")
+wallets = Grant.find_all(user_id=user["userId"])
 ```
 
 ### `purge(self, originUrl: str, identifier: str, platform_name: str, token: str) -> None` [[view source](/src/models/grants.py#218-247)]
@@ -192,26 +224,28 @@ Invalidates a user's grant for a given platform.
 **Example:**
 
 ```python
+from src.models.grants import Grant_Model
+from src.models.users import User_Model
+
 Grant = Grant_Model()
+Users = User_Model
 
-for wallet in wallets:
-  grant = Grant.find(
-      user_id='some user_id', platform_id=wallet["platformId"])
-  d_grant = Grant.decrypt(grant=grant)
+user = Users.find(phone_number="+1234567890")
+grant = Grant.find(user_id=user["userId"], platform_id="telegram")
+d_grant = Grant.decrypt(grant=grant)
 
-  Grant.purge(
-      originUrl='origin',
-      identifier="",
-      platform_name=wallet["platformId"],
-      token=d_grant["token"]
-  )
+Grant.purge(
+  originUrl="http://localhost:18000",
+  identifier="",
+  platform_name="telegram",
+  token=d_grant["token"]
+)
 
-  Grant.delete(grant=grant)
+Grant.delete(grant=grant)
 ```
 
 ## See also
 
-- [Wallets Model](link_to_Wallets_class)
-- [Data Model](link_to_Data_class)
-- [UsersInfos Model](link_to_UsersInfos_class)
-- [Protocol Handler](link_to_protocolHandler)
+- [Data Class](../security/data.md)
+- [User Model](../models/users.md)
+- [Protocol Handler](../modules/protocolHandler.md)

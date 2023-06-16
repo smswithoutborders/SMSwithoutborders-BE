@@ -1,6 +1,6 @@
 # Broadcast Module
 
-The Broadcast module has a `publish` function which can broadcasts a message to a list of URLs defined in a whitelist file.
+The Broadcast module has a `publish` function which can broadcast a message to a list of URLs defined in a whitelist file.
 
 ## Functions
 
@@ -20,7 +20,7 @@ Parses every URL in the list of URLs defined in the whitelist file and broadcast
 
 ```python
 body = {
-  message: 'Some message to broadcast'
+  message: "Some message to broadcast"
 }
 
 publish(body)

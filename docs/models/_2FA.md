@@ -27,7 +27,10 @@ Initializes an OTP_Model instance.
 **Example:**
 
 ```python
-model = OTP_Model("+1234567890")
+from src.models._2FA import OTP_Model
+
+phone_number = "+1234567890"
+otp = OTP_Model(phone_number=phone_number)
 ```
 
 **Notes:**
@@ -49,7 +52,10 @@ Starts an OTP verification process using the Twilio Verify API.
 **Example:**
 
 ```python
-otp = OTP_Model(phone_number='+237671234567')
+from src.models._2FA import OTP_Model
+
+phone_number = "+1234567890"
+otp = OTP_Model(phone_number=phone_number)
 otp_res = otp.verification()
 ```
 
@@ -74,8 +80,11 @@ Verifies the OTP code sent to the specified phone number.
 **Examples:**
 
 ```python
-otp = OTP_Model(phone_number='+237671234567')
-otp_res = otp.verification_check(code='123456')
+from src.models._2FA import OTP_Model
+
+phone_number = "+1234567890"
+otp = OTP_Model(phone_number=phone_number)
+otp_res = otp.verification_check(code="123456")
 ```
 
 **Notes:**
@@ -85,11 +94,11 @@ otp_res = otp.verification_check(code='123456')
 
 ### `check_count(self, unique_id: str, user_id: str)` [[view source](/src/models/_2FA.py#L98-L162)]
 
-Checks for an Svretries instance for a specific user.
+Checks for an existing OTP counter (an instance of the Svretries model class which represents a record in the Svretries database table) for a specific user.
 
 **Parameters:**
 
-- `unique_id (str)`: The unique identifier for the SMS resend record.
+- `unique_id (str)`: The unique identifier for the counter.
 - `user_id (str)`: The user identifier.
 
 **Returns:**
@@ -103,11 +112,24 @@ An instance of the Svretries database model.
 **Examples:**
 
 ```python
-otp = OTP_Model(phone_number='+237671234567')
+from src.models._2FA import OTP_Model
+from src.security.data import Data
+from src.models.users import User_Model
+from settings import Configurations
+
+enable_otp_counter = Configurations.ENABLE_OTP
+data = Data()
+User = User_Model()
+
+phone_number="+1234567890"
+phone_number_hash = data.hash(phone_number)
+user = User.find(phone_number=phone_number)
+
+otp = OTP_Model(phone_number=phone_number)
 if enable_otp_counter:
   otp_counter = otp.check_count(
-      unique_id='phone_number_hash',
-      user_id='user_id'
+      unique_id=phone_number_hash,
+      user_id=user["userId"]
   )
 ```
 
@@ -126,12 +148,19 @@ The timestamp for which the counter (instance) expires.
 **Examples:**
 
 ```python
-otp = OTP_Model(phone_number='+237671234567')
-otp_res = otp.verification()
+from src.models._2FA import OTP_Model
+from src.security.data import Data
+from settings import Configurations
 
-if otp_res.status == "pending":
-  if enable_otp_counter:
-    expires = otp.add_count(otp_counter)
+
+enable_otp_counter = Configurations.ENABLE_OTP
+data = Data()
+
+phone_number="+1234567890"
+
+otp = OTP_Model(phone_number=phone_number)
+if enable_otp_counter:
+  expires = otp.add_count(otp_counter)
 ```
 
 ### `delete_count(self, counter_id: int)` [[view source](/src/models/_2FA.py#L249-L275)]
@@ -149,22 +178,39 @@ if otp_res.status == "pending":
 **Examples:**
 
 ```python
-otp = OTP_Model(phone_number='+237671234567')
+from src.security.data import Data
+from src.models.users import User_Model
+from settings import Configurations
+
+
+enable_otp_counter = Configurations.ENABLE_OTP
+data = Data()
+User = User_Model()
+
+phone_number="+1234567890"
+phone_number_hash = data.hash(phone_number)
+user = User.find(phone_number=phone_number)
+
+otp = OTP_Model(phone_number=phone_number)
 otp_res = otp_check.verification()
+
 
 if otp_res.status == "approved":
   if enable_otp_counter:
     otp_counter = otp.check_count(
-      unique_id='phone_number_hash',
-      user_id='user_id'
+      unique_id=phone_number_hash,
+      user_id=user["userId"]
     )
 
-    cid = otp_counter.id
-    otp.delete_count(otp_counter=cid)
+    c_id = otp_counter.id
+    otp.delete_count(otp_counter=c_id)
 ```
 
 ## See Also
 
 <!-- - [Related Function](link_to_related_function) -->
 - [Twilio Client](https://github.com/twilio/twilio-python#use-the-helper-library)
-- [Svretries Model](link_to_Svretries_class)
+- [Settings module](../modules/settings.md)
+- [Svretries Schema](../schemas/svretries.md)
+- [Data Class](../security/data.md)
+- [User Model](../models/users.md)
