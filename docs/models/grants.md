@@ -16,7 +16,7 @@ This class provides functionality for storing, decrypting, deleting, finding and
 
 Initializes an Grant_Model instance.
 
-**Returns**:
+**Returns:**
 
 - `None`
 
@@ -98,9 +98,9 @@ from src.models.grants import Grant_Model
 from src.models.users import User_Model
 
 Grant = Grant_Model()
-Users = User_Model()
+User = User_Model()
 
-user = Users.find(phone_number="+1234567890")
+user = User.find(phone_number="+1234567890")
 
 grant = Grant.find(user_id=user["userId"], platform_id="telegram")
 d_grant = Grant.decrypt(grant=grant)
@@ -130,7 +130,7 @@ from src.models.users import User_Model
 from src.protocolHandler import TwoFactor
 
 Grant = Grant_Model()
-Users = User_Model()
+User = User_Model()
 Protocol = TwoFactor(origin='http://localhost:18000', platform_name='telegram')
 
 grant = Grant.find(user_id=user["userId"], platform_id="telegram")
@@ -165,10 +165,10 @@ Finds a grant information in the database for a given user and platform.
 from src.models.grants import Grant_Model
 from src.models.users import User_Model
 
-Users = User_Model()
+User = User_Model()
 Grant = Grant_Model()
 
-user = Users.find(phone_number="+1234567890")
+user = User.find(phone_number="+1234567890")
 grant = Grant.find( user_id=user["userId"], platform_id="telegram)
 ```
 
@@ -195,9 +195,9 @@ from src.models.grants import Grant_Model
 from src.models.users import User_Model
 
 Grant = Grant_Model()
-Users = User_Model()
+User = User_Model()
 
-user = Users.find(phone_number="+1234567890")
+user = User.find(phone_number="+1234567890")
 wallets = Grant.find_all(user_id=user["userId"])
 ```
 
@@ -228,9 +228,9 @@ from src.models.grants import Grant_Model
 from src.models.users import User_Model
 
 Grant = Grant_Model()
-Users = User_Model
+User = User_Model
 
-user = Users.find(phone_number="+1234567890")
+user = User.find(phone_number="+1234567890")
 grant = Grant.find(user_id=user["userId"], platform_id="telegram")
 d_grant = Grant.decrypt(grant=grant)
 
