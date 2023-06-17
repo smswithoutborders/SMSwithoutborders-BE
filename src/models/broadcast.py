@@ -20,7 +20,7 @@ def publish(body: dict) -> None:
     """Publishes a message to a list of URLs defined in a whitelist file.
 
     Args:
-        body (dict): The message to be broadcasted.
+        body (dict): The body of the request.
 
     Raises:
         Any exceptions raised by the requests module.

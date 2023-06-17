@@ -46,7 +46,7 @@ class OTP_Model:
         Starts an OTP verification process using the Twilio Verify API.
 
         Returns:
-            SMSObject: An object representing the Twilio verification process.
+            SMSObject: The verification object returned by the Twilio API.
         """
         try:
             logger.debug("Starting OTP verification ...")
