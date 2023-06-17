@@ -56,7 +56,7 @@ class OAuth2:
 
         return {
             "url": result.get("url"),
-            "code_verifier": result.get("code_verifier") or ""
+            "code_verifier": result.get("code_verifier") or "",
         }
 
     def validation(self, code, scope=None, code_verifier=None) -> dict:
@@ -84,9 +84,7 @@ class OAuth2:
         else:
             result = self.Methods.validate(code=code)
 
-        return {
-            "grant": result
-        }
+        return {"grant": result}
 
     def invalidation(self, token: str) -> None:
         """
@@ -144,9 +142,7 @@ class TwoFactor:
         try:
             asyncio.run(self.Methods.authorize())
 
-            return {
-                "body": 201
-            }
+            return {"body": 201}
 
         except self.Platform.exceptions.SessionExistError:
             return {
@@ -169,45 +165,33 @@ class TwoFactor:
         try:
             result = asyncio.run(self.Methods.validate(code=code))
 
-            return {
-                "grant": result
-            }
+            return {"grant": result}
 
-        except self.Platform.exceptions.RegisterAccountError:
+        except self.Platform.exceptions.SessionPasswordNeededError:
             return {
                 "body": 202,
-                "initialization_url": f"/platforms/{self.platform_name}/protocols/twofactor/register"
+                "initialization_url": f"/platforms/{self.platform_name}/protocols/twofactor/password",
             }
 
-        except self.Platform.exceptions.InvalidCodeError:
+        except (self.Platform.exceptions.PhoneCodeInvalidError, self.Platform.exceptions.PhoneCodeExpiredError):
             raise Forbidden()
 
-        except self.Platform.exceptions.TooManyRequests:
+        except self.Platform.exceptions.FloodWaitError:
             raise TooManyRequests()
 
-    def registration(self, first_name: str, last_name: str) -> dict:
-        """
-        Register the user for two-factor authentication.
-
-        Args:
-          first_name (str): The user's first name.
-          last_name (str): The user's last name.
-
-        Returns:
-          dict: A dictionary containing the result of the registration request.
-        """
+    def password_validation(self, password: str) -> dict:
+        """ """
         try:
-            result = asyncio.run(self.Methods.register(
-                first_name=first_name, last_name=last_name))
+            result = asyncio.run(
+                self.Methods.validate_with_password(password=password)
+            )
 
-            return {
-                "grant": result
-            }
+            return {"grant": result}
 
-        except self.Platform.exceptions.InvalidCodeError:
+        except self.Platform.exceptions.PasswordHashInvalidError:
             raise Forbidden()
 
-        except self.Platform.exceptions.TooManyRequests:
+        except self.Platform.exceptions.FloodWaitError:
             raise TooManyRequests()
 
     def invalidation(self, token: str) -> None:
