@@ -57,4 +57,4 @@ def after_request(response):
 
 ## See Also
 
-- [Configurations Class](../misc/settings.md)
+- [Configurations Class](../miscellaneous/settings.md)
