@@ -248,4 +248,4 @@ Grant.delete(grant=grant)
 
 - [Data Class](../security/data.md)
 - [User Model](../models/users.md)
-- [Protocol Handler](../modules/protocolHandler.md)
+- [Protocol Handler](../miscellaneous/protocolHandler.md)

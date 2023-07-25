@@ -210,7 +210,7 @@ if otp_res.status == "approved":
 
 <!-- - [Related Function](link_to_related_function) -->
 - [Twilio Client](https://github.com/twilio/twilio-python#use-the-helper-library)
-- [Settings module](../modules/settings.md)
+- [Settings module](../miscellaneous/settings.md)
 - [Svretries Schema](../schemas/svretries.md)
 - [Data Class](../security/data.md)
 - [User Model](../models/users.md)
