@@ -1,36 +1,42 @@
-from src.security.password_policy import check_password_policy
-from werkzeug.exceptions import UnprocessableEntity
-from werkzeug.exceptions import TooManyRequests
-from werkzeug.exceptions import InternalServerError
-from werkzeug.exceptions import Forbidden
-from werkzeug.exceptions import Unauthorized
-from werkzeug.exceptions import Conflict
-from werkzeug.exceptions import BadRequest
-from src.schemas.db_connector import db
-from src.models._2FA import OTP_Model
-from src.models.sessions import Session_Model
-from src.models.users import User_Model
-from src.models.grants import Grant_Model
-from datetime import timedelta
-from datetime import datetime
 import json
-from src.security.password_policy import password_check
-from src.security.data import Data
-from src.security.cookie import Cookie
-from src.protocolHandler import OAuth2, TwoFactor
-from flask import jsonify
-from flask import Response
-from flask import request
-from flask import Blueprint
-from settings import Configurations
 import logging
-logger = logging.getLogger(__name__)
+
+from datetime import datetime, timedelta
+
+from flask import Blueprint, request, Response, jsonify
+
+from werkzeug.exceptions import (
+    BadRequest,
+    Conflict,
+    Forbidden,
+    InternalServerError,
+    TooManyRequests,
+    UnprocessableEntity,
+    Unauthorized
+)
+
+from settings import Configurations
+
+from src.protocolHandler import OAuth2, TwoFactor
+
+from src.security.cookie import Cookie
+from src.security.data import Data
+from src.security.password_policy import check_password_policy
+
+from src.models.grants import Grant_Model
+from src.models.users import User_Model
+from src.models.sessions import Session_Model
+from src.models._2FA import OTP_Model
+
+from src.schemas.db_connector import db
+
 
 # configurations
 cookie_name = Configurations.COOKIE_NAME
 ENABLE_RECAPTCHA = Configurations.ENABLE_RECAPTCHA
 enable_otp_counter = Configurations.ENABLE_OTP
 
+logger = logging.getLogger(__name__)
 
 v2 = Blueprint("v2", __name__)
 

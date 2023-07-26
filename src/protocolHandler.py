@@ -4,10 +4,12 @@ import asyncio
 from SwobThirdPartyPlatforms import ImportPlatform
 from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
 
-from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import Forbidden
-from werkzeug.exceptions import TooManyRequests
-from werkzeug.exceptions import UnprocessableEntity
+from werkzeug.exceptions import (
+    BadRequest,
+    Forbidden,
+    TooManyRequests,
+    UnprocessableEntity
+)
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +151,7 @@ class TwoFactor:
                 "body": 200
             }
 
-        except self.Platform.exceptions.TooManyRequests:
+        except self.Platform.exceptions.FloodWaitError:
             raise TooManyRequests()
 
     def validation(self, code: str, **kwargs) -> dict:

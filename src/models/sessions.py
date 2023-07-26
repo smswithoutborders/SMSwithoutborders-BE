@@ -1,15 +1,16 @@
-from werkzeug.exceptions import Unauthorized
-from werkzeug.exceptions import Conflict
-from werkzeug.exceptions import InternalServerError
-from src.schemas.sessions import Sessions
-from peewee import DatabaseError
-from settings import Configurations
 import logging
 import json
+
 from datetime import datetime, timedelta
 
-logger = logging.getLogger(__name__)
+from peewee import DatabaseError
+from werkzeug.exceptions import Unauthorized, Conflict, InternalServerError
 
+from settings import Configurations
+from src.schemas.sessions import Sessions
+
+
+logger = logging.getLogger(__name__)
 
 secure = Configurations.SECURE_COOKIE
 cookie_maxage = Configurations.COOKIE_MAXAGE
@@ -65,7 +66,8 @@ class Session_Model:
 
             logger.info(
                 "- SUCCESSFULLY CREATED SESSION %s FOR %s" % (
-                    str(session), unique_identifier)
+                    str(session), unique_identifier
+                )
             )
 
             return {
@@ -76,8 +78,9 @@ class Session_Model:
             }
 
         except DatabaseError as err:
-            logger.error("FAILED TO CREATE SESSION FOR %s CHECK LOGS" %
-                         unique_identifier)
+            logger.error(
+                "FAILED TO CREATE SESSION FOR %s CHECK LOGS" % unique_identifier
+            )
             raise InternalServerError(err)
 
     def find(self, sid: str, unique_identifier: str, user_agent: str, cookie: str, status: str = None, type: str = None) -> str:
@@ -139,13 +142,14 @@ class Session_Model:
 
             if result[0]["data"] != cookie:
                 logger.error("Invalid cookie data")
-                logger.error('Original cokkie: %s' % result[0]["data"])
-                logger.error("Invalid cokkie: %s" % cookie)
+                logger.error('Original cookie: %s' % result[0]["data"])
+                logger.error("Invalid cookie: %s" % cookie)
                 raise Unauthorized()
 
             else:
-                cookie_expire = datetime.strptime(json.loads(
-                    cookie)["expires"], '%Y-%m-%d %H:%M:%S.%f')
+                cookie_expire = datetime.strptime(
+                    json.loads(cookie)["expires"], '%Y-%m-%d %H:%M:%S.%f'
+                )
                 cookie_age = cookie_expire.timestamp() - datetime.now().timestamp()
 
                 if cookie_age <= 0:
@@ -176,8 +180,9 @@ class Session_Model:
         """
 
         try:
-            logger.debug("finding session %s for user %s ..." %
-                         (sid, unique_identifier))
+            logger.debug(
+                "finding session %s for user %s ..." % (sid, unique_identifier)
+            )
 
             result = []
 

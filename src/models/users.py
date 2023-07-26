@@ -1,21 +1,30 @@
-from werkzeug.exceptions import InternalServerError
-from werkzeug.exceptions import TooManyRequests
-from werkzeug.exceptions import Conflict
-from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import Unauthorized
-from src.security.data import Data
+import logging
+
+from datetime import datetime, timedelta
+
+import requests
+
+from peewee import DatabaseError
 from SwobThirdPartyPlatforms import ImportPlatform, available_platforms
+
+from werkzeug.exceptions import (
+    InternalServerError,
+    TooManyRequests,
+    Conflict,
+    BadRequest,
+    Unauthorized
+)
+
+from settings import Configurations
+
+from src.security.data import Data
+
 from src.schemas.wallets import Wallets
 from src.schemas.retries import Retries
 from src.schemas.usersinfo import UsersInfos
 from src.schemas.users import Users
 from src.schemas.db_connector import db
-from peewee import DatabaseError
-from settings import Configurations
-import logging
-import requests
-from datetime import datetime
-from datetime import timedelta
+
 
 logger = logging.getLogger(__name__)
 
@@ -197,12 +206,14 @@ class User_Model:
 
                 # check for duplicate user
                 if len(userinfos) > 1:
-                    logger.error("Duplicate verified users found: %s" %
-                                 phone_number_hash)
+                    logger.error(
+                        "Duplicate verified users found: %s" % phone_number_hash
+                    )
                     raise Conflict()
 
-                logger.debug("Verifying password for user: %s" %
-                             phone_number_hash)
+                logger.debug(
+                    "Verifying password for user: %s" % phone_number_hash
+                )
 
                 users = (
                     self.Users.select()
@@ -223,8 +234,9 @@ class User_Model:
 
                 # check for duplicate user
                 if len(users) > 1:
-                    logger.error("Duplicate users found: %s" %
-                                 phone_number_hash)
+                    logger.error(
+                        "Duplicate users found: %s" % phone_number_hash
+                    )
                     raise Conflict()
 
                 if ENABLE_BLOCKING:
@@ -239,8 +251,9 @@ class User_Model:
 
                 update_login.execute()
 
-                logger.info("- Successfully found verified user: %s" %
-                            phone_number_hash)
+                logger.info(
+                    "- Successfully found verified user: %s" % phone_number_hash
+                )
                 return userinfos[0]
 
             elif user_id:
@@ -346,12 +359,14 @@ class User_Model:
 
                 # check for duplicate user
                 if len(userinfos) > 1:
-                    logger.error("Duplicate verified users found: %s" %
-                                 phone_number_hash)
+                    logger.error(
+                        "Duplicate verified users found: %s" % phone_number_hash
+                    )
                     raise Conflict()
 
-                logger.info("- Successfully found verified user: %s" %
-                            phone_number_hash)
+                logger.info(
+                    "- Successfully found verified user: %s" % phone_number_hash
+                )
                 return userinfos[0]
 
             elif user_id:
@@ -374,7 +389,8 @@ class User_Model:
                 # check for duplicate user
                 if len(userinfos) > 1:
                     logger.error(
-                        "Duplicate verified users found: %s" % user_id)
+                        "Duplicate verified users found: %s" % user_id
+                    )
                     raise Conflict()
 
                 logger.info("- Successfully found verified user: %s" % user_id)
@@ -398,7 +414,8 @@ class User_Model:
                 # check for duplicate user
                 if len(user) > 1:
                     logger.error(
-                        "Duplicate verified users found: %s" % user_id)
+                        "Duplicate verified users found: %s" % user_id
+                    )
                     raise Conflict()
 
                 return {
@@ -523,14 +540,16 @@ class User_Model:
             # check for duplicate user
             if len(result) > 1:
                 logger.error(
-                    "Duplicate users found with user_id: %s" % user_id)
+                    "Duplicate users found with user_id: %s" % user_id
+                )
                 raise Conflict()
 
             logger.info("- Successfully found user with user_id: %s" % user_id)
 
             if status:
                 logger.debug(
-                    "updating userinfo status with user_id: '%s' ..." % user_id)
+                    "updating userinfo status with user_id: '%s' ..." % user_id
+                )
 
                 upd_userinfo = (
                     self.UsersInfos.update(
@@ -545,11 +564,13 @@ class User_Model:
                 upd_userinfo.execute()
 
                 logger.info(
-                    "- User status '%s' successfully updated" % user_id)
+                    "- User status '%s' successfully updated" % user_id
+                )
 
             elif password:
                 logger.debug(
-                    "updating user password with user_id: '%s' ..." % user_id)
+                    "updating user password with user_id: '%s' ..." % user_id
+                )
 
                 upd_user = (
                     self.Users.update(
@@ -563,7 +584,8 @@ class User_Model:
                 upd_user.execute()
 
                 logger.info(
-                    "- User password '%s' successfully updated" % user_id)
+                    "- User password '%s' successfully updated" % user_id
+                )
 
         except DatabaseError as err:
             logger.error("updating user '%s' failed check logs" % user_id)
@@ -599,7 +621,8 @@ class User_Model:
             # check for duplicate user
             if len(userinfos) > 1:
                 logger.error(
-                    "Duplicate users found with user_id: %s" % user_id)
+                    "Duplicate users found with user_id: %s" % user_id
+                )
                 raise Conflict()
 
             user = (

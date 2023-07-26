@@ -3,6 +3,13 @@ import json
 
 from peewee import DatabaseError
 
+from SwobThirdPartyPlatforms import ImportPlatform
+from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
+
+from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import Conflict
+from werkzeug.exceptions import InternalServerError
+
 from src.schemas.wallets import Wallets
 from src.schemas.usersinfo import UsersInfos
 
@@ -12,12 +19,6 @@ from src.security.data import Data
 
 from src.models.broadcast import publish
 
-from SwobThirdPartyPlatforms import ImportPlatform
-from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
-
-from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import Conflict
-from werkzeug.exceptions import InternalServerError
 
 GrantObject = ()
 
@@ -169,7 +170,9 @@ class Grant_Model:
                          (user_id, platform_id))
 
             grant = self.Wallets.get(
-                self.Wallets.userId == user_id, self.Wallets.platformId == platform_id)
+                self.Wallets.userId == user_id,
+                self.Wallets.platformId == platform_id
+            )
 
             logger.info("- Successfully found grant")
 
