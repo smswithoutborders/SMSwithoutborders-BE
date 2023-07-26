@@ -18,7 +18,7 @@ Initializes an OTP_Model instance.
 
 **Parameters:**
 
-- `phone_number (str)`: The phone number to send OTPs to.
+- `phone_number (str)`: The phone number to send OTPs to (in international format).
 
 **Returns:**
 
@@ -29,8 +29,7 @@ Initializes an OTP_Model instance.
 ```python
 from src.models._2FA import OTP_Model
 
-phone_number = "+1234567890"
-otp = OTP_Model(phone_number=phone_number)
+otp = OTP_Model(phone_number="phone_number")
 ```
 
 **Notes:**
@@ -54,8 +53,7 @@ Starts an OTP verification process using the Twilio Verify API.
 ```python
 from src.models._2FA import OTP_Model
 
-phone_number = "+1234567890"
-otp = OTP_Model(phone_number=phone_number)
+otp = OTP_Model(phone_number="phone_number")
 otp_res = otp.verification()
 ```
 
@@ -82,9 +80,8 @@ Verifies the OTP code sent to the specified phone number.
 ```python
 from src.models._2FA import OTP_Model
 
-phone_number = "+1234567890"
-otp = OTP_Model(phone_number=phone_number)
-otp_res = otp.verification_check(code="123456")
+otp = OTP_Model(phone_number="phone_number")
+otp_res = otp.verification_check(code="code")
 ```
 
 **Notes:**
@@ -113,24 +110,12 @@ An instance of the Svretries database model.
 
 ```python
 from src.models._2FA import OTP_Model
-from src.security.data import Data
-from src.models.users import User_Model
-from settings import Configurations
 
-enable_otp_counter = Configurations.ENABLE_OTP
-data = Data()
-User = User_Model()
-
-phone_number="+1234567890"
-phone_number_hash = data.hash(phone_number)
-user = User.find(phone_number=phone_number)
-
-otp = OTP_Model(phone_number=phone_number)
-if enable_otp_counter:
-  otp_counter = otp.check_count(
-      unique_id=phone_number_hash,
-      user_id=user["userId"]
-  )
+otp = OTP_Model(phone_number="phone_number")
+otp_counter = otp.check_count(
+      unique_id="unique_id",
+      user_id="userId"
+    )
 ```
 
 ### `add_count(self, counter) -> str` [[view source](/src/models/_2FA.py#L164-L247)]
@@ -149,18 +134,9 @@ The timestamp for which the counter (instance) expires.
 
 ```python
 from src.models._2FA import OTP_Model
-from src.security.data import Data
-from settings import Configurations
 
-
-enable_otp_counter = Configurations.ENABLE_OTP
-data = Data()
-
-phone_number="+1234567890"
-
-otp = OTP_Model(phone_number=phone_number)
-if enable_otp_counter:
-  expires = otp.add_count(otp_counter)
+otp = OTP_Model(phone_number="phone_number")
+expires = otp.add_count(counter=otp_counter)
 ```
 
 ### `delete_count(self, counter_id: int)` [[view source](/src/models/_2FA.py#L249-L275)]
@@ -178,39 +154,9 @@ if enable_otp_counter:
 **Examples:**
 
 ```python
-from src.security.data import Data
-from src.models.users import User_Model
-from settings import Configurations
+from src.models._2FA import OTP_Model
 
-
-enable_otp_counter = Configurations.ENABLE_OTP
-data = Data()
-User = User_Model()
-
-phone_number="+1234567890"
-phone_number_hash = data.hash(phone_number)
-user = User.find(phone_number=phone_number)
-
-otp = OTP_Model(phone_number=phone_number)
-otp_res = otp_check.verification()
-
-
-if otp_res.status == "approved":
-  if enable_otp_counter:
-    otp_counter = otp.check_count(
-      unique_id=phone_number_hash,
-      user_id=user["userId"]
-    )
-
-    c_id = otp_counter.id
-    otp.delete_count(otp_counter=c_id)
+otp = OTP_Model(phone_number="phone_number")
+otp.delete_count(counter_id=otp_counter_id)
 ```
 
-## See Also
-
-<!-- - [Related Function](link_to_related_function) -->
-- [Twilio Client](https://github.com/twilio/twilio-python#use-the-helper-library)
-- [Settings module](../miscellaneous/settings.md)
-- [Svretries Schema](../schemas/svretries.md)
-- [Data Class](../security/data.md)
-- [User Model](../models/users.md)

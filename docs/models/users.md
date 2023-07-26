@@ -58,9 +58,9 @@ from src.models.users import User_Model
 
 User = User_Model()
 user_id = User.create(
-  phone_number="1234567890",
-  name="John Doe",
-  country_code="+123",
+  phone_number="phone_number",
+  name="user_name",
+  country_code="country_code",
   password="user_password"
 )
 ```
@@ -95,14 +95,7 @@ Verify a user's credentials.
 from src.models.users import User_Model
 
 User = User_Model()
-user_id = User.create(
-  phone_number="1234567890",
-  name="John Doe",
-  country_code="+123",
-  password="user_password"
-)
-
-user = User.verify(user_id=user_id, password="user_password")
+verified_user = User.verify(user_id="user_id", password="user_password")
 ```
 
 ### `find(self, phone_number: str = None, user_id: str = None) -> UserObject` [[view source](/src/models/users.py#L309-L412)]
@@ -111,7 +104,7 @@ Verify a user's credentials.
 
 **Parameters:**
 
-- `phone_number (str, optional)`: The user's phone number
+- `phone_number (str, optional)`: The user's phone number in int'l format
 - `user_id (str, optional)`: The user's identifier
 
 **Returns:**
@@ -130,7 +123,7 @@ Verify a user's credentials.
 from src.models.users import User_Model
 
 User = User_Model()
-user = User.find(phone_number="+1234567890")
+user = User.find(phone_number="phone_number")
 ```
 
 ### `find_platform(self, user_id: str) -> UserPlatformObject` [[view source](/src/models/users.py#L414-L486)]
@@ -155,9 +148,7 @@ Fetches the saved and unsaved platforms for a user.
 from src.models.users import User_Model
 
 User = User_Model()
-user = User.find(phone_number="+1234567890")
-
-user_platforms = User.find_platform(user_id=user["userId"])
+user_platforms = User.find_platform(user_id="user_id")
 ```
 
 ### `update(self, user_id: str, status: str = None, password: str = None) -> None` [[view source](/src/models/users.py#L488-L570)]
@@ -186,17 +177,7 @@ Updates the given user's information in the database.
 from src.models.users import User_Model
 
 User = User_Model()
-user_id = User.create(
-  phone_number="1234567890",
-  name="John Doe",
-  country_code="+123",
-  password="user_password"
-)
-
-User.update(
-  user_id=user_id,
-  status="verified"
-)
+User.update(user_id="user_id", status="user_status")
 ```
 
 ### `delete(self, user_id: str) -> None` [[view source](/src/models/users.py#L572-L623)]
@@ -223,9 +204,7 @@ Deletes the user account and associated user information from the database.
 from src.models.users import User_Model
 
 User = User_Model()
-user = User.find(phone_number="+1234567890")
-
-User.delete(user_id=user["userId"])
+User.delete(user_id="user_id")
 ```
 
 ### `recaptcha(self, captchaToken: str, remoteIp: str) -> bool` [[view source](/src/models/users.py#L625-L665)]
@@ -250,20 +229,7 @@ Verifies the reCAPTCHA token with the Google reCAPTCHA service.
 
 ```python
 from src.models.users import User_Model
-from settings import Configurations
 
 User = User_Model()
-ENABLE_RECAPTCHA = Configurations.ENABLE_RECAPTCHA
-
-if ENABLE_RECAPTCHA:
-  User.recaptcha(captchaToken=captcha_token, remoteIp=remote_ip)
+User.recaptcha(captchaToken="captcha_token", remoteIp="remote_ip")
 ```
-
-## See also
-
-- [Data Class](../security/data.md)
-- [Database Connector](../schemas/db_connector.md)
-- [User Schema](../schemas/users.md)
-- [UsersInfo Schema](../schemas/usersinfo.md)
-- [Retries Schema](../schemas/retries.md)
-- [Wallets Schema](../schemas/wallets.md)

@@ -19,9 +19,9 @@ Parses every URL in the list of URLs defined in the whitelist file and broadcast
 **Example:**
 
 ```python
-body = {
-  message: "Some message to broadcast"
-}
+from src.models.broadcast import publish
 
-publish(body)
+content={"msisdn_hashed": ""}
+
+response = publish(body=content)
 ```
