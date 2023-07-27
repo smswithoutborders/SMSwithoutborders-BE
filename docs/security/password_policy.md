@@ -25,9 +25,7 @@ Checks if a password complies with a password policy that includes the following
 ```python
 from src.security.password_policy import check_password_policy
 
-password = "user_password"
-
-check_password_policy(password=password)
+check_password_policy(password="user_password")
 ```
 
 **Note:**

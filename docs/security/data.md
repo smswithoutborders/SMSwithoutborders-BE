@@ -60,8 +60,7 @@ from src.security.data import Data
 data = Data()
 
 # you can use this for any data you want to encrypt
-data = "data I want to encrypt"
-e_data = data.encrypt(data)
+encrypted_data = data.encrypt("data_to_encrypt")
 ```
 
 ### `decrypt(self, data: str) -> str` [[view source](/src/security/data.py#L93-L129)]
@@ -84,14 +83,8 @@ from src.security.data import Data
 
 data = Data()
 
-# you can use this for any data you want to encrypt
-data = "data I want to encrypt"
-e_data = data.encrypt(data)
-
-# you can use this for any data you want to decrypt
-d_data = data.decrypt(e_data)
-
-# d_data will be equivalent to the original data string
+# you can use this for any encrypted data you want to decrypt
+decrypted_data = data.decrypt("encrypted_data")
 ```
 
 ### `hash(self, data: str, salt: str = None) -> str` [[view source](/src/security/data.py#L93-L129)]
@@ -115,6 +108,5 @@ from src.security.data import Data
 data = Data()
 
 # you can use this for any data you want to hash
-data = "data I want to hash"
-h_data = data.hash(data)
+data_hash = data.hash("data_to_hash")
 ```

@@ -52,60 +52,17 @@ Encrypts the specified cookie data string using the encryption key.
 
 ```python
 from src.security.cookie import Cookie
-from src.models.sessions import Session_Model
-from src.models.users import User_Model
-from src.security.data import Data
-from flask import Flask, request, jsonify
-from datetime import timedelta
+import json
 
-app = Flask(__name__)
+cookie = Cookie()
 
-@app.route("/some/endpoint")
-def handler():
+cookie_data = json.dumps({
+    "sid": "session_sid",
+    "cookie": "session_data",
+    "type": "session_type"
+})
 
-    # some server logic
-
-    Session = Session_Model()
-    User = User_Model()
-    cookie = Cookie()
-    data = Data()
-
-    user_agent = request.headers.get("User-Agent")
-
-    phone_number = "+1234567890"
-    phone_number_hash = data.hash(phone_number)
-
-    user = User.find(phone_number=phone_number)
-
-    res = jsonify({
-        "uid":user["userId"]
-    })
-
-    session = Session.create(
-        unique_identifier=phone_number_hash,
-        user_agent=user_agent,
-        type="verify"
-    )
-
-    cookie_data = json.dumps({
-        "sid": session["sid"],
-        "cookie": session["data"],
-        "type": session["type"]
-    })
-
-    e_cookie = cookie.encrypt(cookie_data)
-
-    session_data = json.loads(session["data"])
-
-    res.set_cookie(
-        "cookie_name",
-        e_cookie,
-        max_age=timedelta(milliseconds=session_data["maxAge"]),
-        secure=session_data["secure"],
-        httponly=session_data["httpOnly"],
-        samesite=session_data["sameSite"]
-    )
-
+encrypted_cookie = cookie.encrypt(cookie_data)
 ```
 
 ### `decrypt(self, data: str) -> str` [[view source](/src/security/cookie.py#L87-L114)]
@@ -128,49 +85,10 @@ Unauthorized: If an error occurs during decryption, a key error.
 
 ```python
 from src.security.cookie import Cookie
-from src.models.sessions import Session_Model
-from flask import Flask, request
+import json
 
-app = Flask(__name__)
+cookie = Cookie()
 
-@app.route("/some/endpoint")
-def handler():
-
-    # some server logic
-
-    Session = Session_Model()
-    cookie = Cookie()
-
-    e_cookie = request.cookies.get(cookie_name)
-    d_cookie = cookie.decrypt(e_cookie)
-    json_cookie = json.loads(d_cookie)
-
-    # you can then extract relevant fields and use them like so:
-
-    sid = json_cookie["sid"]
-    uid = json_cookie["uid"]
-    unique_identifier = json_cookie["unique_identifier"]
-    user_cookie = json_cookie["cookie"]
-    type = json_cookie["type"]
-    status = json_cookie["status"]
-    user_agent = request.headers.get("User-Agent")
-
-    Session.find(
-        sid=sid,
-        unique_identifier=unique_identifier,
-        user_agent=user_agent,
-        cookie=user_cookie,
-        type=type,
-        status=status
-    )
-
-    # rest of the server logic
-
+decrypted_cookie = cookie.decrypt("encrypted_cookie")
+json_cookie = json.loads(decrypted_cookie)
 ```
-
-## See also
-
-- [Cookie Class](../security/cookie.md)
-- [Data Class](../security/data.md)
-- [User Model](../models/users.md)
-- [Session Model](../models/sessions.md)
