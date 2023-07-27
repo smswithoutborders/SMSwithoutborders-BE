@@ -35,20 +35,8 @@ Initializes an OAuth2 instance.
 
 ```python
 from src.protocolHandler import OAuth2
-from flask import Flask, request
 
-app = Flask(__name__)
-
-@app.route("/some/endpoint")
-def handler():
-
-    # some server logic
-
-    originUrl = request.headers.get("Origin")
-
-    Protocol = OAuth2(origin=originUrl, platform_name="Twitter")
-
-    # rest of server logic
+Protocol = OAuth2(origin="originUrl", platform_name="platform_name")
 ```
 
 ### `authorization(self) -> dict` [[view source](/src/protocolHandler.py#L48-L60)]
@@ -63,22 +51,10 @@ Initiates an authorization transaction.
 
 ```python
 from src.protocolHandler import OAuth2
-from flask import Flask, request
 
-app = Flask(__name__)
+Protocol = OAuth2(origin="originUrl", platform_name="platform_name")
 
-@app.route("/some/endpoint")
-def handler():
-
-    # some server logic
-
-    originUrl = request.headers.get("Origin")
-
-    Protocol = OAuth2(origin=originUrl, platform_name="Twitter")
-
-    result= Protocol.authorization()
-
-    # rest of server logic
+result = Protocol.authorization()
 ```
 
 ### `validation(self, code, scope=None, code_verifier=None) -> dict` [[view source](/src/protocolHandler.py#L62-L87)]
@@ -103,29 +79,14 @@ Initiates a validation transaction.
 
 ```python
 from src.protocolHandler import OAuth2
-from flask import Flask, request
 
-app = Flask(__name__)
+Protocol = OAuth2(origin="originUrl", platform_name="platform_name")
 
-@app.route("/some/endpoint")
-def handler():
-
-    # some server logic
-
-    originUrl = request.headers.get("Origin")
-    code = request.json.get("code")
-    scope = request.json.get("scope")
-    code_verifier = request.json.get("code_verifier")
-
-    Protocol = OAuth2(origin=originUrl, platform_name="Twitter")
-
-    result = Protocol.validation(
-        code=code,
-        scope=scope,
-        code_verifier=code_verifier
-    )
-
-    # rest of server logic
+result = Protocol.validation(
+    code="code",
+    scope="scope",
+    code_verifier="code_verifier"
+)
 ```
 
 ### `invalidation(self, token: str) -> None` [[view source](/src/protocolHandler.py#L89-L102)]
@@ -144,30 +105,10 @@ Initiates an invalidation transaction.
 
 ```python
 from src.protocolHandler import OAuth2
-from src.models.grants import Grant_Model
-from src.models.users import User_MOdel
-from flask import Flask, request
 
-app = Flask(__name__)
+Protocol = OAuth2(origin="originUrl", platform_name="platform_name")
 
-@app.route("/some/endpoint")
-def handler():
-
-    # some server logic
-
-    Grant = Grant_Model()
-    User = User_Model()
-
-    user = User.find(phone_number="+1234567890")
-    grant = Grant.find(user_id=user["userId"], platform_id="twitter")
-
-    d_grant = Grant.decrypt(grant=grant)
-
-    Protocol = OAuth2(origin=originUrl, platform_name="Twitter")
-
-    Protocol.invalidation(token=d_grant["token"])
-
-    # rest of server logic
+Protocol.invalidation(token="grant_token")
 ```
 
 ## `Class`: TwoFactor
@@ -189,7 +130,7 @@ Initializes a TwoFactor protocol instance.
 
 **Parameters:**
 
-- `identifier (str)`: Identifier for the user
+- `identifier (str)`: Identifier for the user (phone number in int'l format)
 
 - `platform_name (str)`: The name of the platform in context
 
@@ -205,20 +146,8 @@ Initializes a TwoFactor protocol instance.
 
 ```python
 from src.protocolHandler import TwoFactor
-from flask import Flask, request
 
-app = Flask(__name__)
-
-@app.route("/some/endpoint")
-def handler():
-
-    # some server logic
-
-    originUrl = request.headers.get("Origin")
-
-    Protocol = TwoFactor(identifier="+1234567890", platform_name="Telegram")
-
-    # rest of server logic
+Protocol = TwoFactor(identifier="phone_number", platform_name="platform_name")
 ```
 
 ### `authorization(self) -> dict` [[view source](/src/protocolHandler.py#L135-L153)]
@@ -237,22 +166,10 @@ Initiates an authorization transaction.
 
 ```python
 from src.protocolHandler import TwoFactor
-from flask import Flask, request
 
-app = Flask(__name__)
+Protocol = TwoFactor(identifier="phone_number", platform_name="platform_name")
 
-@app.route("/some/endpoint")
-def handler():
-
-    # some server logic
-
-    originUrl = request.headers.get("Origin")
-
-    Protocol = TwoFactor(identifier="+1234567890", platform_name="Telegram")
-
-    result= Protocol.authorization()
-
-    # rest of server logic
+result= Protocol.authorization()
 ```
 
 ### `validation(self, code: str, **kwargs) -> dict` [[view source](/src/protocolHandler.py#L155-L180)]
@@ -281,29 +198,14 @@ Initiates a validation transaction.
 
 ```python
 from src.protocolHandler import TwoFactor
-from flask import Flask, request
 
-app = Flask(__name__)
+Protocol = TwoFactor(identifier="phone_number", platform_name="platform_name")
 
-@app.route("/some/endpoint")
-def handler():
-
-    # some server logic
-
-    originUrl = request.headers.get("Origin")
-    code = request.json.get("code")
-    scope = request.json.get("scope")
-    code_verifier = request.json.get("code_verifier")
-
-    Protocol = TwoFactor(identifier="+1234567890", platform_name="Telegram")
-
-    result = Protocol.validation(
-        code=code,
-        scope=scope,
-        code_verifier=code_verifier
-    )
-
-    # rest of server logic
+result = Protocol.validation(
+    code="code",
+    scope="scope",
+    code_verifier="code_verifier"
+)
 ```
 
 ### `password_validation(self, password: str) -> dict` [[view source](/src/protocolHandler.py#L182-L195)]
@@ -328,30 +230,15 @@ Initiates a password validation transaction.
 
 ```python
 from src.protocolHandler import TwoFactor
-from flask import Flask, request
 
-app = Flask(__name__)
+Protocol = TwoFactor(identifier="phone_number", platform_name="platform_name")
 
-@app.route("/some/endpoint")
-def handler():
-
-    # some server logic
-
-    originUrl = request.headers.get("Origin")
-    code = request.json.get("code")
-    scope = request.json.get("scope")
-    code_verifier = request.json.get("code_verifier")
-
-    Protocol = TwoFactor(identifier="+1234567890", platform_name="Telegram")
-
-    result = Protocol.password_validation(
-        password="user_password"
-    )
-
-    # rest of server logic
+result = Protocol.password_validation(
+    password="user_password"
+)
 ```
 
-### `invalidation(self, token: str) -> None` [[view source](/src/protocolHandler.py#L89-L102)]
+### `invalidation(self, token: str) -> None` [[view source](/src/protocolHandler.py#L199-L220)]
 
 Initiates an invalidation transaction.
 
@@ -367,35 +254,9 @@ Initiates an invalidation transaction.
 
 ```python
 from src.protocolHandler import TwoFactor
-from src.models.grants import Grant_Model
-from src.models.users import User_MOdel
-from flask import Flask, request
 
-app = Flask(__name__)
+Protocol = TwoFactor(identifier="phone_number", platform_name="platform_name")
 
-@app.route("/some/endpoint")
-def handler():
+Protocol.invalidation(token="grant_token")
 
-    # some server logic
-
-    Grant = Grant_Model()
-    User = User_Model()
-
-    phone_number="+1234567890"
-
-    user = User.find(phone_number=phone_number)
-    grant = Grant.find(user_id=user["userId"], platform_id="telegram")
-
-    d_grant = Grant.decrypt(grant=grant)
-
-    Protocol = TwoFactor(identifier=phone_number, platform_name="Telegram")
-
-    Protocol.invalidation(token=d_grant["token"])
-
-    # rest of server logic
 ```
-
-## See Also
-
-- [User Model](../models/users.md)
-- [Grant Model](../models/grants.md)
