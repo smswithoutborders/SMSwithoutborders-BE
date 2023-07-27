@@ -36,26 +36,13 @@
 
 ```python
 from src.schemas.sessions import Sessions
-from datetime import datetime, timedelta
-import json
 
-def create_session(unique_identifier: str, user_agent: str, cookie_data: dict, session_maxage: int, status: str = None, type: str = None) -> dict:
-
-    expires = datetime.now() + timedelta(milliseconds=session_maxage)
-
-    session = Sessions.create(
-        unique_identifier=unique_identifier,
-        user_agent=user_agent,
-        expires=expires,
-        data=json.dumps(cookie_data),
-        status=status,
-        type=type
-    )
-
-    return {
-        "sid": str(session.sid),
-        "uid": session.unique_identifier,
-        "data": session.data,
-        "type": session.type
-    }
+session = Sessions.create(
+    unique_identifier="unique_identifier",
+    user_agent="user_agent",
+    expires=maxAge,
+    data="cookie_data",  # stringified cookie data
+    status="status",
+    type="type"
+)
 ```

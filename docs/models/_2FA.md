@@ -159,4 +159,3 @@ from src.models._2FA import OTP_Model
 otp = OTP_Model(phone_number="phone_number")
 otp.delete_count(counter_id=otp_counter_id)
 ```
-

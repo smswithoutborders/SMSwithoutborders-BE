@@ -30,18 +30,8 @@
 
 ```python
 from src.schemas.users import Users
-from src.security.data import Data
-
-data = Data()
-
-password = "user_password"
-password_hash = data.hash(data=password)
 
 new_user = Users.create(
-    password=password_hash
+    password="password_hash"
 )
 ```
-
-## See Also
-
-- [Data Class](../security/data.md)

@@ -30,25 +30,11 @@
 
 ```python
 from src.schemas.svretries import Svretries
-from src.security.data import Data
-from src.models.users import User_Model
-
-data = Data()
-User= User_Model()
-
-phone_number = "+1234567890"
-phone_number_hash = data.hash(data=phone_number)
-user = User.find(phone_number=phone_number)
 
 counter = Svetries.create(
-    uniqueId=phone_number_hash,
-    userId=user["userId"],
+    uniqueId="phone_number_hash",
+    userId="userId",
     count=0,
     expires=None
 )
 ```
-
-## See Also
-
-- [Data Class](../security/data.md)
-- [User Model](../models/users.md)

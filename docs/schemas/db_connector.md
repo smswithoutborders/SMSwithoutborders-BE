@@ -38,23 +38,10 @@ This function creates a database if it doesn't exist
 
 ```python
 from src.schemas.db_connector import db
-from flask import Flask
 
-app = Flask(__name__)
+# open db connection
+db.connect()
 
-# open database connection before request
-@app.before_request
-def before_request():
-    db.connect()
-
-# close database connection after request
-@app.after_request
-def after_request(response):
-    db.close()
-
-# rest of server logic
+# close db connection
+db.close()
 ```
-
-## See Also
-
-- [Configurations Class](../miscellaneous/settings.md)

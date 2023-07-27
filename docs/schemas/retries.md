@@ -30,16 +30,6 @@
 
 ```python
 from src.schemas.retries import Retries
-from src.security.data import Data
 
-data = Data()
-
-phone_number = "+1234567890"
-phone_number_hash = data.hash(data=phone_number)
-
-counter = Retries.get(Retries.uniqueId=phone_number_hash)
+counter = Retries.get(Retries.uniqueId="phone_number_hash")
 ```
-
-## See Also
-
-- [Data Class](../security/data.md)

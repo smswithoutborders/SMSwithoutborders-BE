@@ -36,24 +36,13 @@
 
 ```python
 from src.schemas.wallets import Wallets
-from src.security.data import Data
 
-
-def store_grant(user_id: str, platform_id: str, grant: dict) -> None:
-
-    data = Data()
-
-    Wallets.create(
-        userId=user_id,
-        platformId=platform_id,
-        username=data.encrypt(grant["profile"]["name"]),
-        token=data.encrypt(grant["token"]),
-        uniqueId=data.encrypt(grant["profile"]["unique_id"]),
-        uniqueIdHash=data.hash(grant["profile"]["unique_id"]),
-    )
+Wallets.create(
+    userId="user_id",
+    platformId="platform_id",
+    username="encrypted_grant_profile_name",
+    token="encrypted_grant_token",
+    uniqueId="encrypted_grant_profile_unique_id",
+    uniqueIdHash="grant_profile_unique_id_hash",
+)
 ```
-
-## See Also
-
-- [Data Class](../security/data.md)
-- [Grant Model](../models/grants.md)

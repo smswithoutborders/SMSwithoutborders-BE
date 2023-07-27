@@ -33,33 +33,12 @@
 **Example:**
 
 ```python
-from src.schemas.users import Users
 from src.schemas.usersinfos import UsersInfos
-from src.security.data import Data
-
-data = Data()
-
-password = "user_password"
-password_hash = data.hash(data=password)
-name = "User Name"
-country_code = "+123"
-phone_number = "123457890"
-full_phone_number = country_code+phone_number
-phone_number_hash = data.hash(data=full_phone_number)
-
-new_user = Users.create(
-    password=password_hash
-)
 
 UsersInfos.create(
-    name=data.encrypt(data=name),
-    country_code=data.encrypt(data=country_code),
-    full_phone_number=phone_number_hash,
-    userId=new_user.id,
+    name="encrypted_user_name",
+    country_code="encrypted_country_code",
+    full_phone_number="phone_number_hash",
+    userId="new_user_id",
 )
 ```
-
-## See Also
-
-- [Data Class](../security/data.md)
-- [Users Schema](../schemas/users.md)
