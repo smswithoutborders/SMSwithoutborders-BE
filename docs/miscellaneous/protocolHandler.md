@@ -6,10 +6,13 @@ This class provides layers of abstractions as methods for handling user validati
 
 ## Attributes
 
-`origin (str)`: The origin URL of the request.
-`platform_name (str)`: The name of the platform for which the auth transactions are to take place.
-`Platform`: A layer of abstraction of the platform object, provided by the SWOB Custom ThirdParty Platforms library.
-`Methods`: The platform's methods object.
+- `origin (str)`: The origin URL of the request.
+
+- `platform_name (str)`: The name of the platform for which the auth transactions are to take place.
+
+- `Platform`: A layer of abstraction of the platform object, provided by the SWOB Custom ThirdParty Platforms library.
+
+- `Methods`: The platform's methods object.
 
 ## Methods
 
@@ -63,9 +66,11 @@ Initiates a validation transaction.
 
 **Parameters:**
 
-`code (str)`: The authorization code.
-`scope (str, optional)`: The auth scope.
-`code_verifier (str, optional)`: The code verifier from the authorization transaction.
+- `code (str)`: The authorization code.
+
+- `scope (str, optional)`: The auth scope.
+
+- `code_verifier (str, optional)`: The code verifier from the authorization transaction.
 
 **Returns:**
 
@@ -117,10 +122,13 @@ This class provides layers of abstractions as methods for handling user validati
 
 ## Attributes
 
-`identifier (str)`: Identifier for the user, typically the phone number.
-`platform_name (str)`: The name of the platform for which the auth transactions are to take place.
-`Platform`: A layer of abstraction of the platform object, provided by the SWOB Custom ThirdParty Platforms library.
-`Methods`: The platform's methods object.
+- `identifier (str)`: Identifier for the user, typically the phone number.
+
+- `platform_name (str)`: The name of the platform for which the auth transactions are to take place.
+
+- `Platform`: A layer of abstraction of the platform object, provided by the SWOB Custom ThirdParty Platforms library.
+
+- `Methods`: The platform's methods object.
 
 ## Methods
 
@@ -178,7 +186,7 @@ Initiates a validation transaction.
 
 **Parameters:**
 
-`code (str)`: The authorization code.
+- `code (str)`: The authorization code.
 
 **Returns:**
 
@@ -214,7 +222,7 @@ Initiates a password validation transaction.
 
 **Parameters:**
 
-`password (str)`: The password for validation.
+- `password (str)`: The password for validation.
 
 **Returns:**
 
@@ -244,7 +252,7 @@ Initiates an invalidation transaction.
 
 **Parameters:**
 
-`token (str)`: The token obtained from the validation or password_validation transaction.
+- `token (str)`: The token obtained from the validation or password_validation transaction.
 
 **Returns:**
 
