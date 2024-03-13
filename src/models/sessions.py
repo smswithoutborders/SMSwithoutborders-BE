@@ -1,27 +1,31 @@
 import logging
 import json
+
 from datetime import datetime, timedelta
 
-logger = logging.getLogger(__name__)
+from peewee import DatabaseError
+from werkzeug.exceptions import Unauthorized, Conflict, InternalServerError
 
 from settings import Configurations
+from src.schemas.sessions import Sessions
+
+
+logger = logging.getLogger(__name__)
 
 secure = Configurations.SECURE_COOKIE
 cookie_maxage = Configurations.COOKIE_MAXAGE
 session_maxage = Configurations.SESSION_MAXAGE
 
-from peewee import DatabaseError
-
-from src.schemas.sessions import Sessions
-
-from werkzeug.exceptions import InternalServerError
-from werkzeug.exceptions import Conflict
-from werkzeug.exceptions import Unauthorized
 
 class Session_Model:
     def __init__(self) -> None:
+        """Session_Model constructor method that initializes the class with the following attributes:
+
+        Attributes:
+            Sessions: The `Sessions` schema object used to connect to the database.
+            cookie_data (dict): A dictionary containing cookie data used to create a cookie.
         """
-        """
+
         self.Sessions = Sessions
         self.cookie_data = {
             "maxAge": cookie_maxage,
@@ -32,17 +36,19 @@ class Session_Model:
         }
 
     def create(self, unique_identifier: str, user_agent: str, status: str = None, type: str = None) -> dict:
-        """
-        Create session in database.
+        """Creates a new session in the database.
 
-        Arguments:
-            unique_identifier: str,
-            user_agent: str,
-            status: str,
-            type: str
+        Args:
+            unique_identifier (str): Unique identifier of the user.
+            user_agent (str): User agent string of the user.
+            status (str, optional): The status of the session. Defaults to None.
+            type (str, optional): The type of session. Defaults to None.
 
         Returns:
-            dict
+            dict: A dictionary containing the session ID, unique identifier, cookie data, and session type.
+
+        Raises:
+            InternalServerError: If there was a database error.
         """
         try:
             expires = datetime.now() + timedelta(milliseconds=session_maxage)
@@ -59,7 +65,9 @@ class Session_Model:
             )
 
             logger.info(
-                "- SUCCESSFULLY CREATED SESSION %s FOR %s" % (str(session), unique_identifier) 
+                "- SUCCESSFULLY CREATED SESSION %s FOR %s" % (
+                    str(session), unique_identifier
+                )
             )
 
             return {
@@ -70,14 +78,33 @@ class Session_Model:
             }
 
         except DatabaseError as err:
-            logger.error("FAILED TO CREATE SESSION FOR %s CHECK LOGS" % unique_identifier)
+            logger.error(
+                "FAILED TO CREATE SESSION FOR %s CHECK LOGS" % unique_identifier
+            )
             raise InternalServerError(err)
 
     def find(self, sid: str, unique_identifier: str, user_agent: str, cookie: str, status: str = None, type: str = None) -> str:
-        """
+        """Finds a session in the database.
+
+        Args:
+            sid (str): The session ID to search for.
+            unique_identifier (str): The unique identifier of the user.
+            user_agent (str): The user agent string of the user.
+            cookie (str): The cookie data associated with the session.
+            status (str, optional): The status of the session. Defaults to None.
+            type (str, optional): The type of session. Defaults to None.
+
+        Returns:
+            str: The unique identifier associated with the session.
+
+        Raises:
+            InternalServerError: If there was a database error.
+            Conflict: If multiple sessions were found.
+            Unauthorized: If no sessions were found or if the session was invalid.
         """
         try:
-            logger.debug("finding session %s for user %s ..." % (sid, unique_identifier))
+            logger.debug("finding session %s for user %s ..." %
+                         (sid, unique_identifier))
 
             result = []
 
@@ -115,12 +142,14 @@ class Session_Model:
 
             if result[0]["data"] != cookie:
                 logger.error("Invalid cookie data")
-                logger.error('Original cokkie: %s' % result[0]["data"])
-                logger.error("Invalid cokkie: %s" % cookie)
+                logger.error('Original cookie: %s' % result[0]["data"])
+                logger.error("Invalid cookie: %s" % cookie)
                 raise Unauthorized()
 
             else:
-                cookie_expire = datetime.strptime(json.loads(cookie)["expires"], '%Y-%m-%d %H:%M:%S.%f')
+                cookie_expire = datetime.strptime(
+                    json.loads(cookie)["expires"], '%Y-%m-%d %H:%M:%S.%f'
+                )
                 cookie_age = cookie_expire.timestamp() - datetime.now().timestamp()
 
                 if cookie_age <= 0:
@@ -135,21 +164,25 @@ class Session_Model:
             raise InternalServerError(err)
 
     def update(self, sid: str, unique_identifier: str, status: str = None, type: str = None) -> dict:
+        """Updates a session in the database.
+
+        Args:
+            sid (str): The session ID to update.
+            unique_identifier (str): The unique identifier of the user.
+            status (str, optional): The status of the session. Defaults to None.
+            type (str, optional): The type of session. Defaults to None.
+
+        Returns:
+            dict: A dictionary containing the session ID, unique identifier, cookie data, and session type.
+
+        Raises:
+            InternalServerError: If there was a database error.
+        """
+
         try:
-            """
-            Update session in database.
-
-            Arguments:
-                sid: str,
-                unique_identifier: str,
-                status: str,
-                type: str
-
-            Returns:
-                dict
-            """
-
-            logger.debug("finding session %s for user %s ..." % (sid, unique_identifier))
+            logger.debug(
+                "finding session %s for user %s ..." % (sid, unique_identifier)
+            )
 
             result = []
 
@@ -175,7 +208,8 @@ class Session_Model:
                 logger.error("No session %s found" % sid)
                 raise Unauthorized()
 
-            logger.debug("updating session %s for user %s ..." % (sid, unique_identifier))
+            logger.debug("updating session %s for user %s ..." %
+                         (sid, unique_identifier))
 
             upd_session = (
                 self.Sessions.update(
@@ -188,11 +222,11 @@ class Session_Model:
                     self.Sessions.type == type
                 )
             )
-                
+
             upd_session.execute()
 
             logger.info("- SUCCESSFULLY UPDATED SESSION %s" % sid)
-            
+
             return {
                 "sid": sid,
                 "uid": unique_identifier,

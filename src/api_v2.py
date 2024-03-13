@@ -1,26 +1,27 @@
+import json
 import logging
-logger = logging.getLogger(__name__)
 
-# configurations
+from datetime import datetime, timedelta
+
+from flask import Blueprint, request, Response, jsonify
+
+from werkzeug.exceptions import (
+    BadRequest,
+    Conflict,
+    Forbidden,
+    InternalServerError,
+    TooManyRequests,
+    UnprocessableEntity,
+    Unauthorized
+)
+
 from settings import Configurations
-cookie_name = Configurations.COOKIE_NAME
-ENABLE_RECAPTCHA = Configurations.ENABLE_RECAPTCHA
-enable_otp_counter = Configurations.ENABLE_OTP
-
-from flask import Blueprint
-from flask import request
-from flask import Response
-from flask import jsonify
 
 from src.protocolHandler import OAuth2, TwoFactor
 
 from src.security.cookie import Cookie
 from src.security.data import Data
 from src.security.password_policy import check_password_policy
-
-import json
-from datetime import datetime
-from datetime import timedelta
 
 from src.models.grants import Grant_Model
 from src.models.users import User_Model
@@ -29,24 +30,26 @@ from src.models._2FA import OTP_Model
 
 from src.schemas.db_connector import db
 
+
+# configurations
+cookie_name = Configurations.COOKIE_NAME
+ENABLE_RECAPTCHA = Configurations.ENABLE_RECAPTCHA
+enable_otp_counter = Configurations.ENABLE_OTP
+
+logger = logging.getLogger(__name__)
+
 v2 = Blueprint("v2", __name__)
 
-from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import Conflict
-from werkzeug.exceptions import Unauthorized
-from werkzeug.exceptions import Forbidden
-from werkzeug.exceptions import InternalServerError
-from werkzeug.exceptions import TooManyRequests
-from werkzeug.exceptions import UnprocessableEntity
 
 @v2.before_request
 def before_request():
     db.connect()
 
+
 @v2.after_request
 def after_request(response):
     db.close()
-    
+
     response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubdomains"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Content-Security-Policy"] = "script-src 'self'; object-src 'self'"
@@ -55,6 +58,7 @@ def after_request(response):
     response.headers["Permissions-Policy"] = "accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), clipboard-read=(), clipboard-write=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(), gamepad=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), speaker=(), speaker-selection=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()"
 
     return response
+
 
 @v2.route("/signup", methods=["POST", "PUT"])
 def signup():
@@ -108,7 +112,7 @@ def signup():
             cookie_data = json.dumps({
                 "sid": session["sid"],
                 "cookie": session["data"],
-                "type":session["type"]
+                "type": session["type"]
             })
             e_cookie = cookie.encrypt(cookie_data)
 
@@ -167,7 +171,7 @@ def signup():
             res = Response()
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -185,6 +189,7 @@ def signup():
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/recovery", methods=["POST"])
 def recovery():
     """
@@ -198,11 +203,11 @@ def recovery():
         if not "phone_number" in request.json or not request.json["phone_number"]:
             logger.error("no phone_number")
             raise BadRequest()
-        
+
         user_agent = request.headers.get("User-Agent")
 
         phone_number = request.json["phone_number"]
-    
+
         user = User.find(phone_number=phone_number)
 
         res = jsonify({
@@ -218,7 +223,7 @@ def recovery():
         cookie_data = json.dumps({
             "sid": session["sid"],
             "cookie": session["data"],
-            "type":session["type"]
+            "type": session["type"]
         })
         e_cookie = cookie.encrypt(cookie_data)
 
@@ -234,7 +239,7 @@ def recovery():
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -251,6 +256,7 @@ def recovery():
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
 
 @v2.route("/users/<string:user_id>/recovery", methods=["PUT"])
 async def recovery_check(user_id):
@@ -271,7 +277,7 @@ async def recovery_check(user_id):
         elif not request.headers.get("User-Agent"):
             logger.error("no user agent")
             raise BadRequest()
-        
+
         e_cookie = request.cookies.get(cookie_name)
         d_cookie = cookie.decrypt(e_cookie)
         json_cookie = json.loads(d_cookie)
@@ -299,7 +305,8 @@ async def recovery_check(user_id):
         wallets = Grant.find_all(user_id=user_id)
 
         for wallet in wallets:
-            grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
+            grant = Grant.find(
+                user_id=user_id, platform_id=wallet["platformId"])
             d_grant = Grant.decrypt(grant=grant)
 
             Grant.purge(
@@ -326,7 +333,7 @@ async def recovery_check(user_id):
         res = Response()
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -343,6 +350,7 @@ async def recovery_check(user_id):
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
 
 @v2.route("/login", methods=["POST"])
 def signin():
@@ -411,7 +419,7 @@ def signin():
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -431,6 +439,7 @@ def signin():
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
 
 @v2.route("/users/<string:user_id>/OTP", methods=["POST"])
 def OTP(user_id):
@@ -463,7 +472,7 @@ def OTP(user_id):
         phone_number = request.json["phone_number"]
 
         phone_number_hash = data.hash(phone_number)
-    
+
         Session.find(
             sid=sid,
             unique_identifier=phone_number_hash,
@@ -481,7 +490,7 @@ def OTP(user_id):
             otp_counter = otp.check_count(
                 unique_id=phone_number_hash,
                 user_id=user_id
-            )         
+            )
 
             cid = otp_counter.id
 
@@ -527,7 +536,7 @@ def OTP(user_id):
         )
 
         return res, 201
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -536,7 +545,7 @@ def OTP(user_id):
 
     except Conflict as err:
         return str(err), 409
-    
+
     except TooManyRequests as err:
         return str(err), 429
 
@@ -547,6 +556,7 @@ def OTP(user_id):
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
 
 @v2.route("/OTP", methods=["PUT"])
 def OTP_check():
@@ -582,7 +592,7 @@ def OTP_check():
         code = request.json["code"]
 
         phone_number_hash = data.hash(phone_number)
-    
+
         Session.find(
             sid=sid,
             unique_identifier=phone_number_hash,
@@ -598,10 +608,11 @@ def OTP_check():
         if otp_res.status == "approved":
             if enable_otp_counter:
                 otp.delete_count(counter_id=cid)
-                
+
             res = Response()
         elif otp_res.status == "pending":
-            logger.error("Invalid OTP code. OTP_check status = %s" % otp_res.status)
+            logger.error("Invalid OTP code. OTP_check status = %s" %
+                         otp_res.status)
             raise Forbidden()
         else:
             logger.error("OTP_check FAILED with status '%s'" % otp_res.status)
@@ -637,7 +648,7 @@ def OTP_check():
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -658,6 +669,7 @@ def OTP_check():
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>", defaults={"action": None}, methods=["POST", "PUT", "DELETE"])
 @v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/<string:action>", methods=["PUT"])
 def manage_grant(user_id, platform, protocol, action) -> dict:
@@ -673,7 +685,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
 
         originUrl = request.headers.get("Origin")
         method = request.method
-        
+
         Session = Session_Model()
         User = User_Model()
         cookie = Cookie()
@@ -704,7 +716,8 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
         if protocol == "oauth2":
             Protocol = OAuth2(origin=originUrl, platform_name=platform)
         elif protocol == "twofactor":
-            Protocol = TwoFactor(identifier=phone_number or "", platform_name=platform)
+            Protocol = TwoFactor(
+                identifier=phone_number or "", platform_name=platform)
 
         if method.lower() == "post":
             result = Protocol.authorization()
@@ -720,12 +733,12 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
                 "platform": platform.lower()
             })
 
-        elif method.lower() == "put":      
+        elif method.lower() == "put":
             if action == "password":
                 if not password:
                     logger.error("No password")
                     raise BadRequest()
-                
+
                 result = Protocol.password_validation(
                     password=password
                 )
@@ -747,7 +760,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
                     platform_id=platform.lower(),
                     grant=grant
                 )
-          
+
             res = jsonify({
                 "body": body,
                 "initialization_url": initialization_url
@@ -765,9 +778,10 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
             except Unauthorized:
                 raise Forbidden()
 
-            grant = Grant.find(user_id=user["id"], platform_id=platform.lower())
+            grant = Grant.find(
+                user_id=user["id"], platform_id=platform.lower())
             d_grant = Grant.decrypt(grant=grant)
-            
+
             Protocol.invalidation(token=d_grant["token"])
 
             Grant.delete(grant=grant)
@@ -816,7 +830,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
 
     except UnprocessableEntity as error:
         return str(error), 422
-        
+
     except InternalServerError as error:
         logger.exception(error)
         return "internal server error", 500
@@ -824,6 +838,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
     except Exception as error:
         logger.exception(error)
         return "internal server error", 500
+
 
 @v2.route("/users/<string:user_id>/platforms", methods=["GET"])
 def get_platforms(user_id):
@@ -848,7 +863,7 @@ def get_platforms(user_id):
         sid = json_cookie["sid"]
         user_cookie = json_cookie["cookie"]
         user_agent = request.headers.get("User-Agent")
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
@@ -884,7 +899,7 @@ def get_platforms(user_id):
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -904,6 +919,7 @@ def get_platforms(user_id):
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
 
 @v2.route("/users/<string:user_id>/dashboard", methods=["GET"])
 def dashboard(user_id):
@@ -928,7 +944,7 @@ def dashboard(user_id):
         sid = json_cookie["sid"]
         user_cookie = json_cookie["cookie"]
         user_agent = request.headers.get("User-Agent")
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
@@ -969,7 +985,7 @@ def dashboard(user_id):
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -989,6 +1005,7 @@ def dashboard(user_id):
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
 
 @v2.route("/users/<string:user_id>/password", methods=["POST"])
 async def update_password(user_id):
@@ -1027,7 +1044,7 @@ async def update_password(user_id):
         new_password = request.json["new_password"]
 
         check_password_policy(password=new_password)
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
@@ -1043,7 +1060,8 @@ async def update_password(user_id):
         wallets = Grant.find_all(user_id=user["id"])
 
         for wallet in wallets:
-            grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
+            grant = Grant.find(
+                user_id=user_id, platform_id=wallet["platformId"])
             d_grant = Grant.decrypt(grant=grant)
 
             Grant.purge(
@@ -1086,7 +1104,7 @@ async def update_password(user_id):
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -1109,6 +1127,7 @@ async def update_password(user_id):
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
 
 @v2.route("/users/<string:user_id>/verify", methods=["POST"])
 def verify_user_id(user_id):
@@ -1161,7 +1180,7 @@ def verify_user_id(user_id):
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -1182,6 +1201,7 @@ def verify_user_id(user_id):
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/users/<string:user_id>/logout", methods=["POST"])
 def logout(user_id):
     """
@@ -1193,7 +1213,7 @@ def logout(user_id):
         elif not request.headers.get("User-Agent"):
             logger.error("no user agent")
             raise BadRequest()
-    
+
         Session = Session_Model()
         cookie = Cookie()
 
@@ -1204,14 +1224,14 @@ def logout(user_id):
         sid = json_cookie["sid"]
         user_cookie = json_cookie["cookie"]
         user_agent = request.headers.get("User-Agent")
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
             user_agent=user_agent,
             cookie=user_cookie
         )
-                
+
         res = Response()
 
         res.delete_cookie(cookie_name)
@@ -1219,7 +1239,7 @@ def logout(user_id):
         logger.info("- Successfully cleared cookie")
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -1242,6 +1262,7 @@ def logout(user_id):
     except Exception as err:
         logger.exception(err)
         return "internal server error", 500
+
 
 @v2.route("/users/<string:user_id>", methods=["DELETE"])
 async def delete_account(user_id):
@@ -1273,7 +1294,7 @@ async def delete_account(user_id):
         user_agent = request.headers.get("User-Agent")
 
         password = request.json["password"]
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
@@ -1289,7 +1310,8 @@ async def delete_account(user_id):
         wallets = Grant.find_all(user_id=user["id"])
 
         for wallet in wallets:
-            grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
+            grant = Grant.find(
+                user_id=user_id, platform_id=wallet["platformId"])
             d_grant = Grant.decrypt(grant=grant)
 
             Grant.purge(
@@ -1314,7 +1336,7 @@ async def delete_account(user_id):
         res = Response()
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 

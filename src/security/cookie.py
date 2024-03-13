@@ -11,7 +11,8 @@ from werkzeug.exceptions import Unauthorized
 from settings import Configurations
 
 if Configurations.SHARED_KEY and Configurations.HASHING_SALT:
-    e_key = open(Configurations.SHARED_KEY, "r", encoding="utf-8").readline().strip()
+    e_key = open(Configurations.SHARED_KEY, "r",
+                 encoding="utf-8").readline().strip()
 else:
     from src.schemas.credentials import Credentials
 
@@ -23,21 +24,31 @@ logger = logging.getLogger(__name__)
 
 class Cookie:
     """
-    Encrypt and decrypt cookie data.
+    A class that provides methods for encrypting and decrypting cookies.
 
     Attributes:
-        key = str (optional)
+        key_bytes (int): The number of bytes used for the encryption key.
+        key (bytes): The encryption key used for encrypting and decrypting cookies.
 
-    Methods:
-        encrypt(data: str, iv: str = None) -> str,
-        decrypt(data: str) -> str
+    Raises:
+        InternalServerError: If the encryption key length is invalid.
+        Unauthorized: If an error occurs during decryption.
+
     """
 
     def __init__(self, key: str = None) -> None:
         """
-        Arguments:
-            key: str (optional)
+        Initializes a new instance of the Cookie class.
+
+        Args:
+            key (str, optional): The encryption key used for encrypting and decrypting cookies.
+                If not provided, the shared key specified in the configuration file is used.
+        Returns:
+            None
+        Raises:
+            InternalServerError: If the encryption key length is invalid.
         """
+
         self.key_bytes = 32
         self.key = (
             e_key.encode("utf8")[: self.key_bytes]
@@ -52,13 +63,12 @@ class Cookie:
 
     def encrypt(self, data: str) -> str:
         """
-        Encrypt cookie data.
+        Encrypts the specified string using the encryption key.
 
-        Arguments:
-            data: str,
-
+        Args:
+            data (str): The string to encrypt.
         Returns:
-            dict
+            str: The encrypted string.
         """
 
         logger.debug("starting cookie encryption ...")
@@ -76,13 +86,14 @@ class Cookie:
 
     def decrypt(self, data: str) -> str:
         """
-        Decrypt cookie data.
+        Decrypts the specified string using the encryption key.
 
-        Arguments:
-            data: str
-
+        Args:
+            data (str): The string to decrypt.
         Returns:
-            str
+            str: The decrypted string.
+        Raises:
+            Unauthorized: If an error occurs during decryption.
         """
 
         try:
