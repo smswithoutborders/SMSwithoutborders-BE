@@ -770,7 +770,6 @@
 ```ts
 {
   unsaved_platforms: {
-    id?: string
     name?: string
     description?: {
       en?: string
@@ -783,7 +782,6 @@
     letter?: string
   }[]
   saved_platforms: {
-    id?: string
     name?: string
     description?: {
       en?: string
