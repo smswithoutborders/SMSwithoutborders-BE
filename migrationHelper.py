@@ -4,85 +4,56 @@ import sys
 from playhouse.migrate import MySQLMigrator
 from playhouse.migrate import migrate
 
-from peewee import CharField
 from peewee import OperationalError
 
 from src.schemas.db_connector import db
 from src.schemas.wallets import Wallets
+from src.schemas.usersinfo import UsersInfos
 
 migrator = MySQLMigrator(db)
 
+
 def migrate_wallets() -> None:
-    """
-    """
+    """ """
     try:
         logging.debug("Starting wallets schema migration ...")
-        migrate(
-            migrator.drop_constraint('wallets', 'wallets_ibfk_2'),
-            migrator.drop_index('wallets', 'platformId'),
-            migrator.alter_column_type('wallets', 'platformId', CharField()),
-        )
 
-        wallet_update_gmail = Wallets.update(
-            platformId = "gmail"
-        ).where(
-            Wallets.platformId == 1
-        )
+        wallets = Wallets.select()
 
-        wallet_update_twitter = Wallets.update(
-            platformId = "twitter"
-        ).where(
-            Wallets.platformId == 2
-        )
+        for wallet in wallets.iterator():
+            wallet.username = (wallet.iv or "") + wallet.username if wallet.username else None
+            wallet.token = (wallet.iv or "") + wallet.token if wallet.token else None
+            wallet.uniqueId = (wallet.iv or "") + wallet.uniqueId if wallet.uniqueId else None
 
-        wallet_update_telegram = Wallets.update(
-            platformId = "telegram"
-        ).where(
-            Wallets.platformId == 3
-        )
-
-        wallet_update_gmail.execute()
-        wallet_update_twitter.execute()
-        wallet_update_telegram.execute()
+            wallet.save()
 
         logging.debug("- Successfully migrated wallets schema")
 
     except OperationalError as error:
         raise error
 
+
 def migrate_usersinfo() -> None:
-    """
-    """
+    """ """
     try:
         logging.debug("Starting usersinfo schema migration ...")
-        migrate(
-            migrator.drop_column('usersInfos', 'phone_number'),
-        )
+
+        user_infos = UsersInfos.select()
+
+        for user_info in user_infos.iterator():
+            user_info.name = (user_info.iv or "") + user_info.name if user_info.name else None
+            user_info.country_code = (user_info.iv or "") + user_info.country_code if user_info.country_code else None
+
+            user_info.save()
 
         logging.debug("- Successfully migrated usersinfo schema")
 
     except OperationalError as error:
         raise error
 
-def migrate_sessions() -> None:
-    """
-    """
-    try:
-        logging.debug("Starting session schema migration ...")
-        migrate(
-            migrator.alter_column_type('sessions', 'type', CharField()),
-            migrator.drop_not_null('sessions', 'type'),
-            migrator.drop_column('sessions', 'svid')
-        )
-
-        logging.debug("- Successfully migrated session schema")
-
-    except OperationalError as error:
-        raise error
 
 def main() -> None:
-    """
-    """
+    """ """
     try:
         migrate_wallets()
         logging.info("- Successfully Migrated Wallets Table")
@@ -90,13 +61,11 @@ def main() -> None:
         migrate_usersinfo()
         logging.info("- Successfully Migrated UsersInfo Table")
 
-        migrate_sessions()
-        logging.info("- Successfully Migrated Sessions Table")
-
         sys.exit(0)
-        
+
     except Exception as error:
         logging.error(str(error))
+
 
 if __name__ == "__main__":
 

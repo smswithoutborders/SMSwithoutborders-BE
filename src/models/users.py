@@ -89,11 +89,10 @@ class User_Model:
                 )
 
                 self.UsersInfos.create(
-                    name = data.encrypt(data=name)["e_data"],
-                    country_code = data.encrypt(data=country_code)["e_data"],
+                    name = data.encrypt(data=name),
+                    country_code = data.encrypt(data=country_code),
                     full_phone_number = phone_number_hash,
                     userId= new_user.id,
-                    iv = data.iv
                 )
 
                 logger.info("- User '%s' successfully created" % phone_number_hash)

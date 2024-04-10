@@ -658,7 +658,7 @@
 ### [PUT]/users/{user_id}/platforms/{platform}/protocols/{protocol}/{action}
 
 - Summary  
-  Token Verification. Request body for Telegram = {phone_number, first_name, last_name}
+  Token Verification. Request body for Telegram = {phone_number, password}
 
 #### RequestBody
 
@@ -666,8 +666,7 @@
 
 ```ts
 {
-  first_name?: string
-  last_name?: string
+  password?: string
   phone_number?: string
 }
 ```
@@ -705,7 +704,7 @@
 }
 ```
 
-- 403 Forbidden (e.g User does not have access rights to the content, invalid verification code)
+- 403 Forbidden (e.g User does not have access rights to the content, invalid 2FA password)
 
 `application/json`
 

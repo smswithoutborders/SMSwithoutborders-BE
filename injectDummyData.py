@@ -52,12 +52,11 @@ def create(phone_number: str, country_code: str, name: str, password: str) -> No
             )
 
             UsersInfos.create(
-                name = data.encrypt(data=name)["e_data"],
-                country_code = data.encrypt(data=country_code)["e_data"],
+                name = data.encrypt(data=name),
+                country_code = data.encrypt(data=country_code),
                 full_phone_number = phone_number_hash,
                 userId= new_user.id,
                 status="verified",
-                iv = data.iv
             )
 
             logger.info("- User '%s' successfully created \n" % phone_number_hash)

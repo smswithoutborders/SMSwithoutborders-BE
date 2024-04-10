@@ -16,7 +16,7 @@ from src.protocolHandler import OAuth2, TwoFactor
 
 from src.security.cookie import Cookie
 from src.security.data import Data
-from src.security.password_policy import password_check
+from src.security.password_policy import check_password_policy
 
 import json
 from datetime import datetime
@@ -86,7 +86,7 @@ def signup():
             country_code = request.json["country_code"]
             password = request.json["password"]
 
-            password_check(password=password)
+            check_password_policy(password=password)
 
             user_id = User.create(
                 phone_number=phone_number,
@@ -271,7 +271,7 @@ async def recovery_check(user_id):
         elif not request.headers.get("User-Agent"):
             logger.error("no user agent")
             raise BadRequest()
-
+        
         e_cookie = request.cookies.get(cookie_name)
         d_cookie = cookie.decrypt(e_cookie)
         json_cookie = json.loads(d_cookie)
@@ -284,6 +284,8 @@ async def recovery_check(user_id):
         user_agent = request.headers.get("User-Agent")
 
         new_password = request.json["new_password"]
+
+        check_password_policy(password=new_password)
 
         Session.find(
             sid=sid,
@@ -695,8 +697,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
         scope = request.json.get("scope")
         phone_number = request.json.get("phone_number")
         code_verifier = request.json.get("code_verifier")
-        first_name = request.json.get("first_name")
-        last_name = request.json.get("last_name")
+        password = request.json.get("password")
 
         Grant = Grant_Model()
 
@@ -720,10 +721,13 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
             })
 
         elif method.lower() == "put":      
-            if action == "register":
-                result = Protocol.registration(
-                    first_name=first_name,
-                    last_name=last_name
+            if action == "password":
+                if not password:
+                    logger.error("No password")
+                    raise BadRequest()
+                
+                result = Protocol.password_validation(
+                    password=password
                 )
 
             else:
@@ -1021,6 +1025,8 @@ async def update_password(user_id):
 
         password = request.json["password"]
         new_password = request.json["new_password"]
+
+        check_password_policy(password=new_password)
     
         Session.find(
             sid=sid,
