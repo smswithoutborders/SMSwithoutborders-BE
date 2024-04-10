@@ -770,18 +770,24 @@
 ```ts
 {
   unsaved_platforms: {
-    id?: string
     name?: string
-    description?: string
+    description?: {
+      en?: string
+      fa?: string
+      fr?: string
+    }
     logo?: string
     initialization_url?: string
     type?: string
     letter?: string
   }[]
   saved_platforms: {
-    id?: string
     name?: string
-    description?: string
+    description?: {
+      en?: string
+      fa?: string
+      fr?: string
+    }
     logo?: string
     initialization_url?: string
     type?: string
