@@ -6,6 +6,7 @@ from flask import Blueprint
 from flask import request
 from flask import Response
 from flask import jsonify
+from flask_cors import cross_origin
 
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Conflict
@@ -1274,6 +1275,7 @@ async def delete_account(user_id):
 
 
 @v2.route("/users", methods=["GET"])
+@cross_origin()
 def get_users_analytics():
     """"""
     try:
