@@ -194,7 +194,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request POST 'http://localhost:9000/v2/users/{uid}/gmail/protocols/oauth2' \
+curl --location --request POST 'http://localhost:9000/v2/users/{uid}/platforms/gmail/protocols/oauth2' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw ''
@@ -228,7 +228,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request PUT 'http://localhost:9000/v2/users/{uid}/gmail/protocols/oauth2' \
+curl --location --request PUT 'http://localhost:9000/v2/users/{uid}/platforms/gmail/protocols/oauth2' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -262,7 +262,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request DELETE 'http://localhost:9000/v2/users/{uid}/gmail/protocols/oauth2' \
+curl --location --request DELETE 'http://localhost:9000/v2/users/{uid}/platforms/gmail/protocols/oauth2' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -292,7 +292,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request POST 'http://localhost:9000/v2/users/{uid}/twitter/protocols/oauth' \
+curl --location --request POST 'http://localhost:9000/v2/users/{uid}/platforms/twitter/protocols/oauth2' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw ''
@@ -327,7 +327,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request PUT 'http://localhost:9000/v2/users/{uid}/twitter/protocols/oauth' \
+curl --location --request PUT 'http://localhost:9000/v2/users/{uid}/platforms/twitter/protocols/oauth2' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -362,7 +362,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request DELETE 'http://localhost:9000/v2/users/{uid}/twitter/protocols/oauth' \
+curl --location --request DELETE 'http://localhost:9000/v2/users/{uid}/platforms/twitter/protocols/oauth2' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -394,7 +394,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request POST 'http://localhost:9000/v2/users/{uid}/telegram/protocols/twofactor' \
+curl --location --request POST 'http://localhost:9000/v2/users/{uid}/platforms/telegram/protocols/twofactor' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -436,7 +436,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request PUT 'http://localhost:9000/v2/users/{uid}/telegram/protocols/twofactor' \
+curl --location --request PUT 'http://localhost:9000/v2/users/{uid}/platforms/telegram/protocols/twofactor' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -477,7 +477,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request PUT 'http://localhost:9000/v2/users/{uid}/telegram/protocols/twofactor/register' \
+curl --location --request PUT 'http://localhost:9000/v2/users/{uid}/platforms/telegram/protocols/twofactor/register' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -513,7 +513,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request DELETE 'http://localhost:9000/v2/users/{uid}/telegram/protocols/twofactor' \
+curl --location --request DELETE 'http://localhost:9000/v2/users/{uid}/platforms/telegram/protocols/twofactor' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
@@ -809,7 +809,7 @@ The user also must configure their [header](https://developer.mozilla.org/en-US/
 Here is an example. Running User management API locally on port 9000
 
 ```bash
-curl --location --request PUT 'http://localhost:9000/v2/recovery' \
+curl --location --request PUT 'http://localhost:9000/v2/OTP' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: xxx-xxx-xxx-xxx-xxx-xxx' \
 --data-raw '{
