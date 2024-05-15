@@ -1,35 +1,11 @@
 import logging
-logger = logging.getLogger(__name__)
-
-# configurations
-from settings import Configurations
-cookie_name = Configurations.COOKIE_NAME
-ENABLE_RECAPTCHA = Configurations.ENABLE_RECAPTCHA
-enable_otp_counter = Configurations.ENABLE_OTP
+import json
+from datetime import datetime, timedelta
 
 from flask import Blueprint
 from flask import request
 from flask import Response
 from flask import jsonify
-
-from src.protocolHandler import OAuth2, TwoFactor
-
-from src.security.cookie import Cookie
-from src.security.data import Data
-from src.security.password_policy import check_password_policy
-
-import json
-from datetime import datetime
-from datetime import timedelta
-
-from src.models.grants import Grant_Model
-from src.models.users import User_Model
-from src.models.sessions import Session_Model
-from src.models._2FA import OTP_Model
-
-from src.schemas.db_connector import db
-
-v2 = Blueprint("v2", __name__)
 
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import Conflict
@@ -39,27 +15,55 @@ from werkzeug.exceptions import InternalServerError
 from werkzeug.exceptions import TooManyRequests
 from werkzeug.exceptions import UnprocessableEntity
 
+from settings import Configurations
+
+from src.protocolHandler import OAuth2, TwoFactor
+
+from src.security.cookie import Cookie
+from src.security.data import Data
+from src.security.password_policy import check_password_policy
+
+from src.models.grants import Grant_Model
+from src.models.users import User_Model
+from src.models.sessions import Session_Model
+from src.models._2FA import OTP_Model
+
+from src.schemas.db_connector import db
+
+cookie_name = Configurations.COOKIE_NAME
+ENABLE_RECAPTCHA = Configurations.ENABLE_RECAPTCHA
+enable_otp_counter = Configurations.ENABLE_OTP
+
+v2 = Blueprint("v2", __name__)
+logger = logging.getLogger(__name__)
+
+
 @v2.before_request
 def before_request():
     db.connect()
 
+
 @v2.after_request
 def after_request(response):
     db.close()
-    
-    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubdomains"
+
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=63072000; includeSubdomains"
+    )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Content-Security-Policy"] = "script-src 'self'; object-src 'self'"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Cache-Control"] = "no-cache"
-    response.headers["Permissions-Policy"] = "accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), clipboard-read=(), clipboard-write=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(), gamepad=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), speaker=(), speaker-selection=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()"
+    response.headers["Permissions-Policy"] = (
+        "accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), clipboard-read=(), clipboard-write=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(), gamepad=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), speaker=(), speaker-selection=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()"
+    )
 
     return response
 
+
 @v2.route("/signup", methods=["POST", "PUT"])
 def signup():
-    """
-    """
+    """ """
     try:
         method = request.method
 
@@ -92,24 +96,24 @@ def signup():
                 phone_number=phone_number,
                 name=name,
                 country_code=country_code,
-                password=password
+                password=password,
             )
 
-            res = jsonify({
-                "uid": user_id
-            })
+            res = jsonify({"uid": user_id})
 
             session = Session.create(
-                unique_identifier=data.hash(country_code+phone_number),
+                unique_identifier=data.hash(country_code + phone_number),
                 user_agent=user_agent,
                 type="signup",
             )
 
-            cookie_data = json.dumps({
-                "sid": session["sid"],
-                "cookie": session["data"],
-                "type":session["type"]
-            })
+            cookie_data = json.dumps(
+                {
+                    "sid": session["sid"],
+                    "cookie": session["data"],
+                    "type": session["type"],
+                }
+            )
             e_cookie = cookie.encrypt(cookie_data)
 
             session_data = json.loads(session["data"])
@@ -120,7 +124,7 @@ def signup():
                 max_age=timedelta(milliseconds=session_data["maxAge"]),
                 secure=session_data["secure"],
                 httponly=session_data["httpOnly"],
-                samesite=session_data["sameSite"]
+                samesite=session_data["sameSite"],
             )
 
         elif method.lower() == "put":
@@ -149,25 +153,22 @@ def signup():
                 user_agent=user_agent,
                 cookie=user_cookie,
                 type=type,
-                status=status
+                status=status,
             )
 
-            User.update(
-                user_id=uid,
-                status="verified"
-            )
+            User.update(user_id=uid, status="verified")
 
             Session.update(
                 sid=sid,
                 unique_identifier=unique_identifier,
                 status="verified",
-                type=type
+                type=type,
             )
 
             res = Response()
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -185,10 +186,10 @@ def signup():
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/recovery", methods=["POST"])
 def recovery():
-    """
-    """
+    """ """
     try:
         User = User_Model()
         Session = Session_Model()
@@ -198,16 +199,14 @@ def recovery():
         if not "phone_number" in request.json or not request.json["phone_number"]:
             logger.error("no phone_number")
             raise BadRequest()
-        
+
         user_agent = request.headers.get("User-Agent")
 
         phone_number = request.json["phone_number"]
-    
+
         user = User.find(phone_number=phone_number)
 
-        res = jsonify({
-            "uid": user["userId"]
-        })
+        res = jsonify({"uid": user["userId"]})
 
         session = Session.create(
             unique_identifier=data.hash(phone_number),
@@ -215,11 +214,9 @@ def recovery():
             type="recovery",
         )
 
-        cookie_data = json.dumps({
-            "sid": session["sid"],
-            "cookie": session["data"],
-            "type":session["type"]
-        })
+        cookie_data = json.dumps(
+            {"sid": session["sid"], "cookie": session["data"], "type": session["type"]}
+        )
         e_cookie = cookie.encrypt(cookie_data)
 
         session_data = json.loads(session["data"])
@@ -230,11 +227,11 @@ def recovery():
             max_age=timedelta(milliseconds=session_data["maxAge"]),
             secure=session_data["secure"],
             httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"]
+            samesite=session_data["sameSite"],
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -252,10 +249,10 @@ def recovery():
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/users/<string:user_id>/recovery", methods=["PUT"])
 async def recovery_check(user_id):
-    """
-    """
+    """ """
     try:
         originUrl = request.headers.get("Origin")
         Grant = Grant_Model()
@@ -271,7 +268,7 @@ async def recovery_check(user_id):
         elif not request.headers.get("User-Agent"):
             logger.error("no user agent")
             raise BadRequest()
-        
+
         e_cookie = request.cookies.get(cookie_name)
         d_cookie = cookie.decrypt(e_cookie)
         json_cookie = json.loads(d_cookie)
@@ -293,7 +290,7 @@ async def recovery_check(user_id):
             user_agent=user_agent,
             cookie=user_cookie,
             type=type,
-            status=status
+            status=status,
         )
 
         wallets = Grant.find_all(user_id=user_id)
@@ -306,27 +303,21 @@ async def recovery_check(user_id):
                 originUrl=originUrl,
                 identifier="",
                 platform_name=wallet["platformId"],
-                token=d_grant["token"]
+                token=d_grant["token"],
             )
 
             Grant.delete(grant=grant)
 
-        User.update(
-            user_id=user_id,
-            password=data.hash(new_password)
-        )
+        User.update(user_id=user_id, password=data.hash(new_password))
 
         Session.update(
-            sid=sid,
-            unique_identifier=unique_identifier,
-            status="updated",
-            type=type
+            sid=sid, unique_identifier=unique_identifier, status="updated", type=type
         )
 
         res = Response()
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -344,10 +335,10 @@ async def recovery_check(user_id):
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/login", methods=["POST"])
 def signin():
-    """
-    """
+    """ """
     try:
         User = User_Model()
         Session = Session_Model()
@@ -378,24 +369,15 @@ def signin():
         phone_number = request.json["phone_number"]
         password = request.json["password"]
 
-        user = User.verify(
-            phone_number=phone_number,
-            password=password
-        )
+        user = User.verify(phone_number=phone_number, password=password)
 
-        res = jsonify({
-            "uid": user["userId"]
-        })
+        res = jsonify({"uid": user["userId"]})
 
         session = Session.create(
-            unique_identifier=user["userId"],
-            user_agent=user_agent
+            unique_identifier=user["userId"], user_agent=user_agent
         )
 
-        cookie_data = json.dumps({
-            "sid": session["sid"],
-            "cookie": session["data"]
-        })
+        cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
 
         e_cookie = cookie.encrypt(cookie_data)
 
@@ -407,11 +389,11 @@ def signin():
             max_age=timedelta(milliseconds=session_data["maxAge"]),
             secure=session_data["secure"],
             httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"]
+            samesite=session_data["sameSite"],
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -432,10 +414,10 @@ def signin():
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/users/<string:user_id>/OTP", methods=["POST"])
 def OTP(user_id):
-    """
-    """
+    """ """
     try:
         if not request.cookies.get(cookie_name):
             logger.error("no cookie")
@@ -463,13 +445,13 @@ def OTP(user_id):
         phone_number = request.json["phone_number"]
 
         phone_number_hash = data.hash(phone_number)
-    
+
         Session.find(
             sid=sid,
             unique_identifier=phone_number_hash,
             user_agent=user_agent,
             cookie=user_cookie,
-            type=type
+            type=type,
         )
 
         otp = OTP_Model(phone_number=phone_number)
@@ -478,10 +460,7 @@ def OTP(user_id):
         expires = 0
 
         if enable_otp_counter:
-            otp_counter = otp.check_count(
-                unique_id=phone_number_hash,
-                user_id=user_id
-            )         
+            otp_counter = otp.check_count(unique_id=phone_number_hash, user_id=user_id)
 
             cid = otp_counter.id
 
@@ -491,27 +470,25 @@ def OTP(user_id):
             if enable_otp_counter:
                 expires = otp.add_count(otp_counter)
 
-            res = jsonify({
-                "expires": int(round(expires)) * 1000
-            })
+            res = jsonify({"expires": int(round(expires)) * 1000})
         else:
             logger.error("OTP FAILED with status '%s'" % otp_res.status)
             raise InternalServerError(otp_res)
 
         session = Session.update(
-            sid=sid,
-            unique_identifier=phone_number_hash,
-            type=type
+            sid=sid, unique_identifier=phone_number_hash, type=type
         )
 
-        cookie_data = json.dumps({
-            "sid": session["sid"],
-            "uid": user_id,
-            "cookie": session["data"],
-            "type": session["type"],
-            "phone_number": phone_number,
-            "cid": cid
-        })
+        cookie_data = json.dumps(
+            {
+                "sid": session["sid"],
+                "uid": user_id,
+                "cookie": session["data"],
+                "type": session["type"],
+                "phone_number": phone_number,
+                "cid": cid,
+            }
+        )
 
         e_cookie = cookie.encrypt(cookie_data)
 
@@ -523,11 +500,11 @@ def OTP(user_id):
             max_age=timedelta(milliseconds=session_data["maxAge"]),
             secure=session_data["secure"],
             httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"]
+            samesite=session_data["sameSite"],
         )
 
         return res, 201
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -536,7 +513,7 @@ def OTP(user_id):
 
     except Conflict as err:
         return str(err), 409
-    
+
     except TooManyRequests as err:
         return str(err), 429
 
@@ -548,10 +525,10 @@ def OTP(user_id):
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/OTP", methods=["PUT"])
 def OTP_check():
-    """
-    """
+    """ """
     try:
         if not request.cookies.get(cookie_name):
             logger.error("no cookie")
@@ -582,13 +559,13 @@ def OTP_check():
         code = request.json["code"]
 
         phone_number_hash = data.hash(phone_number)
-    
+
         Session.find(
             sid=sid,
             unique_identifier=phone_number_hash,
             user_agent=user_agent,
             cookie=user_cookie,
-            type=type
+            type=type,
         )
 
         otp = OTP_Model(phone_number=phone_number)
@@ -598,7 +575,7 @@ def OTP_check():
         if otp_res.status == "approved":
             if enable_otp_counter:
                 otp.delete_count(counter_id=cid)
-                
+
             res = Response()
         elif otp_res.status == "pending":
             logger.error("Invalid OTP code. OTP_check status = %s" % otp_res.status)
@@ -608,20 +585,19 @@ def OTP_check():
             raise InternalServerError(otp_res)
 
         session = Session.update(
-            sid=sid,
-            unique_identifier=phone_number_hash,
-            status="success",
-            type=type
+            sid=sid, unique_identifier=phone_number_hash, status="success", type=type
         )
 
-        cookie_data = json.dumps({
-            "sid": session["sid"],
-            "unique_identifier": session["uid"],
-            "uid": uid,
-            "cookie": session["data"],
-            "status": "success",
-            "type": type
-        })
+        cookie_data = json.dumps(
+            {
+                "sid": session["sid"],
+                "unique_identifier": session["uid"],
+                "uid": uid,
+                "cookie": session["data"],
+                "status": "success",
+                "type": type,
+            }
+        )
 
         e_cookie = cookie.encrypt(cookie_data)
 
@@ -633,11 +609,11 @@ def OTP_check():
             max_age=timedelta(milliseconds=session_data["maxAge"]),
             secure=session_data["secure"],
             httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"]
+            samesite=session_data["sameSite"],
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -658,11 +634,18 @@ def OTP_check():
         logger.exception(err)
         return "internal server error", 500
 
-@v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>", defaults={"action": None}, methods=["POST", "PUT", "DELETE"])
-@v2.route("users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/<string:action>", methods=["PUT"])
+
+@v2.route(
+    "users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>",
+    defaults={"action": None},
+    methods=["POST", "PUT", "DELETE"],
+)
+@v2.route(
+    "users/<string:user_id>/platforms/<string:platform>/protocols/<string:protocol>/<string:action>",
+    methods=["PUT"],
+)
 def manage_grant(user_id, platform, protocol, action) -> dict:
-    """
-    """
+    """ """
     try:
         if not request.cookies.get(cookie_name):
             logger.error("no cookie")
@@ -673,7 +656,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
 
         originUrl = request.headers.get("Origin")
         method = request.method
-        
+
         Session = Session_Model()
         User = User_Model()
         cookie = Cookie()
@@ -690,7 +673,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
             sid=sid,
             unique_identifier=user_id,
             user_agent=user_agent,
-            cookie=user_cookie
+            cookie=user_cookie,
         )
 
         code = request.json.get("code")
@@ -713,28 +696,26 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
             code_verifier = result.get("code_verifier") or ""
             body = result.get("body") or ""
 
-            res = jsonify({
-                "url": url,
-                "code_verifier": code_verifier,
-                "body": body,
-                "platform": platform.lower()
-            })
+            res = jsonify(
+                {
+                    "url": url,
+                    "code_verifier": code_verifier,
+                    "body": body,
+                    "platform": platform.lower(),
+                }
+            )
 
-        elif method.lower() == "put":      
+        elif method.lower() == "put":
             if action == "password":
                 if not password:
                     logger.error("No password")
                     raise BadRequest()
-                
-                result = Protocol.password_validation(
-                    password=password
-                )
+
+                result = Protocol.password_validation(password=password)
 
             else:
                 result = Protocol.validation(
-                    code=code,
-                    scope=scope,
-                    code_verifier=code_verifier
+                    code=code, scope=scope, code_verifier=code_verifier
                 )
 
             body = result.get("body") or ""
@@ -742,16 +723,9 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
             grant = result.get("grant")
 
             if grant:
-                Grant.store(
-                    user_id=user_id,
-                    platform_id=platform.lower(),
-                    grant=grant
-                )
-          
-            res = jsonify({
-                "body": body,
-                "initialization_url": initialization_url
-            })
+                Grant.store(user_id=user_id, platform_id=platform.lower(), grant=grant)
+
+            res = jsonify({"body": body, "initialization_url": initialization_url})
 
         elif method.lower() == "delete":
             if not request.json.get("password"):
@@ -767,22 +741,16 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
 
             grant = Grant.find(user_id=user["id"], platform_id=platform.lower())
             d_grant = Grant.decrypt(grant=grant)
-            
+
             Protocol.invalidation(token=d_grant["token"])
 
             Grant.delete(grant=grant)
 
             res = Response()
 
-        session = Session.update(
-            sid=sid,
-            unique_identifier=user_id
-        )
+        session = Session.update(sid=sid, unique_identifier=user_id)
 
-        cookie_data = json.dumps({
-            "sid": session["sid"],
-            "cookie": session["data"]
-        })
+        cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
 
         e_cookie = cookie.encrypt(cookie_data)
 
@@ -794,7 +762,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
             max_age=timedelta(milliseconds=session_data["maxAge"]),
             secure=session_data["secure"],
             httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"]
+            samesite=session_data["sameSite"],
         )
 
         return res, 200
@@ -816,7 +784,7 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
 
     except UnprocessableEntity as error:
         return str(error), 422
-        
+
     except InternalServerError as error:
         logger.exception(error)
         return "internal server error", 500
@@ -825,10 +793,10 @@ def manage_grant(user_id, platform, protocol, action) -> dict:
         logger.exception(error)
         return "internal server error", 500
 
+
 @v2.route("/users/<string:user_id>/platforms", methods=["GET"])
 def get_platforms(user_id):
-    """
-    """
+    """ """
     try:
         if not request.cookies.get(cookie_name):
             logger.error("no cookie")
@@ -848,27 +816,21 @@ def get_platforms(user_id):
         sid = json_cookie["sid"]
         user_cookie = json_cookie["cookie"]
         user_agent = request.headers.get("User-Agent")
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
             user_agent=user_agent,
-            cookie=user_cookie
+            cookie=user_cookie,
         )
 
         user_platforms = User.find_platform(user_id=user_id)
 
         res = jsonify(user_platforms)
 
-        session = Session.update(
-            sid=sid,
-            unique_identifier=user_id
-        )
+        session = Session.update(sid=sid, unique_identifier=user_id)
 
-        cookie_data = json.dumps({
-            "sid": session["sid"],
-            "cookie": session["data"]
-        })
+        cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
 
         e_cookie = cookie.encrypt(cookie_data)
 
@@ -880,11 +842,11 @@ def get_platforms(user_id):
             max_age=timedelta(milliseconds=session_data["maxAge"]),
             secure=session_data["secure"],
             httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"]
+            samesite=session_data["sameSite"],
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -905,10 +867,10 @@ def get_platforms(user_id):
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/users/<string:user_id>/dashboard", methods=["GET"])
 def dashboard(user_id):
-    """
-    """
+    """ """
     try:
         if not request.cookies.get(cookie_name):
             logger.error("no cookie")
@@ -928,32 +890,26 @@ def dashboard(user_id):
         sid = json_cookie["sid"]
         user_cookie = json_cookie["cookie"]
         user_agent = request.headers.get("User-Agent")
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
             user_agent=user_agent,
-            cookie=user_cookie
+            cookie=user_cookie,
         )
 
         user = User.find(user_id=user_id)
 
         result = {
             "createdAt": user["createdAt"],
-            "updatedAt": user["last_login"] if user["last_login"] else datetime.now()
+            "updatedAt": user["last_login"] if user["last_login"] else datetime.now(),
         }
 
         res = jsonify(result)
 
-        session = Session.update(
-            sid=sid,
-            unique_identifier=user_id
-        )
+        session = Session.update(sid=sid, unique_identifier=user_id)
 
-        cookie_data = json.dumps({
-            "sid": session["sid"],
-            "cookie": session["data"]
-        })
+        cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
 
         e_cookie = cookie.encrypt(cookie_data)
 
@@ -965,11 +921,11 @@ def dashboard(user_id):
             max_age=timedelta(milliseconds=session_data["maxAge"]),
             secure=session_data["secure"],
             httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"]
+            samesite=session_data["sameSite"],
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -990,10 +946,10 @@ def dashboard(user_id):
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/users/<string:user_id>/password", methods=["POST"])
 async def update_password(user_id):
-    """
-    """
+    """ """
     try:
         if not request.cookies.get(cookie_name):
             logger.error("no cookie")
@@ -1027,12 +983,12 @@ async def update_password(user_id):
         new_password = request.json["new_password"]
 
         check_password_policy(password=new_password)
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
             user_agent=user_agent,
-            cookie=user_cookie
+            cookie=user_cookie,
         )
 
         try:
@@ -1050,27 +1006,18 @@ async def update_password(user_id):
                 originUrl=originUrl,
                 identifier="",
                 platform_name=wallet["platformId"],
-                token=d_grant["token"]
+                token=d_grant["token"],
             )
 
             Grant.delete(grant=grant)
 
-        User.update(
-            user_id=user["id"],
-            password=data.hash(new_password)
-        )
+        User.update(user_id=user["id"], password=data.hash(new_password))
 
         res = Response()
 
-        session = Session.update(
-            sid=sid,
-            unique_identifier=user_id
-        )
+        session = Session.update(sid=sid, unique_identifier=user_id)
 
-        cookie_data = json.dumps({
-            "sid": session["sid"],
-            "cookie": session["data"]
-        })
+        cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
 
         e_cookie = cookie.encrypt(cookie_data)
 
@@ -1082,11 +1029,11 @@ async def update_password(user_id):
             max_age=timedelta(milliseconds=session_data["maxAge"]),
             secure=session_data["secure"],
             httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"]
+            samesite=session_data["sameSite"],
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -1110,10 +1057,10 @@ async def update_password(user_id):
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/users/<string:user_id>/verify", methods=["POST"])
 def verify_user_id(user_id):
-    """
-    """
+    """ """
     try:
         if not "password" in request.json or not request.json["password"]:
             logger.error("no password")
@@ -1130,22 +1077,13 @@ def verify_user_id(user_id):
 
         password = request.json["password"]
 
-        user = User.verify(
-            user_id=user_id,
-            password=password
-        )
+        user = User.verify(user_id=user_id, password=password)
 
         res = Response()
 
-        session = Session.create(
-            unique_identifier=user["id"],
-            user_agent=user_agent
-        )
+        session = Session.create(unique_identifier=user["id"], user_agent=user_agent)
 
-        cookie_data = json.dumps({
-            "sid": session["sid"],
-            "cookie": session["data"]
-        })
+        cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
 
         e_cookie = cookie.encrypt(cookie_data)
 
@@ -1157,11 +1095,11 @@ def verify_user_id(user_id):
             max_age=timedelta(milliseconds=session_data["maxAge"]),
             secure=session_data["secure"],
             httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"]
+            samesite=session_data["sameSite"],
         )
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -1182,10 +1120,10 @@ def verify_user_id(user_id):
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/users/<string:user_id>/logout", methods=["POST"])
 def logout(user_id):
-    """
-    """
+    """ """
     try:
         if not request.cookies.get(cookie_name):
             logger.error("no cookie")
@@ -1193,7 +1131,7 @@ def logout(user_id):
         elif not request.headers.get("User-Agent"):
             logger.error("no user agent")
             raise BadRequest()
-    
+
         Session = Session_Model()
         cookie = Cookie()
 
@@ -1204,14 +1142,14 @@ def logout(user_id):
         sid = json_cookie["sid"]
         user_cookie = json_cookie["cookie"]
         user_agent = request.headers.get("User-Agent")
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
             user_agent=user_agent,
-            cookie=user_cookie
+            cookie=user_cookie,
         )
-                
+
         res = Response()
 
         res.delete_cookie(cookie_name)
@@ -1219,7 +1157,7 @@ def logout(user_id):
         logger.info("- Successfully cleared cookie")
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -1243,10 +1181,10 @@ def logout(user_id):
         logger.exception(err)
         return "internal server error", 500
 
+
 @v2.route("/users/<string:user_id>", methods=["DELETE"])
 async def delete_account(user_id):
-    """
-    """
+    """ """
     try:
         if not request.cookies.get(cookie_name):
             logger.error("no cookie")
@@ -1273,12 +1211,12 @@ async def delete_account(user_id):
         user_agent = request.headers.get("User-Agent")
 
         password = request.json["password"]
-    
+
         Session.find(
             sid=sid,
             unique_identifier=user_id,
             user_agent=user_agent,
-            cookie=user_cookie
+            cookie=user_cookie,
         )
 
         try:
@@ -1296,25 +1234,21 @@ async def delete_account(user_id):
                 originUrl=originUrl,
                 identifier="",
                 platform_name=wallet["platformId"],
-                token=d_grant["token"]
+                token=d_grant["token"],
             )
 
             Grant.delete(grant=grant)
 
-        User.delete(
-            user_id=user["id"]
-        )
+        User.delete(user_id=user["id"])
 
         Session.create(
-            unique_identifier=user["id"],
-            user_agent=user_agent,
-            type="deleted"
+            unique_identifier=user["id"], user_agent=user_agent, type="deleted"
         )
 
         res = Response()
 
         return res, 200
-                
+
     except BadRequest as err:
         return str(err), 400
 
@@ -1329,6 +1263,33 @@ async def delete_account(user_id):
 
     except Conflict as err:
         return str(err), 409
+
+    except InternalServerError as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+    except Exception as err:
+        logger.exception(err)
+        return "internal server error", 500
+
+
+@v2.route("/users", methods=["GET"])
+def get_users_analytics():
+    """"""
+    try:
+        start = request.args.get("start")
+        end = request.args.get("end")
+        _type = request.args.get("type")
+        _format = request.args.get("format")
+
+        users = User_Model()
+
+        data = users.get_analytics(start=start, end=end, _type=_type, _format=_format)
+
+        return jsonify(data), 200
+
+    except BadRequest as err:
+        return str(err), 400
 
     except InternalServerError as err:
         logger.exception(err)
