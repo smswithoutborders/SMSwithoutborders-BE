@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package vault.v1;
+
+// Request message for creating an entity.
+message CreateEntityRequest {
+    // Country code of the entity.
+    string country_code = 1;
+    // Username of the entity.
+    string username = 2;
+    // Phone number of the entity.
+    string phone_number = 3;
+    // Password of the entity.
+    string password = 4;
+    // Public key for publishing.
+    string publish_pub_key = 5;
+    // Public key for device identification.
+    string device_id_pub_key = 6;
+    // Ownership proof response.
+    string ownership_proof_response = 7;
+}
+
+// Response message for creating an entity.
+message CreateEntityResponse {
+    // Indicates if ownership proof is required.
+    bool requires_ownership_proof = 1;
+    // Public key for publishing.
+    string peer_publish_pub_key = 2;
+    // Response message.
+    string message = 3;
+    // Next attempt value.
+    int32 next_attempt = 4;
+}
+
+// Request message for authenticating an entity.
+message AuthenticateEntityRequest {
+    // Phone number of the entity.
+    string phone_number = 1;
+    // Hash of the phone number.
+    string phone_number_hash = 2;
+    // Password of the entity.
+    string password = 3;
+    // Public key for publishing.
+    string publish_pub_key = 5;
+    // Public key for device identification.
+    string device_id_pub_key = 6;
+    // Ownership proof response.
+    string ownership_proof_response = 7;
+}
+
+// Response message for authenticating an entity.
+message AuthenticateEntityResponse {
+    // Indicates if ownership proof is required.
+    bool requires_ownership_proof = 1;
+    // Long-lived token for authenticated entity.
+    string long_lived_token = 2;
+    // Response message.
+    string message = 3;
+}
+
+// Service for managing entities.
+service Entity {
+    // Creates an entity.
+    rpc CreateEntity (CreateEntityRequest) returns (CreateEntityResponse);
+    // Authenticates an entity.
+    rpc AuthenticateEntity (AuthenticateEntityRequest) returns (AuthenticateEntityResponse);
+}

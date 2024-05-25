@@ -2,7 +2,10 @@
 
 # SMSWithoutBorders Back-end
 
-This is a cloud API and User management service. It is directly configurable with MySQL databases for managing users. Also provides out of the box integrations of Google OAuth-2.0, Twitter OAuth, and Telegram end-points and Account authentication.
+This is a cloud API and User management service. It is directly configurable
+with MySQL databases for managing users. Also provides out of the box
+integrations of Google OAuth-2.0, Twitter OAuth, and Telegram end-points and
+Account authentication.
 
 ## Documentation
 
@@ -10,13 +13,16 @@ This is a cloud API and User management service. It is directly configurable wit
 2. [Features](docs/api_versions.md)
 3. [References](./docs/references.md)
 4. [Security](./docs/security.md)
+5. [gRPC](docs/grpc.md)
 
 ## Contribution
 
 We are thrilled to have you contribute to this project
 
-Please take a moment to read our [contributing guide](docs/contributing.md) to learn about our development process.
-Open an [issue](https://github.com/smswithoutborders/SMSwithoutborders-BE/issues) first to discuss potential changes/additions.
+Please take a moment to read our [contributing guide](docs/contributing.md) to
+learn about our development process. Open an
+[issue](https://github.com/smswithoutborders/SMSwithoutborders-BE/issues) first
+to discuss potential changes/additions.
 
 ## Licensing
 
