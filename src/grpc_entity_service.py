@@ -13,7 +13,7 @@ import vault_pb2
 import vault_pb2_grpc
 
 from src.entity import create_entity, find_entity
-from src.crypto import generate_hmac, encrypt_aes
+from src.crypto import generate_hmac, verify_hmac, encrypt_aes
 from src.otp_service import send_otp, verify_otp
 from src.utils import load_key
 
@@ -28,6 +28,11 @@ logger = logging.getLogger(__name__)
 def error_response(context, sys_msg, status_code, user_msg=None, _type=None):
     if not user_msg:
         user_msg = sys_msg
+
+    if isinstance(user_msg, tuple):
+        user_msg = "".join(user_msg)
+    if isinstance(sys_msg, tuple):
+        sys_msg = "".join(sys_msg)
 
     if _type == "UNKNOWN":
         logger.exception(sys_msg, exc_info=True)
@@ -186,6 +191,100 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 return create_entity_with_ownership_proof(request)
 
             return create_entity_without_ownership_proof(request)
+
+        except Exception as e:
+            return error_response(
+                context,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
+            )
+
+    def AuthenticateEntity(self, request, context):
+        """Handles the authentication of an entity."""
+
+        def initiate_authentication(request):
+            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+            entity_obj = find_entity(phone_number_hash=phone_number_hash)
+
+            if not entity_obj:
+                return error_response(
+                    context,
+                    f"Entity with phone number `{request.phone_number}` not found.",
+                    grpc.StatusCode.NOT_FOUND,
+                )
+
+            if not verify_hmac(HASHING_KEY, request.password, entity_obj.password_hash):
+                return error_response(
+                    context,
+                    f"Incorrect Password provided for phone number {request.phone_number}",
+                    grpc.StatusCode.UNAUTHENTICATED,
+                    user_msg=(
+                        "Incorrect credentials. Please double-check ",
+                        "your details and try again.",
+                    ),
+                )
+
+            success, response = handle_pow_initialization(context, request)
+            if not success:
+                return response
+
+            message, expires = response
+
+            return vault_pb2.AuthenticateEntityResponse(
+                requires_ownership_proof=True,
+                message=message,
+                next_attempt=expires,
+                phone_number_hash=phone_number_hash,
+            )
+
+        def complete_authentication(request):
+            entity_obj = find_entity(phone_number_hash=request.phone_number_hash)
+            if not entity_obj:
+                return error_response(
+                    context,
+                    f"Entity with phone number hash `{request.phone_number_hash}` not found.",
+                    grpc.StatusCode.NOT_FOUND,
+                )
+
+            success, response = handle_pow_verification(context, request)
+            if not success:
+                return response
+
+            long_lived_token = generate_hmac(
+                HASHING_KEY,
+                request.phone_number_hash + request.ownership_proof_response,
+            )
+
+            return vault_pb2.AuthenticateEntityResponse(
+                long_lived_token=long_lived_token,
+                message="Entity authenticated successfully!",
+            )
+
+        try:
+            if request.ownership_proof_response:
+                required_fields = [
+                    "phone_number_hash",
+                    "publish_pub_key",
+                    "device_id_pub_key",
+                ]
+                missing_fields_response = check_missing_fields(
+                    context, request, required_fields
+                )
+                if missing_fields_response:
+                    return missing_fields_response
+
+                return complete_authentication(request)
+
+            required_fields = ["phone_number", "password"]
+            missing_fields_response = check_missing_fields(
+                context, request, required_fields
+            )
+            if missing_fields_response:
+                return missing_fields_response
+
+            return initiate_authentication(request)
 
         except Exception as e:
             return error_response(

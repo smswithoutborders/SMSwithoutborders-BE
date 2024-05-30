@@ -28,7 +28,8 @@ message CreateEntityResponse {
     string peer_publish_pub_key = 2;
     // Response message.
     string message = 3;
-    // Next attempt value.
+    // The next available time to request another proof of 
+    // ownership (in Unix seconds)
     int32 next_attempt = 4;
 }
 
@@ -36,16 +37,16 @@ message CreateEntityResponse {
 message AuthenticateEntityRequest {
     // Phone number of the entity.
     string phone_number = 1;
-    // Hash of the phone number.
-    string phone_number_hash = 2;
     // Password of the entity.
-    string password = 3;
+    string password = 2;
     // Public key for publishing.
-    string publish_pub_key = 5;
+    string publish_pub_key = 3;
     // Public key for device identification.
-    string device_id_pub_key = 6;
+    string device_id_pub_key = 4;
     // Ownership proof response.
-    string ownership_proof_response = 7;
+    string ownership_proof_response = 5;
+    // Hash Phone number of the entity.
+    string phone_number_hash = 6;
 }
 
 // Response message for authenticating an entity.
@@ -56,6 +57,11 @@ message AuthenticateEntityResponse {
     string long_lived_token = 2;
     // Response message.
     string message = 3;
+    // Hash Phone number of the entity.
+    string phone_number_hash = 4;
+    // The next available time to request another proof of 
+    // ownership (in Unix seconds)
+    int32 next_attempt = 5;
 }
 
 // Service for managing entities.
