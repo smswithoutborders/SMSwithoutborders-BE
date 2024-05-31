@@ -2,294 +2,355 @@
 
 ## Table of Contents
 
-- [Structure](#structure)
+- [Download Protocol Buffer File](#download-protocol-buffer-file)
+  - [Version 1](#version-1)
+- [Prerequisites](#prerequisites)
 - [Usage](#usage)
-  1. [Creating an Entity (Account)](#1-creating-an-entity-account)
-     - [Step 1: Proof of Ownership](#step-1-proof-of-ownership)
-     - [Step 2: Registration](#step-2-registration)
-  2. [Authenticate Entity (Account)](#2-authenticate-entity-account)
-     - [Step 1: Initiate Authentication](#step-1-initiate-authentication)
-     - [Step 2: Complete Authentication](#step-2-complete-authentication)
+  - [Create an Entity](#create-an-entity)
+    - [Initiate Creation](#initiate-creation)
+    - [Complete Creation](#complete-creation)
 
-## Structure
+## Download Protocol Buffer File
 
-- **[protos/](../protos/)**: This directory contains the Protocol Buffer
-  (.proto) files used for defining gRPC services and messages. These files serve
-  as the single source of truth for the gRPC APIs, ensuring consistent
-  communication structures between server and client implementations.
+To use the gRPC functions, download the protocol buffer file from the
+[proto](/protos/) directory corresponding to the desired version.
 
-1. **Install Dependencies**: First, ensure that the necessary dependencies are
-   installed:
+### Version 1
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+curl -O -L https://raw.githubusercontent.com/smswithoutborders/SMSwithoutborders-BE/feature/grpc_api/protos/v1/vault.proto
+```
 
-2. **Generate Code**: Use the `protoc` compiler to generate Python code from the
-   `.proto` files:
+## Prerequisites
 
-   ```bash
-   python3 -m grpc_tools.protoc -I./protos --python_out=. --pyi_out=. --grpc_python_out=. ./protos/*.proto
-   ```
+To add relevant documentation links to the provided instructions, you can modify
+the text like this:
 
-### Usage
+````markdown
+### Install Dependencies
 
-> [!NOTE]
->
-> Before using the provided protobuf definitions, ensure that you compile them
-> using the protobuf compiler. This is necessary for generating the required
-> gRPC client and server code for your chosen programming language.
+If you're using Python, install the necessary dependencies from
+`requirements.txt`. For other languages, see
+[Supported languages](https://grpc.io/docs/languages/).
 
----
+```bash
+pip install -r requirements.txt
+```
+````
 
-## 1. Creating an Entity (Account)
+### Compile gRPC for Python
 
-To create an entity (account) in the vault, follow these steps:
+If you're using Python, compile the gRPC files with `protoc` to generate the
+necessary Python files. For other languages, see
+[Supported languages](https://grpc.io/docs/languages/).
 
-### Step 1: Proof of Ownership
+```bash
+python -m grpc_tools.protoc -I protos/v1 --python_out=. --grpc_python_out=. protos/v1/vault.proto
+```
+
+### Starting the Server
+
+```bash
+python3 grpc_server.py
+```
+
+## Usage
+
+### Create an Entity
+
+An entity represents a user or client in the vault.
+
+#### Initiate Creation
 
 Before creating an entity, you must prove ownership of the phone number you
 intend to use. This step ensures the security and authenticity of the entity
 creation process.
 
-- **Request Parameters**:
-  - **phone_number**: The phone number associated with the entity. It should be
-    in [E164 format](https://en.wikipedia.org/wiki/E.164).
+> `request` **CreateEntityRequest**
 
-The response will indicate the status of the request:
+> [!NOTE]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
 
-- `INVALID_ARGUMENT`: Missing required field. The `details` in the response will
-  specify the missing field.
-- `ALREADY_EXISTS`: The phone number is already associated with a registered
-  entity in the vault.
-- `OK`: The proof of ownership request was successful. A code will be sent to
-  the provided phone number to be used in the next step.
-  - `next_attempt`: The next available time to request another proof of
-    ownership (in Unix seconds) if the first attempt fails.
-  - `requires_ownership_proof`: `true`, indicating that proof of ownership is
-    required to proceed with entity creation.
+| Field        | Type   | Description                                                                                                                           |
+| ------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| phone_number | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
 
-#### Example (Python)
+> `response` **CreateEntityResponse**
 
-```python
-import grpc
-import vault_pb2
-import vault_pb2_grpc
+> [!NOTE]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
 
-def create_entity_proof_of_own():
-    channel = grpc.insecure_channel('localhost:50051')
-    stub = vault_pb2_grpc.EntityStub(channel)
+| Field                    | Type   | Description                                                                                                 |
+| ------------------------ | ------ | ----------------------------------------------------------------------------------------------------------- |
+| requires_ownership_proof | bool   | An indicator if proof of ownership is required. `true` if required, `false` otherwise.                      |
+| next_attempt_timestamp   | int32  | The next available time to request another proof of ownership (in Unix seconds) if the first attempt fails. |
+| message                  | string | A response message from the server.                                                                         |
 
-    request = vault_pb2.CreateEntityRequest(
-        phone_number="+1234567890"
-    )
+> `method` **CreateEntity**
 
-    response = stub.CreateEntity(request)
-    print("Entity creation response:", response)
+The examples below use
+[grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
 
-if __name__ == '__main__':
-    create_entity_proof_of_own()
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d '{"phone_number": "+237123456789"}' \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/CreateEntity
 ```
 
-### Response
+**Sample response**
 
 ```json
 {
-	"requires_ownership_proof": true,
-	"peer_publish_pub_key": "",
-	"message": "",
-	"next_attempt": 112233
+	"requiresOwnershipProof": true,
+	"message": "OTP sent successfully. Check your phone for the code.",
+	"nextAttemptTimestamp": 1717323582
 }
 ```
 
-### Step 2: Registration
+#### Complete Creation
 
-After completing Step 1 and receiving the proof (OTP), complete the entity
-registration with fields used to identify and create an entity.
+> [!WARN]
+>
+> Ensure that you have completed the [Initiate Creation](#initiate-creation)
+> step before executing this step.
 
-- **Request Parameters**:
-  - **phone_number**: The phone number associated with the entity. It should be
-    in [E164 format](https://en.wikipedia.org/wiki/E.164).
-  - **country_code**: The
-    [ISO 3166-1 alpha-2 code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
-    associated with the phone number.
-  - **password**: A secure password for the entity.
-  - **username**: (Optional) A username for the entity.
-  - **publish_pub_key**: The public key for publishing, base64 encoded.
-  - **device_id_pub_key**: The public key associated with the device ID, base64
-    encoded.
+> `request` **CreateEntityRequest**
 
-The response will indicate the status of the request:
+> [!NOTE]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
 
-- `INVALID_ARGUMENT`: Missing required field or weak password. The `details` in
-  the response will specify the issue.
-- `ALREADY_EXISTS`: The phone number is already associated with a registered
-  entity in the vault.
-- `UNAUTHENTICATED`: The proof provided is invalid.
-- `OK`: The proof of ownership response is valid, and the entity has been
-  successfully added to the vault.
-  - `peer_publish_pub_key`: The DH handshake peer public key for publishing,
-    base64 encoded.
+| Field                    | Type   | Description                                                                                                                                |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| phone_number             | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789.      |
+| country_code             | string | The [ISO 3166-1 alpha-2 code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) associated with the phone number. e.g., `CM` for Cameroon. |
+| password                 | string | A secure password for the entity.                                                                                                          |
+| ownership_proof_response | string | The proof response from the previous step.                                                                                                 |
+| client_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                                                                                   |
+| client_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                                                                                    |
 
-#### Example (Python)
+> `response` **CreateEntityResponse**
 
-```python
-import grpc
-import vault_pb2
-import vault_pb2_grpc
+> [!NOTE]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
 
-def register_entity():
-    channel = grpc.insecure_channel('localhost:50051')
-    stub = vault_pb2_grpc.EntityStub(channel)
+| Field                    | Type   | Description                                                                |
+| ------------------------ | ------ | -------------------------------------------------------------------------- |
+| message                  | string | A response message from the server.                                        |
+| server_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                   |
+| server_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                    |
+| long_lived_token         | string | A token for the authenticated session, to be used for subsequent requests. |
 
-    request = vault_pb2.CreateEntityRequest(
-        phone_number="+1234567890",
-        ownership_proof_response="112233",
-        country_code="US",
-        password="mySecurePassword123",
-        username="myUsername",  # Optional
-        publish_pub_key="base64encodedPublicKey",
-        device_id_pub_key="base64encodedDevicePublicKey"
-    )
+> `method` **CreateEntity**
 
-    response = stub.CreateEntity(request)
-    print("Entity registration response:", response)
+The examples below use
+[grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
 
-if __name__ == '__main__':
-    register_entity()
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d @ \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/CreateEntity <payload.json
 ```
 
-### Response
+**Sample payload.json**
 
 ```json
 {
-	"requires_ownership_proof": false,
-	"peer_publish_pub_key": "base64encodedPublicKey",
-	"message": "",
-	"next_attempt": 0
+	"country_code": "CM",
+	"phone_number": "+237123456789",
+	"password": "Password@123",
+	"client_publish_pub_key": "x25519 client publish public key",
+	"client_device_id_pub_key": "x25519 client device_id public key",
+	"ownership_proof_response": "123456"
 }
 ```
 
-## 2. Authenticate Entity (Account)
+**Sample response**
 
-To authenticate an entity in the vault, follow these steps:
+```json
+{
+	"longLivedToken": "long_lived_token",
+	"serverPublishPubKey": "x25519 server publish public key",
+	"serverDeviceIdPubKey": "x25519 server publish public key",
+	"message": "Entity created successfully"
+}
+```
 
-### Step 1: Initiate Authentication
+### Authenticate an Entity
+
+An entity represents a user or client in the vault.
+
+#### Initiate Authentication
 
 This step involves verifying the phone number and password, triggering a proof
 of ownership for the phone number.
 
-- **Request Parameters**:
-  - **phone_number**: The phone number associated with the entity. It should be
-    in [E164 format](https://en.wikipedia.org/wiki/E.164).
-  - **password**: The password for the entity.
+> `request` **AuthenticateEntityRequest**
 
-The response will indicate the status of the request and whether ownership proof
-is required:
+> [!NOTE]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
 
-- `INVALID_ARGUMENT`: Missing required field or incorrect format. The `details`
-  in the response will specify the issue.
-- `NOT_FOUND`: The provided phone number does not exist in the vault.
-- `UNAUTHENTICATED`: Incorrect credentials provided.
-- `OK`: The authentication request has been accepted, and a proof of ownership
-  challenge has been triggered.
-  - `next_attempt`: The next available time to request another proof of
-    ownership (in Unix seconds) if the first attempt fails.
-  - `requires_ownership_proof`: `true`, indicating that proof of ownership is
-    required to proceed with authentication.
-  - `phone_number_hash`: The hash of the entity's phone number to be used in the
-    subsequent request to complete authentication.
+| Field        | Type   | Description                                                                                                                           |
+| ------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| phone_number | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
+| password     | string | A secure password for the entity.                                                                                                     |
 
-#### Example (Python)
+> `response` **AuthenticateEntityResponse**
 
-```python
-import grpc
-import vault_pb2
-import vault_pb2_grpc
+> [!NOTE]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
 
-def initiate_authentication():
-    channel = grpc.insecure_channel('localhost:50051')
-    stub = vault_pb2_grpc.EntityStub(channel)
+| Field                    | Type   | Description                                                                                                 |
+| ------------------------ | ------ | ----------------------------------------------------------------------------------------------------------- |
+| requires_ownership_proof | bool   | An indicator if proof of ownership is required. `true` if required, `false` otherwise.                      |
+| next_attempt_timestamp   | int32  | The next available time to request another proof of ownership (in Unix seconds) if the first attempt fails. |
+| message                  | string | A response message from the server.                                                                         |
 
-    request = vault_pb2.AuthenticateEntityRequest(
-        phone_number="+1234567890",
-        password="mySecurePassword123"
-    )
+> `method` **AuthenticateEntity**
 
-    response = stub.AuthenticateEntity(request)
-    print("Authentication initiation response:", response)
+The examples below use
+[grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
 
-if __name__ == '__main__':
-    initiate_authentication()
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d '{"phone_number": "+237123456789", "password": "Password@123"}' \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/AuthenticateEntity
 ```
 
-### Response
+**Sample response**
 
 ```json
 {
-	"requires_ownership_proof": true,
-	"long_lived_token": "",
-	"message": "",
-	"phone_number_hash": "hash_of_phone_number",
-	"next_attempt": 112233
+	"requiresOwnershipProof": true,
+	"message": "OTP sent successfully. Check your phone for the code.",
+	"nextAttemptTimestamp": 1717323582
 }
 ```
 
-### Step 2: Complete Authentication
+#### Complete Authentication
 
-After receiving the proof of ownership, use the phone_number_hash and the proof
-response to complete the authentication.
+> [!WARN]
+>
+> Ensure that you have completed the
+> [Initiate Authentication](#initiate-authentication) step before executing this
+> step.
 
-- **Request Parameters**:
-  - **phone_number_hash**: The phone number hash associated with the entity.
-  - **publish_pub_key**: The public key for publishing, base64 encoded.
-  - **device_id_pub_key**: The public key associated with the device ID, base64
-    encoded.
-  - **ownership_proof_response**: The proof response from the ownership step.
+> `request` **AuthenticateEntityRequest**
 
-The response will indicate the status of the request and provide a long-lived
-token if successful:
+> [!NOTE]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
 
-- `INVALID_ARGUMENT`: Missing required field or incorrect format. The `details`
-  in the response will specify the issue.
-- `NOT_FOUND`: The provided phone number hash does not exist in the vault.
-- `UNAUTHENTICATED`: Invalid proof of ownership response.
-- `OK`: The entity has been successfully authenticated.
-  - `long_lived_token`: A token for the authenticated session, to be used for
-    subsequent requests.
+| Field                    | Type   | Description                                                                                                                           |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| phone_number             | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
+| ownership_proof_response | string | The proof response from the previous step.                                                                                            |
+| client_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                                                                              |
+| client_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                                                                               |
 
-#### Example (Python)
+> `response` **AuthenticateEntityResponse**
 
-```python
-import grpc
-import vault_pb2
-import vault_pb2_grpc
+> [!NOTE]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
 
-def complete_authentication():
-    channel = grpc.insecure_channel('localhost:50051')
-    stub = vault_pb2_grpc.EntityStub(channel)
+| Field                    | Type   | Description                                                                |
+| ------------------------ | ------ | -------------------------------------------------------------------------- |
+| message                  | string | A response message from the server.                                        |
+| server_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                   |
+| server_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                    |
+| long_lived_token         | string | A token for the authenticated session, to be used for subsequent requests. |
 
-    request = vault_pb2.AuthenticateEntityRequest(
-        phone_number_hash="hash_of_phone_number",
-        publish_pub_key="base64encodedPublicKey",
-        device_id_pub_key="base64encodedDevicePublicKey",
-        ownership_proof_response="ownershipProof"
-    )
+> `method` **AuthenticateEntity**
 
-    response = stub.AuthenticateEntity(request)
-    print("Authentication completion response:", response)
+The examples below use
+[grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
 
-if __name__ == '__main__':
-    complete_authentication()
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d @ \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
 ```
 
-### Response
+**Sample payload.json**
 
 ```json
 {
-	"long_lived_token": "longLivedAuthToken",
-	"message": "Entity authenticated successfully!",
-	"requires_ownership_proof": false,
-	"phone_number_hash": ""
+	"phone_number": "+237123456789",
+	"client_publish_pub_key": "x25519 client publish public key",
+	"client_device_id_pub_key": "x25519 client device_id public key",
+	"ownership_proof_response": "123456"
+}
+```
+
+**Sample response**
+
+```json
+{
+	"longLivedToken": "long_lived_token",
+	"serverPublishPubKey": "x25519 server publish public key",
+	"serverDeviceIdPubKey": "x25519 server publish public key",
+	"message": "Entity authenticated successfully!"
 }
 ```

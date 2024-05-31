@@ -187,7 +187,7 @@ def mock_send_otp(phone_number):
             - A string message indicating the result of the OTP sending process.
     """
     logger.info("Mock OTP sent to %s.", phone_number)
-    return True, "Mock OTP sent successfully. OTP code is 123456."
+    return True, "OTP sent successfully. Check your phone for the code."
 
 
 def mock_verify_otp(phone_number, otp):
@@ -205,7 +205,7 @@ def mock_verify_otp(phone_number, otp):
     """
     if otp == "123456":
         logger.info("Mock OTP verified successfully for %s. OTP %s.", phone_number, otp)
-        return True, "Mock OTP verified successfully."
+        return True, "OTP verified successfully."
 
     logger.warning("Invalid OTP %s provided for %s.", otp, phone_number)
     return False, "Invalid OTP. Please double-check the code and try again."

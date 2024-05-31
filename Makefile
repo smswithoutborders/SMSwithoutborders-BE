@@ -45,9 +45,9 @@ dummy-user-inject:
 grpc-compile:
 	$(call log_message,INFO - Compiling gRPC protos ...)
 	@$(python) -m grpc_tools.protoc \
-		-I./protos \
+		-I./protos/v1 \
 		--python_out=. \
 		--pyi_out=. \
 		--grpc_python_out=. \
-		./protos/*.proto
+		./protos/v1/*.proto
 	$(call log_message,INFO - gRPC Compilation complete!)
