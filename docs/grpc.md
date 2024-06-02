@@ -26,7 +26,6 @@ curl -O -L https://raw.githubusercontent.com/smswithoutborders/SMSwithoutborders
 To add relevant documentation links to the provided instructions, you can modify
 the text like this:
 
-````markdown
 ### Install Dependencies
 
 If you're using Python, install the necessary dependencies from
@@ -36,7 +35,6 @@ If you're using Python, install the necessary dependencies from
 ```bash
 pip install -r requirements.txt
 ```
-````
 
 ### Compile gRPC for Python
 
