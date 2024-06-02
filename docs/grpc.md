@@ -71,7 +71,7 @@ creation process.
 
 > `request` **CreateEntityRequest**
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > The table lists only the required fields for this step. Other fields will be
 > ignored.
@@ -84,7 +84,7 @@ creation process.
 
 > `response` **CreateEntityResponse**
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > The table lists only the fields that are populated for this step. Other fields
 > may be empty, omitted, or false.
@@ -140,7 +140,7 @@ localhost:6000 vault.v1.Entity/CreateEntity
 
 #### Complete Creation
 
-> [!WARN]
+> [!WARNING]
 >
 > Ensure that you have completed the [Initiate Creation](#initiate-creation)
 > step before executing this step.
@@ -149,7 +149,7 @@ localhost:6000 vault.v1.Entity/CreateEntity
 
 > `request` **CreateEntityRequest**
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > The table lists only the required fields for this step. Other fields will be
 > ignored.
@@ -167,7 +167,7 @@ localhost:6000 vault.v1.Entity/CreateEntity
 
 > `response` **CreateEntityResponse**
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > The table lists only the fields that are populated for this step. Other fields
 > may be empty, omitted, or false.
@@ -251,7 +251,7 @@ of ownership for the phone number.
 
 > `request` **AuthenticateEntityRequest**
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > The table lists only the required fields for this step. Other fields will be
 > ignored.
@@ -265,7 +265,7 @@ of ownership for the phone number.
 
 > `response` **AuthenticateEntityResponse**
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > The table lists only the fields that are populated for this step. Other fields
 > may be empty, omitted, or false.
@@ -321,7 +321,7 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 
 #### Complete Authentication
 
-> [!WARN]
+> [!WARNING]
 >
 > Ensure that you have completed the
 > [Initiate Authentication](#initiate-authentication) step before executing this
@@ -331,7 +331,7 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 
 > `request` **AuthenticateEntityRequest**
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > The table lists only the required fields for this step. Other fields will be
 > ignored.
@@ -347,7 +347,7 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 
 > `response` **AuthenticateEntityResponse**
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > The table lists only the fields that are populated for this step. Other fields
 > may be empty, omitted, or false.
