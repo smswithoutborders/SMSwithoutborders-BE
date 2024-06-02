@@ -14,7 +14,6 @@ class Entity(Model):
     phone_number_hash = CharField()
     password_hash = CharField()
     country_code = CharField()
-    username = CharField(null=True)
     publish_pub_key = TextField(null=True)
     device_id_pub_key = TextField(null=True)
     crypto_metadata = TextField(null=True)

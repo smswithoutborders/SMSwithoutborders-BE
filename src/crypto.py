@@ -62,7 +62,7 @@ def generate_hmac(key, message):
     if len(key) != 32:
         raise ValueError("HMAC key must be 32 bytes long")
 
-    return hmac.new(key, message.encode("utf-8"), hashlib.sha256).hexdigest()
+    return hmac.new(key, message.encode("utf-8"), hashlib.sha512).hexdigest()
 
 
 def verify_hmac(key, message, hmac_to_verify):

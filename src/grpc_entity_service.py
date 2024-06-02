@@ -26,6 +26,19 @@ logger = logging.getLogger(__name__)
 
 
 def error_response(context, sys_msg, status_code, user_msg=None, _type=None):
+    """
+    Create an error response.
+
+    Args:
+        context: gRPC context.
+        sys_msg (str or tuple): System message.
+        status_code: gRPC status code.
+        user_msg (str or tuple): User-friendly message.
+        _type (str): Type of error.
+
+    Returns:
+        vault_pb2.CreateEntityResponse: Error response.
+    """
     if not user_msg:
         user_msg = sys_msg
 
@@ -46,6 +59,18 @@ def error_response(context, sys_msg, status_code, user_msg=None, _type=None):
 
 
 def check_missing_fields(context, request, required_fields):
+    """
+    Check for missing fields in the gRPC request.
+
+    Args:
+        context: gRPC context.
+        request: gRPC request object.
+        required_fields (list): List of required fields.
+
+    Returns:
+        None or vault_pb2.CreateEntityResponse: None if no missing fields,
+            error response otherwise.
+    """
     missing_fields = [field for field in required_fields if not getattr(request, field)]
     if missing_fields:
         return error_response(
@@ -57,6 +82,16 @@ def check_missing_fields(context, request, required_fields):
 
 
 def handle_pow_verification(context, request):
+    """
+    Handle proof of ownership verification.
+
+    Args:
+        context: gRPC context.
+        request: gRPC request object.
+
+    Returns:
+        tuple: Tuple containing success flag and message.
+    """
     success, message = verify_otp(
         request.phone_number, request.ownership_proof_response
     )
@@ -70,6 +105,16 @@ def handle_pow_verification(context, request):
 
 
 def handle_pow_initialization(context, request):
+    """
+    Handle proof of ownership initialization.
+
+    Args:
+        context: gRPC context.
+        request: gRPC request object.
+
+    Returns:
+        tuple: Tuple containing success flag, message, and expiration time.
+    """
     success, message, expires = send_otp(request.phone_number)
     if not success:
         return success, error_response(
@@ -81,6 +126,15 @@ def handle_pow_initialization(context, request):
 
 
 def generate_keypair_and_public_key(keystore_path):
+    """
+    Generate keypair and public key.
+
+    Args:
+        keystore_path (str): Path to the keystore file.
+
+    Returns:
+        tuple: Tuple containing keypair object and public key.
+    """
     if os.path.isfile(keystore_path):
         os.remove(keystore_path)
 
@@ -90,6 +144,16 @@ def generate_keypair_and_public_key(keystore_path):
 
 
 def generate_crypto_metadata(publish_keypair, device_id_keypair):
+    """
+    Generate cryptographic metadata.
+
+    Args:
+        publish_keypair: Publish keypair object.
+        device_id_keypair: Device ID keypair object.
+
+    Returns:
+        str: JSON string representing cryptographic metadata.
+    """
     crypto_metadata = {
         "publish_keypair": {
             "pnt_keystore": publish_keypair.pnt_keystore,
@@ -105,6 +169,15 @@ def generate_crypto_metadata(publish_keypair, device_id_keypair):
 
 
 def encrypt_and_encode(plaintext):
+    """
+    Encrypt and encode plaintext.
+
+    Args:
+        plaintext (str): Plaintext to encrypt and encode.
+
+    Returns:
+        str: Base64 encoded ciphertext.
+    """
     return base64.b64encode(
         encrypt_aes(
             ENCRYPTION_KEY,
@@ -120,6 +193,15 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         """Handles the creation of an entity."""
 
         def complete_creation(request):
+            """
+            Complete the creation process.
+
+            Args:
+                request: gRPC request object.
+
+            Returns:
+                vault_pb2.CreateEntityResponse: Create entity response.
+            """
             success, response = handle_pow_verification(context, request)
             if not success:
                 return response
@@ -171,6 +253,15 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         def initiate_creation(request):
+            """
+            Initiate the creation process.
+
+            Args:
+                request: gRPC request object.
+
+            Returns:
+                vault_pb2.CreateEntityResponse: Create entity response.
+            """
             success, response = handle_pow_initialization(context, request)
             if not success:
                 return response
@@ -230,6 +321,16 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         """Handles the authentication of an entity."""
 
         def initiate_authentication(request, entity_obj):
+            """
+            Initiate the authentication process.
+
+            Args:
+                request: gRPC request object.
+                entity_obj: Entity object.
+
+            Returns:
+                vault_pb2.AuthenticateEntityResponse: Authentication response.
+            """
             missing_fields_response = check_missing_fields(
                 context, request, ["password"]
             )
@@ -260,6 +361,16 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         def complete_authentication(request, entity_obj):
+            """
+            Complete the authentication process.
+
+            Args:
+                request: gRPC request object.
+                entity_obj: Entity object.
+
+            Returns:
+                vault_pb2.AuthenticateEntityResponse: Authentication response.
+            """
             missing_fields_response = check_missing_fields(
                 context,
                 request,
