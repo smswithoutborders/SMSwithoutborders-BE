@@ -9,6 +9,9 @@
   - [Create an Entity](#create-an-entity)
     - [Initiate Creation](#initiate-creation)
     - [Complete Creation](#complete-creation)
+  - [Authenticate an Entity](#authenticate-an-entity)
+    - [Initiate Authentication](#initiate-authentication)
+    - [Complete Authentication](#complete-authentication)
 
 ## Download Protocol Buffer File
 
@@ -64,6 +67,8 @@ Before creating an entity, you must prove ownership of the phone number you
 intend to use. This step ensures the security and authenticity of the entity
 creation process.
 
+---
+
 > `request` **CreateEntityRequest**
 
 > [!NOTE]
@@ -74,6 +79,8 @@ creation process.
 | Field        | Type   | Description                                                                                                                           |
 | ------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | phone_number | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
+
+---
 
 > `response` **CreateEntityResponse**
 
@@ -88,10 +95,14 @@ creation process.
 | next_attempt_timestamp   | int32  | The next available time to request another proof of ownership (in Unix seconds) if the first attempt fails. |
 | message                  | string | A response message from the server.                                                                         |
 
+---
+
 > `method` **CreateEntity**
 
-The examples below use
-[grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
 
 > [!NOTE]
 >
@@ -102,6 +113,8 @@ The examples below use
 > the
 > [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
 
+---
+
 **Sample request**
 
 ```bash
@@ -110,6 +123,8 @@ grpcurl -plaintext \
     -proto protos/v1/vault.proto \
 localhost:6000 vault.v1.Entity/CreateEntity
 ```
+
+---
 
 **Sample response**
 
@@ -121,12 +136,16 @@ localhost:6000 vault.v1.Entity/CreateEntity
 }
 ```
 
+---
+
 #### Complete Creation
 
 > [!WARN]
 >
 > Ensure that you have completed the [Initiate Creation](#initiate-creation)
 > step before executing this step.
+
+---
 
 > `request` **CreateEntityRequest**
 
@@ -144,6 +163,8 @@ localhost:6000 vault.v1.Entity/CreateEntity
 | client_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                                                                                   |
 | client_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                                                                                    |
 
+---
+
 > `response` **CreateEntityResponse**
 
 > [!NOTE]
@@ -158,10 +179,14 @@ localhost:6000 vault.v1.Entity/CreateEntity
 | server_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                    |
 | long_lived_token         | string | A token for the authenticated session, to be used for subsequent requests. |
 
+---
+
 > `method` **CreateEntity**
 
-The examples below use
-[grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
 
 > [!NOTE]
 >
@@ -172,6 +197,8 @@ The examples below use
 > the
 > [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
 
+---
+
 **Sample request**
 
 ```bash
@@ -180,6 +207,8 @@ grpcurl -plaintext \
     -proto protos/v1/vault.proto \
 localhost:6000 vault.v1.Entity/CreateEntity <payload.json
 ```
+
+---
 
 **Sample payload.json**
 
@@ -194,6 +223,8 @@ localhost:6000 vault.v1.Entity/CreateEntity <payload.json
 }
 ```
 
+---
+
 **Sample response**
 
 ```json
@@ -205,6 +236,8 @@ localhost:6000 vault.v1.Entity/CreateEntity <payload.json
 }
 ```
 
+---
+
 ### Authenticate an Entity
 
 An entity represents a user or client in the vault.
@@ -213,6 +246,8 @@ An entity represents a user or client in the vault.
 
 This step involves verifying the phone number and password, triggering a proof
 of ownership for the phone number.
+
+---
 
 > `request` **AuthenticateEntityRequest**
 
@@ -225,6 +260,8 @@ of ownership for the phone number.
 | ------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | phone_number | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
 | password     | string | A secure password for the entity.                                                                                                     |
+
+---
 
 > `response` **AuthenticateEntityResponse**
 
@@ -239,10 +276,14 @@ of ownership for the phone number.
 | next_attempt_timestamp   | int32  | The next available time to request another proof of ownership (in Unix seconds) if the first attempt fails. |
 | message                  | string | A response message from the server.                                                                         |
 
+---
+
 > `method` **AuthenticateEntity**
 
-The examples below use
-[grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
 
 > [!NOTE]
 >
@@ -253,6 +294,8 @@ The examples below use
 > the
 > [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
 
+---
+
 **Sample request**
 
 ```bash
@@ -261,6 +304,8 @@ grpcurl -plaintext \
     -proto protos/v1/vault.proto \
 localhost:6000 vault.v1.Entity/AuthenticateEntity
 ```
+
+---
 
 **Sample response**
 
@@ -272,6 +317,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 }
 ```
 
+---
+
 #### Complete Authentication
 
 > [!WARN]
@@ -279,6 +326,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 > Ensure that you have completed the
 > [Initiate Authentication](#initiate-authentication) step before executing this
 > step.
+
+---
 
 > `request` **AuthenticateEntityRequest**
 
@@ -294,6 +343,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 | client_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                                                                              |
 | client_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                                                                               |
 
+---
+
 > `response` **AuthenticateEntityResponse**
 
 > [!NOTE]
@@ -308,10 +359,14 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 | server_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                    |
 | long_lived_token         | string | A token for the authenticated session, to be used for subsequent requests. |
 
+---
+
 > `method` **AuthenticateEntity**
 
-The examples below use
-[grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
 
 > [!NOTE]
 >
@@ -322,6 +377,8 @@ The examples below use
 > the
 > [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
 
+---
+
 **Sample request**
 
 ```bash
@@ -330,6 +387,8 @@ grpcurl -plaintext \
     -proto protos/v1/vault.proto \
 localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
 ```
+
+---
 
 **Sample payload.json**
 
@@ -341,6 +400,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
 	"ownership_proof_response": "123456"
 }
 ```
+
+---
 
 **Sample response**
 
