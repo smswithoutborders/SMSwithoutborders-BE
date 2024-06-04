@@ -1,6 +1,10 @@
 """Utitlies Module."""
 
+import os
 import logging
+from functools import wraps
+
+import mysql.connector
 from peewee import DatabaseError
 
 logging.basicConfig(level=logging.INFO)
@@ -82,3 +86,96 @@ def create_tables(models):
 
     except DatabaseError as e:
         logger.error("An error occurred while creating tables: %s", e)
+
+
+def ensure_database_exists(host, user, password, database_name):
+    """
+    Decorator that ensures a MySQL database exists before executing a function.
+
+    Args:
+        host (str): The host address of the MySQL server.
+        user (str): The username for connecting to the MySQL server.
+        password (str): The password for connecting to the MySQL server.
+        database_name (str): The name of the database to ensure existence.
+
+    Returns:
+        function: Decorated function.
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                with mysql.connector.connect(
+                    host=host, user=user, password=password
+                ) as connection:
+                    with connection.cursor() as cursor:
+                        sql = "CREATE DATABASE IF NOT EXISTS " + database_name
+                        cursor.execute(sql)
+
+            except mysql.connector.Error as error:
+                logger.error("Failed to create database: %s", error)
+
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def get_configs(config_name: str, strict: bool = False) -> str:
+    """
+    Retrieves the value of a configuration from the environment variables.
+
+    Args:
+        config_name (str): The name of the configuration to retrieve.
+        strict (bool): If True, raises an error if the configuration is not found. Default is False.
+
+    Returns:
+        str: The value of the configuration, or None if not found and strict is False.
+
+    Raises:
+        KeyError: If the configuration is not found and strict is True.
+        ValueError: If the configuration value is empty and strict is True.
+    """
+    try:
+        value = os.environ[config_name] if strict else os.environ.get(config_name)
+        if strict and (value is None or value.strip() == ""):
+            raise ValueError(f"Configuration '{config_name}' is missing or empty.")
+        return value
+    except KeyError as error:
+        logger.error(
+            "Configuration '%s' not found in environment variables: %s",
+            config_name,
+            error,
+        )
+        raise
+    except ValueError as error:
+        logger.error("Configuration '%s' is empty: %s", config_name, error)
+        raise
+
+
+def set_configs(config_name: str, config_value: str) -> None:
+    """
+    Sets the value of a configuration in the environment variables.
+
+    Args:
+        config_name (str): The name of the configuration to set.
+        config_value (str): The value of the configuration to set.
+
+    Raises:
+        ValueError: If config_name or config_value is empty.
+    """
+    if not config_name or not config_value:
+        error_message = (
+            f"Cannot set configuration. Invalid config_name '{config_name}' ",
+            "or config_value '{config_value}'.",
+        )
+        logger.error(error_message)
+        raise ValueError(error_message)
+
+    try:
+        os.environ[config_name] = config_value
+    except Exception as error:
+        logger.error("Failed to set configuration '%s': %s", config_name, error)
+        raise
