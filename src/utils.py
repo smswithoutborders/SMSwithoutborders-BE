@@ -2,10 +2,16 @@
 
 import os
 import logging
+import uuid
+import json
+import base64
 from functools import wraps
 
 import mysql.connector
 from peewee import DatabaseError
+from smswithoutborders_libsig.keypairs import x25519
+
+from src.crypto import encrypt_aes, decrypt_aes
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -179,3 +185,96 @@ def set_configs(config_name: str, config_value: str) -> None:
     except Exception as error:
         logger.error("Failed to set configuration '%s': %s", config_name, error)
         raise
+
+
+def generate_eid(phone_number_hash, namespace=uuid.NAMESPACE_DNS):
+    """
+    Generate a UUID based on a phone number hash using UUID5.
+
+    Parameters:
+    - phone_number_hash (str): The hash of the phone number.
+    - namespace (uuid.UUID): The namespace identifier. Defaults to uuid.NAMESPACE_DNS.
+
+    Returns:
+    - str: The hexadecimal representation of the generated UUID.
+    """
+    return uuid.uuid5(namespace, phone_number_hash).hex
+
+
+def generate_keypair_and_public_key(keystore_path):
+    """
+    Generate keypair and public key.
+
+    Args:
+        keystore_path (str): Path to the keystore file.
+
+    Returns:
+        tuple: Tuple containing keypair object and public key.
+    """
+    if os.path.isfile(keystore_path):
+        os.remove(keystore_path)
+
+    keypair_obj = x25519(keystore_path)
+    peer_pub_key = keypair_obj.init()
+    return keypair_obj, peer_pub_key
+
+
+def generate_crypto_metadata(publish_keypair, device_id_keypair):
+    """
+    Generate cryptographic metadata.
+
+    Args:
+        publish_keypair: Publish keypair object.
+        device_id_keypair: Device ID keypair object.
+
+    Returns:
+        str: JSON string representing cryptographic metadata.
+    """
+    crypto_metadata = {
+        "publish_keypair": {
+            "pnt_keystore": publish_keypair.pnt_keystore,
+            "secret_key": publish_keypair.secret_key,
+        },
+        "device_id_keypair": {
+            "pnt_keystore": device_id_keypair.pnt_keystore,
+            "secret_key": device_id_keypair.secret_key,
+        },
+    }
+
+    return json.dumps(crypto_metadata)
+
+
+def encrypt_and_encode(plaintext):
+    """
+    Encrypt and encode plaintext.
+
+    Args:
+        plaintext (str): Plaintext to encrypt and encode.
+
+    Returns:
+        str: Base64 encoded ciphertext.
+    """
+    encryption_key = load_key(get_configs("SHARED_KEY"), 32)
+
+    return base64.b64encode(
+        encrypt_aes(
+            encryption_key,
+            plaintext,
+        )
+    ).decode("utf-8")
+
+
+def decrypt_and_decode(encoded_ciphertext):
+    """
+    Decode and decrypt encoded ciphertext.
+
+    Args:
+        encoded_ciphertext (str): Base64 encoded ciphertext to decode and decrypt.
+
+    Returns:
+        str: Decrypted plaintext.
+    """
+    encryption_key = load_key(get_configs("SHARED_KEY"), 32)
+
+    ciphertext = base64.b64decode(encoded_ciphertext)
+    return decrypt_aes(encryption_key, ciphertext)

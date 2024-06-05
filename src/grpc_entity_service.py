@@ -2,25 +2,27 @@
 
 import os
 import logging
-import json
 import base64
 
 import grpc
-
-from smswithoutborders_libsig.keypairs import x25519
 
 import vault_pb2
 import vault_pb2_grpc
 
 from src.entity import create_entity, find_entity
-from src.crypto import generate_hmac, verify_hmac, encrypt_aes
+from src.crypto import generate_hmac, verify_hmac
 from src.otp_service import send_otp, verify_otp
-from src.utils import load_key
+from src.utils import (
+    load_key,
+    get_configs,
+    encrypt_and_encode,
+    generate_keypair_and_public_key,
+    generate_crypto_metadata,
+    generate_eid,
+)
 
-from settings import Configurations
-
-HASHING_KEY = load_key(Configurations.HASHING_SALT, 32)
-ENCRYPTION_KEY = load_key(Configurations.SHARED_KEY, 32)
+HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
+KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
 
 logger = logging.getLogger(__name__)
 
@@ -125,67 +127,6 @@ def handle_pow_initialization(context, request):
     return success, (message, expires)
 
 
-def generate_keypair_and_public_key(keystore_path):
-    """
-    Generate keypair and public key.
-
-    Args:
-        keystore_path (str): Path to the keystore file.
-
-    Returns:
-        tuple: Tuple containing keypair object and public key.
-    """
-    if os.path.isfile(keystore_path):
-        os.remove(keystore_path)
-
-    keypair_obj = x25519(keystore_path)
-    peer_pub_key = keypair_obj.init()
-    return keypair_obj, peer_pub_key
-
-
-def generate_crypto_metadata(publish_keypair, device_id_keypair):
-    """
-    Generate cryptographic metadata.
-
-    Args:
-        publish_keypair: Publish keypair object.
-        device_id_keypair: Device ID keypair object.
-
-    Returns:
-        str: JSON string representing cryptographic metadata.
-    """
-    crypto_metadata = {
-        "publish_keypair": {
-            "pnt_keystore": publish_keypair.pnt_keystore,
-            "secret_key": publish_keypair.secret_key,
-        },
-        "device_id_keypair": {
-            "pnt_keystore": device_id_keypair.pnt_keystore,
-            "secret_key": device_id_keypair.secret_key,
-        },
-    }
-
-    return json.dumps(crypto_metadata)
-
-
-def encrypt_and_encode(plaintext):
-    """
-    Encrypt and encode plaintext.
-
-    Args:
-        plaintext (str): Plaintext to encrypt and encode.
-
-    Returns:
-        str: Base64 encoded ciphertext.
-    """
-    return base64.b64encode(
-        encrypt_aes(
-            ENCRYPTION_KEY,
-            plaintext,
-        )
-    ).decode("utf-8")
-
-
 class EntityService(vault_pb2_grpc.EntityServicer):
     """Entity Service Descriptor"""
 
@@ -207,19 +148,23 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 return response
 
             phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
-            eid = generate_hmac(HASHING_KEY, phone_number_hash)
+            eid = generate_eid(phone_number_hash)
             password_hash = generate_hmac(HASHING_KEY, request.password)
             country_code_ciphertext_b64 = encrypt_and_encode(request.country_code)
-            publish_keypair, server_publish_pub_key = generate_keypair_and_public_key(
-                os.path.join(Configurations.KEYSTORE_PATH, f"{eid}_publish.db")
-            )
-            device_id_keypair, server_device_id_pub_key = (
+            server_publish_keypair, server_publish_pub_key = (
                 generate_keypair_and_public_key(
-                    os.path.join(Configurations.KEYSTORE_PATH, f"{eid}_device_id.db")
+                    os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
+                )
+            )
+            server_device_id_keypair, server_device_id_pub_key = (
+                generate_keypair_and_public_key(
+                    os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db")
                 )
             )
             crypto_metadata_ciphertext_b64 = encrypt_and_encode(
-                generate_crypto_metadata(publish_keypair, device_id_keypair)
+                generate_crypto_metadata(
+                    server_publish_keypair, server_device_id_keypair
+                )
             )
 
             fields = {
@@ -227,9 +172,9 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 "phone_number_hash": phone_number_hash,
                 "password_hash": password_hash,
                 "country_code": country_code_ciphertext_b64,
-                "publish_pub_key": request.client_publish_pub_key,
-                "device_id_pub_key": request.client_device_id_pub_key,
-                "crypto_metadata": crypto_metadata_ciphertext_b64,
+                "client_publish_pub_key": request.client_publish_pub_key,
+                "client_device_id_pub_key": request.client_device_id_pub_key,
+                "server_crypto_metadata": crypto_metadata_ciphertext_b64,
             }
 
             create_entity(**fields)
@@ -244,7 +189,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             return vault_pb2.CreateEntityResponse(
                 long_lived_token=long_lived_token,
                 message="Entity created successfully",
-                server_publish_pub_key=base64.b85encode(server_publish_pub_key).decode(
+                server_publish_pub_key=base64.b64encode(server_publish_pub_key).decode(
                     "utf-8"
                 ),
                 server_device_id_pub_key=base64.b64encode(
@@ -389,11 +334,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             eid = entity_obj.eid
 
             publish_keypair, server_publish_pub_key = generate_keypair_and_public_key(
-                os.path.join(Configurations.KEYSTORE_PATH, f"{eid}_publish.db")
+                os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
             )
             device_id_keypair, server_device_id_pub_key = (
                 generate_keypair_and_public_key(
-                    os.path.join(Configurations.KEYSTORE_PATH, f"{eid}_device_id.db")
+                    os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db")
                 )
             )
             crypto_metadata_ciphertext_b64 = encrypt_and_encode(

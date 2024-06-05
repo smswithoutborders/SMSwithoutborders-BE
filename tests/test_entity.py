@@ -2,7 +2,7 @@
 
 import pytest
 from peewee import SqliteDatabase
-from src.utils import create_tables, set_configs
+from src.utils import create_tables, set_configs, generate_eid
 
 
 @pytest.fixture()
@@ -32,8 +32,8 @@ def test_create_entity_required_fields():
     """Test creation of an entity with required fields."""
     from src.entity import create_entity
 
-    eid = "eid1"
     phone_number_hash = "phone_hash1"
+    eid = generate_eid(phone_number_hash)
     password_hash = "password_hash1"
     country_code = "+237"
 
@@ -50,8 +50,8 @@ def test_create_entity_additional_fields():
     """Test creation of an entity with additional fields."""
     from src.entity import create_entity
 
-    eid = "eid2"
     phone_number_hash = "phone_hash2"
+    eid = generate_eid(phone_number_hash)
     password_hash = "password_hash2"
     country_code = "+237"
     publish_pub_key = "-----BEGIN PUBLIC KEY-----\n1234\n-----END PUBLIC KEY-----"
@@ -64,8 +64,8 @@ def test_create_entity_additional_fields():
         phone_number_hash,
         password_hash,
         country_code,
-        publish_pub_key=publish_pub_key,
-        device_id_pub_key=device_id_pub_key,
+        client_publish_pub_key=publish_pub_key,
+        client_device_id_pub_key=device_id_pub_key,
     )
 
     assert entity is not None
@@ -73,16 +73,16 @@ def test_create_entity_additional_fields():
     assert entity.phone_number_hash == phone_number_hash
     assert entity.password_hash == password_hash
     assert entity.country_code == country_code
-    assert entity.publish_pub_key == publish_pub_key
-    assert entity.device_id_pub_key == device_id_pub_key
+    assert entity.client_publish_pub_key == publish_pub_key
+    assert entity.client_device_id_pub_key == device_id_pub_key
 
 
 def test_find_entity_by_single_criterion():
     """Test finding an entity by a single criterion."""
     from src.entity import create_entity, find_entity
 
-    eid = "eid3"
     phone_number_hash = "phone_hash3"
+    eid = generate_eid(phone_number_hash)
     password_hash = "password_hash3"
     country_code = "+237"
 
@@ -90,15 +90,15 @@ def test_find_entity_by_single_criterion():
     entity = find_entity(eid=eid)
 
     assert entity is not None
-    assert entity.eid == eid
+    assert entity.eid.hex == eid
 
 
 def test_find_entity_by_multiple_criteria():
     """Test finding an entity by multiple criteria."""
     from src.entity import create_entity, find_entity
 
-    eid = "eid4"
     phone_number_hash = "phone_hash4"
+    eid = generate_eid(phone_number_hash)
     password_hash = "password_hash4"
     country_code = "+237"
 
@@ -106,7 +106,7 @@ def test_find_entity_by_multiple_criteria():
     entity = find_entity(eid=eid, phone_number_hash=phone_number_hash)
 
     assert entity is not None
-    assert entity.eid == eid
+    assert entity.eid.hex == eid
 
 
 def test_find_entity_not_exist():

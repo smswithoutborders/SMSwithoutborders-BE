@@ -2,33 +2,51 @@
 
 from datetime import datetime, timedelta
 import pytest
-from src.otp_service import send_otp, verify_otp
-from src.models import OTPRateLimit
+from peewee import SqliteDatabase
+from src.utils import create_tables, set_configs
+
+
+@pytest.fixture()
+def set_testing_mode():
+    """Set the application mode to testing."""
+    set_configs("MODE", "testing")
 
 
 @pytest.fixture(autouse=True)
-def clean_up_otp(request):
-    """Fixture to clean up OTPRateLimit records after test execution."""
+def setup_teardown_database(tmp_path, set_testing_mode):
+    """Fixture for setting up and tearing down the test database."""
+    from src.models import OTPRateLimit
 
-    def fin():
-        OTPRateLimit.delete().execute()
+    db_path = tmp_path / "test.db"
+    test_db = SqliteDatabase(db_path)
+    test_db.bind([OTPRateLimit])
+    test_db.connect()
+    create_tables([OTPRateLimit])
 
-    request.addfinalizer(fin)
+    yield
+
+    test_db.drop_tables([OTPRateLimit])
+    test_db.close()
 
 
 def test_send_otp_success():
     """Test successful OTP sending."""
+    from src.otp_service import send_otp
+
     phone_number = "+237123456789"
 
     success, message, expires = send_otp(phone_number)
 
     assert success is True
     assert message == "OTP sent successfully. Check your phone for the code."
-    assert isinstance(expires, datetime)
+    assert isinstance(expires, int)
 
 
 def test_send_otp_rate_limited():
     """Test when rate limit is exceeded."""
+    from src.models import OTPRateLimit
+    from src.otp_service import send_otp
+
     phone_number = "+237123456789"
 
     OTPRateLimit.create(
@@ -46,6 +64,9 @@ def test_send_otp_rate_limited():
 
 def test_verify_otp_success():
     """Test successful OTP verification."""
+    from src.models import OTPRateLimit
+    from src.otp_service import send_otp, verify_otp
+
     phone_number = "+237123456789"
 
     success, _, _ = send_otp(phone_number)
@@ -64,6 +85,9 @@ def test_verify_otp_success():
 
 def test_verify_otp_failure():
     """Test OTP verification failure."""
+    from src.models import OTPRateLimit
+    from src.otp_service import send_otp, verify_otp
+
     phone_number = "+237123456789"
 
     success, _, _ = send_otp(phone_number)
@@ -82,6 +106,9 @@ def test_verify_otp_failure():
 
 def test_rate_limit_reset():
     """Test if rate limit is reset after the last window expires."""
+    from src.models import OTPRateLimit
+    from src.otp_service import send_otp
+
     phone_number = "+237123456789"
 
     OTPRateLimit.create(

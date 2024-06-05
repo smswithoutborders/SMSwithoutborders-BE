@@ -77,4 +77,3 @@ class Configurations(baseConfig):
     RECAPTCHA_SECRET_KEY = os.environ.get("RECAPTCHA_SECRET_KEY")
 
     BROADCAST_WHITELIST = os.environ.get("BROADCAST_WHITELIST")
-    KEYSTORE_PATH = os.environ["KEYSTORE_PATH"]

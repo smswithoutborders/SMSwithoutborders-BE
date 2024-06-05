@@ -16,9 +16,9 @@ class Entity(Model):
     phone_number_hash = CharField(index=True)
     password_hash = CharField()
     country_code = CharField()
-    publish_pub_key = TextField(null=True)
-    device_id_pub_key = TextField(null=True)
-    crypto_metadata = TextField(null=True)
+    client_publish_pub_key = TextField(null=True)
+    client_device_id_pub_key = TextField(null=True)
+    server_crypto_metadata = TextField(null=True)
 
     class Meta:
         """Meta class to define database connection."""
