@@ -244,6 +244,54 @@ def generate_crypto_metadata(publish_keypair, device_id_keypair):
     return json.dumps(crypto_metadata)
 
 
+def load_crypto_metadata(metadata):
+    """
+    Load cryptographic metadata.
+
+    Args:
+        metadata (str): JSON string representing cryptographic metadata.
+
+    Returns:
+        CryptoMetadata: Object representing cryptographic metadata.
+    """
+
+    class CryptoMetadata:
+        """
+        Represents cryptographic metadata.
+        """
+
+        def __init__(self, metadata):
+            self.__dict__.update(self._convert(json.loads(metadata)))
+
+        def _convert(self, data):
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    data[key] = CryptoMetadata(json.dumps(value))
+                elif isinstance(value, list):
+                    data[key] = [
+                        (
+                            CryptoMetadata(json.dumps(item))
+                            if isinstance(item, dict)
+                            else item
+                        )
+                        for item in value
+                    ]
+            return data
+
+        def __getattr__(self, name):
+            try:
+                return self.__dict__[name]
+            except KeyError as exc:
+                raise AttributeError(
+                    f"'CryptoMetadata' object has no attribute '{name}'"
+                ) from exc
+
+        def __setattr__(self, name, value):
+            self.__dict__[name] = value
+
+    return CryptoMetadata(metadata)
+
+
 def encrypt_and_encode(plaintext):
     """
     Encrypt and encode plaintext.

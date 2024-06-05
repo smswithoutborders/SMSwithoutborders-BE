@@ -19,6 +19,7 @@ from src.utils import (
     generate_eid,
     load_key,
     generate_keypair_and_public_key,
+    load_crypto_metadata,
     decrypt_and_decode,
 )
 from src.crypto import generate_hmac
@@ -309,22 +310,22 @@ def test_entity_complete_creation_success(grpc_server_mock):
     )
 
     # Decrypt and decode server crypto metadata
-    server_crypto_metadata = json.loads(
+    server_crypto_metadata = load_crypto_metadata(
         decrypt_and_decode(entity_obj.server_crypto_metadata)
     )
-    server_publish_keypair = server_crypto_metadata["publish_keypair"]
-    server_device_id_keypair = server_crypto_metadata["device_id_keypair"]
+    server_publish_keypair = server_crypto_metadata.publish_keypair
+    server_device_id_keypair = server_crypto_metadata.device_id_keypair
 
     # Initialize x25519 objects for server keystore and keys
     server_publish_key_obj = x25519(
         server_keystore_publish,
-        server_publish_keypair["pnt_keystore"],
-        server_publish_keypair["secret_key"],
+        server_publish_keypair.pnt_keystore,
+        server_publish_keypair.secret_key,
     )
     server_device_id_key_obj = x25519(
         server_keystore_device_id,
-        server_device_id_keypair["pnt_keystore"],
-        server_device_id_keypair["secret_key"],
+        server_device_id_keypair.pnt_keystore,
+        server_device_id_keypair.secret_key,
     )
 
     # Generate shared keys for server
