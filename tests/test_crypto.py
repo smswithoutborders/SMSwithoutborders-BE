@@ -2,7 +2,15 @@
 
 import os
 import pytest
-from src.crypto import encrypt_aes, decrypt_aes, generate_hmac, verify_hmac
+from src.crypto import (
+    encrypt_aes,
+    decrypt_aes,
+    generate_hmac,
+    verify_hmac,
+    encrypt_fernet,
+    decrypt_fernet,
+)
+from src.utils import convert_to_fernet_key
 
 
 @pytest.fixture
@@ -15,6 +23,12 @@ def aes_key():
 def plaintext():
     """Fixture that provides a sample plaintext message for AES encryption."""
     return "This is a test message."
+
+
+@pytest.fixture
+def fernet_key():
+    """Fixture that generates a random Fernet key."""
+    return convert_to_fernet_key(os.urandom(32))
 
 
 @pytest.fixture
@@ -119,3 +133,47 @@ def test_invalid_hmac_key_length():
         with pytest.raises(ValueError):
             invalid_hmac_key = os.urandom(key_length)
             generate_hmac(invalid_hmac_key, "Test message")
+
+
+def test_encrypt_decrypt_fernet(fernet_key, plaintext):
+    """Test that encrypts and then decrypts a message using Fernet,
+    verifying the result matches the original plaintext.
+    """
+    ciphertext = encrypt_fernet(fernet_key, plaintext)
+    decrypted_text = decrypt_fernet(fernet_key, ciphertext)
+    assert decrypted_text == plaintext
+
+
+def test_decrypt_fernet_tampered_ciphertext(fernet_key, plaintext):
+    """Test that decrypts tampered ciphertext using Fernet, verifying decryption fails."""
+    ciphertext = encrypt_fernet(fernet_key, plaintext)
+    tampered_ciphertext = bytearray(ciphertext)
+    tampered_ciphertext[0] ^= 1
+    with pytest.raises(Exception):
+        decrypt_fernet(fernet_key, bytes(tampered_ciphertext))
+
+
+def test_decrypt_fernet_with_wrong_key(fernet_key, plaintext):
+    """Test that decrypts ciphertext with a wrong Fernet key, verifying decryption fails."""
+    ciphertext = encrypt_fernet(fernet_key, plaintext)
+    wrong_key = convert_to_fernet_key(os.urandom(32))
+    with pytest.raises(Exception):
+        decrypt_fernet(wrong_key, ciphertext)
+
+
+def test_encrypt_decrypt_fernet_empty_message(fernet_key):
+    """Test that encrypts and then decrypts an empty message using Fernet."""
+    empty_plaintext = ""
+    ciphertext = encrypt_fernet(fernet_key, empty_plaintext)
+    decrypted_text = decrypt_fernet(fernet_key, ciphertext)
+    assert decrypted_text == empty_plaintext
+
+
+def test_encrypt_decrypt_fernet_long_message(fernet_key):
+    """Test that encrypts and then decrypts a long message using Fernet."""
+    long_plaintext = (
+        "This is a very long message to test Fernet encryption and decryption." * 1000
+    )
+    ciphertext = encrypt_fernet(fernet_key, long_plaintext)
+    decrypted_text = decrypt_fernet(fernet_key, ciphertext)
+    assert decrypted_text == long_plaintext

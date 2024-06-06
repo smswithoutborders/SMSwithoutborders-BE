@@ -1,10 +1,11 @@
 """
-Cryptographic functions for AES encryption/decryption and HMAC generation/verification.
+Cryptographic functions for encryption/decryption, and HMAC generation/verification.
 """
 
 import hmac
 import hashlib
 from Crypto.Cipher import AES
+from cryptography.fernet import Fernet
 
 
 def encrypt_aes(key, plaintext):
@@ -82,3 +83,33 @@ def verify_hmac(key, message, hmac_to_verify):
 
     generated_hmac = generate_hmac(key, message)
     return hmac.compare_digest(generated_hmac, hmac_to_verify)
+
+
+def encrypt_fernet(key, plaintext):
+    """
+    Encrypts a plaintext string using Fernet encryption.
+
+    Args:
+        key (bytes): The encryption key (must be 32 bytes long).
+        plaintext (str): The plaintext string to be encrypted.
+
+    Returns:
+        bytes: The encrypted ciphertext.
+    """
+    fernet = Fernet(key)
+    return fernet.encrypt(plaintext.encode("utf-8"))
+
+
+def decrypt_fernet(key, ciphertext):
+    """
+    Decrypts a ciphertext string using Fernet encryption.
+
+    Args:
+        key (bytes): The decryption key (must be 32 bytes long).
+        ciphertext (bytes): The encrypted ciphertext.
+
+    Returns:
+        str: The decrypted plaintext string.
+    """
+    fernet = Fernet(key)
+    return fernet.decrypt(ciphertext).decode("utf-8")

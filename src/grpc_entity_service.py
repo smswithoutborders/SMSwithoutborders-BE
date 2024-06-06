@@ -19,7 +19,9 @@ from src.utils import (
     generate_keypair_and_public_key,
     generate_crypto_metadata,
     generate_eid,
+    get_shared_key,
 )
+from src.long_lived_token import generate_llt
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
@@ -179,10 +181,14 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             create_entity(**fields)
 
-            long_lived_token = generate_hmac(
-                HASHING_KEY,
-                password_hash + request.phone_number,
+            shared_key = get_shared_key(
+                os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db"),
+                server_device_id_keypair.pnt_keystore,
+                server_device_id_keypair.secret_key,
+                base64.b64decode(request.client_device_id_pub_key),
             )
+
+            long_lived_token = generate_llt(eid, shared_key)
 
             logger.info("Entity created successfully")
 
@@ -331,29 +337,37 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if not success:
                 return response
 
-            eid = entity_obj.eid
+            eid = entity_obj.eid.hex
 
-            publish_keypair, server_publish_pub_key = generate_keypair_and_public_key(
-                os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
+            server_publish_keypair, server_publish_pub_key = (
+                generate_keypair_and_public_key(
+                    os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
+                )
             )
-            device_id_keypair, server_device_id_pub_key = (
+            server_device_id_keypair, server_device_id_pub_key = (
                 generate_keypair_and_public_key(
                     os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db")
                 )
             )
             crypto_metadata_ciphertext_b64 = encrypt_and_encode(
-                generate_crypto_metadata(publish_keypair, device_id_keypair)
+                generate_crypto_metadata(
+                    server_publish_keypair, server_device_id_keypair
+                )
             )
 
-            entity_obj.publish_pub_key = request.client_publish_pub_key
-            entity_obj.device_id_pub_key = request.client_device_id_pub_key
-            entity_obj.crypto_metadata = crypto_metadata_ciphertext_b64
+            entity_obj.client_publish_pub_key = request.client_publish_pub_key
+            entity_obj.client_device_id_pub_key = request.client_device_id_pub_key
+            entity_obj.server_crypto_metadata = crypto_metadata_ciphertext_b64
             entity_obj.save()
 
-            long_lived_token = generate_hmac(
-                HASHING_KEY,
-                entity_obj.password_hash + request.phone_number,
+            shared_key = get_shared_key(
+                os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db"),
+                server_device_id_keypair.pnt_keystore,
+                server_device_id_keypair.secret_key,
+                base64.b64decode(request.client_device_id_pub_key),
             )
+
+            long_lived_token = generate_llt(eid, shared_key)
 
             return vault_pb2.AuthenticateEntityResponse(
                 long_lived_token=long_lived_token,

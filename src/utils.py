@@ -219,6 +219,24 @@ def generate_keypair_and_public_key(keystore_path):
     return keypair_obj, peer_pub_key
 
 
+def get_shared_key(keystore_path, pnt_keystore, secret_key, peer_pub_key):
+    """
+    Generate a shared key.
+
+    Args:
+        keystore_path (str): Path to the keystore file.
+        pnt_keystore (str): The keystore pointer.
+        secret_key (bytes): Secret key used for the keypair.
+        peer_pub_key (bytes): Public key of the peer to generate the shared key with.
+
+    Returns:
+        bytes: The generated shared key.
+    """
+    keypair_obj = x25519(keystore_path, pnt_keystore, secret_key)
+    shared_key = keypair_obj.agree(peer_pub_key)
+    return shared_key
+
+
 def generate_crypto_metadata(publish_keypair, device_id_keypair):
     """
     Generate cryptographic metadata.
@@ -326,3 +344,19 @@ def decrypt_and_decode(encoded_ciphertext):
 
     ciphertext = base64.b64decode(encoded_ciphertext)
     return decrypt_aes(encryption_key, ciphertext)
+
+
+def convert_to_fernet_key(secret_key):
+    """
+    Converts a secret key to a Fernet key.
+
+    Args:
+        secret_key (bytes): The secret key (must be 32 bytes long).
+
+    Returns:
+        bytes: The base64-encoded Fernet key.
+    """
+    if len(secret_key) != 32:
+        raise ValueError("Secret key must be 32 bytes long")
+
+    return base64.urlsafe_b64encode(secret_key)

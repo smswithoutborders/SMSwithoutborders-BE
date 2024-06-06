@@ -3,12 +3,10 @@
 import os
 from datetime import datetime, timedelta
 import base64
-import json
 import grpc
 import pytest
 from peewee import SqliteDatabase
 from grpc_testing import server_from_dictionary, strict_real_time
-from smswithoutborders_libsig.keypairs import x25519
 
 import vault_pb2
 
@@ -20,6 +18,7 @@ from src.utils import (
     load_key,
     generate_keypair_and_public_key,
     load_crypto_metadata,
+    get_shared_key,
     decrypt_and_decode,
 )
 from src.crypto import generate_hmac
@@ -277,24 +276,19 @@ def test_entity_complete_creation_success(grpc_server_mock):
 
     response, _, code, _ = create_entity_method.termination()
 
-    # Initialize x25519 objects for client keystore and keys
-    client_publish_key_obj = x25519(
+    # Generate shared keys for client
+    client_publish_shared_key = get_shared_key(
         client_keystore_publish,
         client_publish_keypair.pnt_keystore,
         client_publish_keypair.secret_key,
+        base64.b64decode(response.server_publish_pub_key),
     )
-    client_device_id_key_obj = x25519(
+
+    client_device_id_shared_key = get_shared_key(
         client_keystore_device_id,
         client_device_id_keypair.pnt_keystore,
         client_device_id_keypair.secret_key,
-    )
-
-    # Generate shared keys for client
-    client_publish_shared_key = client_publish_key_obj.agree(
-        base64.b64decode(response.server_publish_pub_key)
-    )
-    client_device_id_shared_key = client_device_id_key_obj.agree(
-        base64.b64decode(response.server_device_id_pub_key)
+        base64.b64decode(response.server_device_id_pub_key),
     )
 
     hash_key = load_key(get_configs("HASHING_SALT"), 32)
@@ -316,24 +310,18 @@ def test_entity_complete_creation_success(grpc_server_mock):
     server_publish_keypair = server_crypto_metadata.publish_keypair
     server_device_id_keypair = server_crypto_metadata.device_id_keypair
 
-    # Initialize x25519 objects for server keystore and keys
-    server_publish_key_obj = x25519(
+    # Generate shared keys for server
+    server_publish_shared_key = get_shared_key(
         server_keystore_publish,
         server_publish_keypair.pnt_keystore,
         server_publish_keypair.secret_key,
+        base64.b64decode(entity_obj.client_publish_pub_key),
     )
-    server_device_id_key_obj = x25519(
+    server_device_id_shared_key = get_shared_key(
         server_keystore_device_id,
         server_device_id_keypair.pnt_keystore,
         server_device_id_keypair.secret_key,
-    )
-
-    # Generate shared keys for server
-    server_publish_shared_key = server_publish_key_obj.agree(
-        base64.b64decode(entity_obj.client_publish_pub_key)
-    )
-    server_device_id_shared_key = server_device_id_key_obj.agree(
-        base64.b64decode(entity_obj.client_device_id_pub_key)
+        base64.b64decode(entity_obj.client_device_id_pub_key),
     )
 
     assert code == grpc.StatusCode.OK
@@ -400,8 +388,8 @@ def test_entity_complete_authentication_success(grpc_server_mock):
         "phone_number": request_data["phone_number"],
         "password": request_data["password"],
         "ownership_proof_response": "123456",
-        "client_publish_pub_key": "client_publish_pub_key",
-        "client_device_id_pub_key": "client_device_id_pub_key",
+        "client_publish_pub_key": "Kqprob8WuflOMpcR6SGg8yQumerTvm1MQeAtcgFxWFY",
+        "client_device_id_pub_key": "UD6gLBg0RJ/olGhJItmDxHOdv0550BDpGGnMIcvbCkc=",
     }
     request = vault_pb2.AuthenticateEntityRequest(**request_data)
 
