@@ -1,7 +1,7 @@
 """Entity Controllers"""
 
 from peewee import DoesNotExist
-from src.models import Entity
+from src.db_models import Entity
 
 database = Entity._meta.database
 

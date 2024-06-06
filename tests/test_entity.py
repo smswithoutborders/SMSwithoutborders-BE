@@ -14,7 +14,7 @@ def set_testing_mode():
 @pytest.fixture(autouse=True)
 def setup_teardown_database(tmp_path, set_testing_mode):
     """Fixture for setting up and tearing down the test database."""
-    from src.models import Entity
+    from src.db_models import Entity
 
     db_path = tmp_path / "test.db"
     test_db = SqliteDatabase(db_path)

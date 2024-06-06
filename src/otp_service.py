@@ -4,7 +4,7 @@ import datetime
 import logging
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
-from src.models import OTPRateLimit
+from src.db_models import OTPRateLimit
 from src.utils import get_configs
 
 logging.basicConfig(level=logging.INFO)

@@ -15,7 +15,7 @@ def set_testing_mode():
 @pytest.fixture(autouse=True)
 def setup_teardown_database(tmp_path, set_testing_mode):
     """Fixture for setting up and tearing down the test database."""
-    from src.models import OTPRateLimit
+    from src.db_models import OTPRateLimit
 
     db_path = tmp_path / "test.db"
     test_db = SqliteDatabase(db_path)
@@ -44,7 +44,7 @@ def test_send_otp_success():
 
 def test_send_otp_rate_limited():
     """Test when rate limit is exceeded."""
-    from src.models import OTPRateLimit
+    from src.db_models import OTPRateLimit
     from src.otp_service import send_otp
 
     phone_number = "+237123456789"
@@ -64,7 +64,7 @@ def test_send_otp_rate_limited():
 
 def test_verify_otp_success():
     """Test successful OTP verification."""
-    from src.models import OTPRateLimit
+    from src.db_models import OTPRateLimit
     from src.otp_service import send_otp, verify_otp
 
     phone_number = "+237123456789"
@@ -85,7 +85,7 @@ def test_verify_otp_success():
 
 def test_verify_otp_failure():
     """Test OTP verification failure."""
-    from src.models import OTPRateLimit
+    from src.db_models import OTPRateLimit
     from src.otp_service import send_otp, verify_otp
 
     phone_number = "+237123456789"
@@ -106,7 +106,7 @@ def test_verify_otp_failure():
 
 def test_rate_limit_reset():
     """Test if rate limit is reset after the last window expires."""
-    from src.models import OTPRateLimit
+    from src.db_models import OTPRateLimit
     from src.otp_service import send_otp
 
     phone_number = "+237123456789"

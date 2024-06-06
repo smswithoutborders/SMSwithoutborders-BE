@@ -59,7 +59,7 @@ def configure_test_environment(session_temp_dir):
 @pytest.fixture(autouse=True)
 def setup_teardown_database(tmp_path, configure_test_environment):
     """Fixture for setting up and tearing down the test database."""
-    from src.models import Entity, OTPRateLimit
+    from src.db_models import Entity, OTPRateLimit
 
     db_path = tmp_path / "test.db"
     test_db = SqliteDatabase(db_path)
@@ -110,7 +110,7 @@ def test_entity_initiate_creation_success(grpc_server_mock):
 
 def test_entity_initiate_creation_rate_limited(grpc_server_mock):
     "Test case for rate limited initiation of entity creation."
-    from src.models import OTPRateLimit
+    from src.db_models import OTPRateLimit
 
     request_data = {"phone_number": "+237123456789"}
 
@@ -163,7 +163,7 @@ def test_entity_creation_missing_fields(grpc_server_mock):
 
 def test_entity_creation_already_exists(grpc_server_mock):
     """Test case for creating an entity that already exists."""
-    from src.models import Entity
+    from src.db_models import Entity
 
     request_data = {"phone_number": "+237123456789"}
     hash_key = load_key(get_configs("HASHING_SALT"), 32)
@@ -230,7 +230,7 @@ def test_entity_complete_creation_invalid_proof(grpc_server_mock):
 
 def test_entity_complete_creation_success(grpc_server_mock):
     """Test case for successful completion of entity creation."""
-    from src.models import Entity
+    from src.db_models import Entity
 
     # Define paths for client keystores
     client_keystore_publish = os.path.join(
@@ -335,7 +335,7 @@ def test_entity_complete_creation_success(grpc_server_mock):
 
 def test_entity_initiate_authentication_success(grpc_server_mock):
     """Test case for successful initiation of entity authentication."""
-    from src.models import Entity
+    from src.db_models import Entity
 
     request_data = {"phone_number": "+237123456789", "password": "Password@1234"}
     hash_key = load_key(get_configs("HASHING_SALT"), 32)
@@ -371,7 +371,7 @@ def test_entity_initiate_authentication_success(grpc_server_mock):
 
 def test_entity_complete_authentication_success(grpc_server_mock):
     """Test case for successful completion of entity authentication."""
-    from src.models import Entity
+    from src.db_models import Entity
 
     request_data = {"phone_number": "+237123456789", "password": "Password@1234"}
     hash_key = load_key(get_configs("HASHING_SALT"), 32)
@@ -437,7 +437,7 @@ def test_entity_authenticate_missing_fields(grpc_server_mock):
 
 def test_entity_authenticate_incorrect_password(grpc_server_mock):
     """Test case for incorrect password during entity authentication."""
-    from src.models import Entity
+    from src.db_models import Entity
 
     request_data = {"phone_number": "+237123456789", "password": "Password@123"}
     hash_key = load_key(get_configs("HASHING_SALT"), 32)
