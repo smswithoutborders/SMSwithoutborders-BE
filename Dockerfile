@@ -12,7 +12,8 @@ WORKDIR /smswithoutborders-backend
 
 COPY . .
 
-RUN pip install --no-cache-dir wheel && \
+RUN pip install -U pip && \
+    pip install --no-cache-dir wheel && \
     pip install --no-cache-dir --force-reinstall -r requirements.txt
 
 RUN usermod -u 1000 www-data && \
