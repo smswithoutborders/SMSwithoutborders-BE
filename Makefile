@@ -7,7 +7,7 @@ endef
 start:
 	@(\
 		if [ "$(shell echo ${MODE} | tr '[:upper:]' '[:lower:]')" = "production" ] && [ "${SSL_CERTIFICATE}" != "" ] && [ "${SSL_KEY}" != "" ] && [ "${SSL_PEM}" != "" ]; then \
-			$(call log_message,INFO Starting Production server ...) \
+			$(call log_message,INFO Starting Production server ...) && \
 			mod_wsgi-express start-server wsgi_script.py \
 			--user www-data \
 			--group www-data \
