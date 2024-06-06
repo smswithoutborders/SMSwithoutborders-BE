@@ -51,7 +51,15 @@ python -m grpc_tools.protoc -I protos/v1 --python_out=. --grpc_python_out=. prot
 
 ### Starting the Server
 
+**Quick Start (for Development Only):**
+
 ```bash
+HASHING_SALT=/path/to/hashing.key \
+SHARED_KEY=/path/to/shared.key \
+KEYSTORE_PATH=/path/to/key_store \
+SQLITE_DATABASE_PATH=/path/to/local.db \
+GRPC_PORT=6000 \
+HOST=127.0.0.1 \
 python3 grpc_server.py
 ```
 

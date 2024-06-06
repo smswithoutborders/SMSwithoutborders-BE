@@ -17,7 +17,7 @@ DATABASE_CONFIGS = {
         "user": get_configs("MYSQL_USER"),
     },
     "sqlite": {
-        "database_path": get_configs("SQLITE_DATABASE_PATH") or ":memory:",
+        "database_path": get_configs("SQLITE_DATABASE_PATH"),
     },
 }
 
