@@ -5,15 +5,15 @@ import logging
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from src.models import OTPRateLimit
+from src.utils import get_configs
 from settings import Configurations
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TWILIO_ACCOUNT_SID = "your_account_sid"
-TWILIO_AUTH_TOKEN = "your_auth_token"
-TWILIO_SERVICE_SID = "your_twilio_service_sid"
-client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+TWILIO_ACCOUNT_SID = get_configs("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = get_configs("TWILIO_AUTH_TOKEN")
+TWILIO_SERVICE_SID = get_configs("TWILIO_SERVICE_SID")
 
 RATE_LIMIT_WINDOWS = [
     {"duration": 2, "count": 1},  # 2 minute window
@@ -124,6 +124,8 @@ def twilio_send_otp(phone_number):
             - A boolean indicating whether the OTP was sent successfully.
             - A message indicating the result of the OTP sending process.
     """
+    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
     try:
         verification = client.verify.v2.services(
             TWILIO_SERVICE_SID
@@ -159,6 +161,8 @@ def twilio_verify_otp(phone_number, otp):
             - A boolean indicating whether the OTP was verified successfully.
             - A message indicating the result of the OTP verification process.
     """
+    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
     try:
         verification_check = client.verify.v2.services(
             TWILIO_SERVICE_SID
