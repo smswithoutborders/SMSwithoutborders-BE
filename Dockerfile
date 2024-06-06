@@ -11,15 +11,13 @@ RUN apt-get update && \
 WORKDIR /smswithoutborders-backend
 
 COPY . .
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN pip install -U pip && \
     pip install --no-cache-dir wheel && \
-    pip install --no-cache-dir --force-reinstall -r requirements.txt
-
-RUN usermod -u 1000 www-data && \
+    pip install --no-cache-dir --force-reinstall -r requirements.txt && \
+    usermod -u 1000 www-data && \
     usermod -G root www-data
-
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 FROM base as development
 CMD echo "[*] Starting Development server ..." && \
@@ -31,4 +29,5 @@ CMD echo "[*] Starting Development server ..." && \
     --log-to-terminal
 
 FROM base as production
-CMD ["supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
+ENV MODE=production
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
