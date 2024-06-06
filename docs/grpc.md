@@ -26,14 +26,21 @@ curl -O -L https://raw.githubusercontent.com/smswithoutborders/SMSwithoutborders
 
 ## Prerequisites
 
-To add relevant documentation links to the provided instructions, you can modify
-the text like this:
-
 ### Install Dependencies
 
 If you're using Python, install the necessary dependencies from
 `requirements.txt`. For other languages, see
 [Supported languages](https://grpc.io/docs/languages/).
+
+> [!TIP]
+>
+> it's recommended to set up a virtual environment to isolate your project's
+> dependencies.
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
 ```bash
 pip install -r requirements.txt
