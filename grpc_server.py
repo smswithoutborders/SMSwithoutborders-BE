@@ -8,6 +8,7 @@ import grpc
 import vault_pb2_grpc
 
 from settings import Configurations
+from src.utils import get_configs
 from src.grpc_entity_service import EntityService
 
 logger = logging.getLogger("[GRPC SERVER]")
@@ -18,11 +19,11 @@ def serve():
     Starts the gRPC server and listens for requests.
     """
     mode = Configurations.MODE
-    server_certificate = Configurations.SSL_CERTIFICATE
-    private_key = Configurations.SSL_KEY
-    hostname = Configurations.HOST
-    secure_port = Configurations.GRPC_SSL_PORT
-    port = Configurations.GRPC_PORT
+    server_certificate = get_configs("SSL_CERTIFICATE")
+    private_key = get_configs("SSL_KEY")
+    hostname = get_configs("HOST")
+    secure_port = get_configs("GRPC_SSL_PORT")
+    port = get_configs("GRPC_PORT")
 
     num_cpu_cores = os.cpu_count()
     max_workers = 10

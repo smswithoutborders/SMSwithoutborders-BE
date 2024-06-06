@@ -6,7 +6,6 @@ from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from src.models import OTPRateLimit
 from src.utils import get_configs
-from settings import Configurations
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,6 +13,8 @@ logger = logging.getLogger(__name__)
 TWILIO_ACCOUNT_SID = get_configs("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = get_configs("TWILIO_AUTH_TOKEN")
 TWILIO_SERVICE_SID = get_configs("TWILIO_SERVICE_SID")
+MOCK_OTP = get_configs("MOCK_OTP")
+MOCK_OTP = True if MOCK_OTP and MOCK_OTP.lower() == "true" else False
 
 RATE_LIMIT_WINDOWS = [
     {"duration": 2, "count": 1},  # 2 minute window
@@ -76,10 +77,10 @@ def send_otp(phone_number):
 
     expires = None
 
-    if Configurations.MODE == "production":
-        success, message = twilio_send_otp(phone_number)
-    else:
+    if MOCK_OTP:
         success, message = mock_send_otp(phone_number)
+    else:
+        success, message = twilio_send_otp(phone_number)
 
     if success:
         otp = increment_rate_limit(phone_number)
@@ -101,10 +102,10 @@ def verify_otp(phone_number, otp):
             - A boolean indicating whether the OTP was verified successfully.
             - A message indicating the result of the OTP verification process.
     """
-    if Configurations.MODE == "production":
-        success, message = twilio_verify_otp(phone_number, otp)
-    else:
+    if MOCK_OTP:
         success, message = mock_verify_otp(phone_number, otp)
+    else:
+        success, message = twilio_verify_otp(phone_number, otp)
 
     if success:
         clear_rate_limit(phone_number)
