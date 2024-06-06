@@ -21,7 +21,7 @@ def serve():
     mode = Configurations.MODE
     server_certificate = get_configs("SSL_CERTIFICATE")
     private_key = get_configs("SSL_KEY")
-    hostname = get_configs("HOST")
+    hostname = get_configs("GRPC_HOST")
     secure_port = get_configs("GRPC_SSL_PORT")
     port = get_configs("GRPC_PORT")
 
