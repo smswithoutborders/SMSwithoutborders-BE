@@ -131,3 +131,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# protoc
+*_pb2_grpc.py*
+*_pb2.py*
+
+# Ignore SQLite database files
+*.sqlite
+*.sqlite3
+*.db
