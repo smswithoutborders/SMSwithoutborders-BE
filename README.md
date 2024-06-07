@@ -14,6 +14,8 @@ Account authentication.
 3. [References](./docs/references.md)
 4. [Security](./docs/security.md)
 5. [gRPC](docs/grpc.md)
+6. [Specifications](docs/specifications.md)
+   - [Long-Lived Tokens (LLTs)](docs/specifications.md#1-long-lived-tokens-llts)
 
 ## Contribution
 

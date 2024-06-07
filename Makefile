@@ -7,7 +7,7 @@ endef
 start:
 	@(\
 		if [ "$(shell echo ${MODE} | tr '[:upper:]' '[:lower:]')" = "production" ] && [ "${SSL_CERTIFICATE}" != "" ] && [ "${SSL_KEY}" != "" ] && [ "${SSL_PEM}" != "" ]; then \
-			echo "[$(shell date +'%Y-%m-%d %H:%M:%S')] - INFO Starting Production server ..." && \
+			echo "[$(shell date +'%Y-%m-%d %H:%M:%S')] - INFO - Starting Production server ..." && \
 			mod_wsgi-express start-server wsgi_script.py \
 			--user www-data \
 			--group www-data \
@@ -20,37 +20,37 @@ start:
 			--https-port '${SSL_PORT}' \
 			--log-to-terminal; \
 		else \
-			echo "[$(shell date +'%Y-%m-%d %H:%M:%S')] - INFO Starting Development server ..." && \
+			echo "[$(shell date +'%Y-%m-%d %H:%M:%S')] - INFO - Starting Development server ..." && \
 			mod_wsgi-express start-server wsgi_script.py --user www-data --group www-data --port ${PORT} --log-to-terminal; \
 		fi \
 	)
 
 set-keys:
-	$(call log_message,WARNING Login to database engine.)
+	$(call log_message,WARNING - Login to database engine.)
 	@echo ""
 	@echo "Press [Enter] to use default value."
 	@echo ""
 	@$(python) configurationHelper.py --setkeys
-	$(call log_message,SUCCESS Keys set successfully.)
+	$(call log_message,INFO - Keys set successfully.)
 
 get-keys:
-	$(call log_message,WARNING Login to database engine.)
+	$(call log_message,WARNING - Login to database engine.)
 	@echo ""
 	@echo "Press [Enter] to use default value."
 	@echo ""
 	@$(python) configurationHelper.py --getkeys
 
 migrate:
-	$(call log_message,INFO Starting migration ...)
+	$(call log_message,INFO - Starting migration ...)
 	@$(python) migrationHelper.py
 	@echo ""
-	$(call log_message,SUCCESS Migration completed successfully.)
+	$(call log_message,INFO - Migration completed successfully.)
 
 dummy-user-inject:
-	$(call log_message,INFO Injecting dummy user ...)
+	$(call log_message,INFO - Injecting dummy user ...)
 	@$(python) injectDummyData.py --user
 	@echo ""
-	$(call log_message,SUCCESS Dummy user injected successfully.)
+	$(call log_message,INFO - Dummy user injected successfully.)
 
 grpc-compile:
 	$(call log_message,INFO - Compiling gRPC protos ...)
