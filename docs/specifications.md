@@ -8,8 +8,11 @@
      - [Generating LLTs](#1-generating-llts)
      - [Retrieving the LLT from Ciphertext](#2-retrieving-the-llt-from-ciphertext)
    - [Code Example (Python)](#code-example-python)
-     - [Generating LLTs](#generating-llts)
-     - [Retrieving the LLT from Ciphertext](#retrieving-the-llt-from-ciphertext)
+2. [Device ID](#2-device-id)
+   - [Purpose](#purpose-1)
+   - [Usage](#usage-1)
+     - [Generating Device ID](#1-generating-device-id)
+   - [Code Example (Python)](#code-example-python-1)
 
 ## 1. Long-Lived Tokens (LLTs)
 
@@ -56,11 +59,14 @@ can perform an `X25519` handshake with the vault.
   the vault.
 - **Plaintext LLT**: The plaintext LLT is used for subsequent requests to the
   vault. This LLT contains user identification information and is signed to
-  prevent tampering. It is recommended not to store the plaintext LLT. Instead,
-  the client should decrypt the LLT ciphertext on-demand using the device ID
-  shared secret key obtained from the X25519 handshake. This prevents
-  unauthorized access to the plaintext LLT, even if the client device is
-  compromised.
+  prevent tampering.
+
+> [!NOTE]
+>
+> It is recommended not to store the plaintext LLT. Instead, the client should
+> decrypt the LLT ciphertext on-demand using the device ID shared secret key
+> obtained from the X25519 handshake. This prevents unauthorized access to the
+> plaintext LLT, even if the client device is compromised.
 
 ### Code Example (Python)
 
@@ -121,4 +127,59 @@ llt_plaintext = fernet.decrypt(base64.b64decode(llt_ciphertext)).decode("utf-8")
 
 # Return the decrypted LLT
 print(llt_plaintext)
+```
+
+## 2. Device ID
+
+### Purpose
+
+The device ID is a unique identifier for a device which can be used to identify
+an entity other than their phone number. This is useful as entities can use
+other phone numbers other than the one used to create their account with an
+authenticated device to be able to publish messages with RelaySMS.
+
+### Usage
+
+#### 1. Generating Device ID:
+
+- **Hashing**: An `HMAC` with `SHA-256` hash algorithm is used to hash a
+  combination of the entity `phone number` and the entity `device id public key`
+  used for the `X25519` handshake between the client and the vault
+  `(phone_number + public_key)`. The `device_id` shared secret key obtained from
+  the `X25519` handshake between the client and the vault is then used as the
+  `HMAC` key for hashing the combination. The hexadecimal representation of the
+  hash then becomes the computed device id.
+
+> [!NOTE]
+>
+> It is recommended not to store the computed device ID. Instead, it should be
+> computed on-demand on the authorized device. This prevents unauthorized access
+> to the device id, even if the client device is compromised.
+
+### Code Example (Python)
+
+```python
+
+import hmac
+import hashlib
+
+
+def compute_device_id(secret_key, phone_number, public_key) -> str:
+    """
+    Compute a device ID using HMAC and SHA-256.
+
+    Args:
+        secret_key (str): The secret key used for HMAC.
+        phone_number (str): The phone number to be included in the HMAC input.
+        public_key (str): The public key to be included in the HMAC input.
+
+    Returns:
+        str: The hexadecimal representation of the HMAC digest.
+    """
+    # Combine phone number and public key
+    combined_input = phone_number + public_key
+    # Compute HMAC with SHA-256
+    hmac_object = hmac.new(secret_key.encode(), combined_input.encode(), hashlib.sha256)
+    # Return hexadecimal representation of HMAC digest
+    return hmac_object.hexdigest()
 ```

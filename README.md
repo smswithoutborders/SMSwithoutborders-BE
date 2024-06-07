@@ -16,6 +16,7 @@ Account authentication.
 5. [gRPC](docs/grpc.md)
 6. [Specifications](docs/specifications.md)
    - [Long-Lived Tokens (LLTs)](docs/specifications.md#1-long-lived-tokens-llts)
+   - [Device IDs](docs/specifications.md#2-device-id)
 
 ## Contribution
 
