@@ -205,8 +205,8 @@ def test_entity_complete_creation_invalid_proof(grpc_server_mock):
         "ownership_proof_response": "12346",
         "country_code": "CM",
         "password": "password",
-        "client_publish_pub_key": "client_publish_pub_key",
-        "client_device_id_pub_key": "client_device_id_pub_key",
+        "client_publish_pub_key": base64.b64encode(b"\x82" * 32).decode("utf-8"),
+        "client_device_id_pub_key": base64.b64encode(b"\x82" * 32).decode("utf-8"),
     }
 
     request = vault_pb2.CreateEntityRequest(**request_data)
@@ -333,6 +333,36 @@ def test_entity_complete_creation_success(grpc_server_mock):
     assert client_device_id_shared_key == server_device_id_shared_key
 
 
+def test_entity_complete_creation_invalid_public_keys(grpc_server_mock):
+    """Test case for entity creation with invalid public keys."""
+    request_data = {
+        "phone_number": "+237123456789",
+        "ownership_proof_response": "123456",
+        "country_code": "CM",
+        "password": "Password@1234",
+        "client_publish_pub_key": "invalid_key",
+        "client_device_id_pub_key": "invalid_key",
+    }
+
+    request = vault_pb2.CreateEntityRequest(**request_data)
+
+    create_entity_method = grpc_server_mock.invoke_unary_unary(
+        method_descriptor=(
+            vault_pb2.DESCRIPTOR.services_by_name["Entity"].methods_by_name[
+                "CreateEntity"
+            ]
+        ),
+        invocation_metadata={},
+        request=request,
+        timeout=1,
+    )
+
+    _, _, code, details = create_entity_method.termination()
+
+    assert code == grpc.StatusCode.INVALID_ARGUMENT
+    assert "Invalid fields:" in details
+
+
 def test_entity_initiate_authentication_success(grpc_server_mock):
     """Test case for successful initiation of entity authentication."""
     from src.db_models import Entity
@@ -373,7 +403,13 @@ def test_entity_complete_authentication_success(grpc_server_mock):
     """Test case for successful completion of entity authentication."""
     from src.db_models import Entity
 
-    request_data = {"phone_number": "+237123456789", "password": "Password@1234"}
+    request_data = {
+        "phone_number": "+237123456789",
+        "password": "Password@1234",
+        "ownership_proof_response": "123456",
+        "client_publish_pub_key": base64.b64encode(b"\x82" * 32).decode("utf-8"),
+        "client_device_id_pub_key": base64.b64encode(b"\x82" * 32).decode("utf-8"),
+    }
     hash_key = load_key(get_configs("HASHING_SALT"), 32)
     phone_number_hash = generate_hmac(hash_key, request_data["phone_number"])
 
@@ -384,13 +420,6 @@ def test_entity_complete_authentication_success(grpc_server_mock):
         password_hash=generate_hmac(hash_key, request_data["password"]),
     )
 
-    request_data = {
-        "phone_number": request_data["phone_number"],
-        "password": request_data["password"],
-        "ownership_proof_response": "123456",
-        "client_publish_pub_key": "Kqprob8WuflOMpcR6SGg8yQumerTvm1MQeAtcgFxWFY",
-        "client_device_id_pub_key": "UD6gLBg0RJ/olGhJItmDxHOdv0550BDpGGnMIcvbCkc=",
-    }
     request = vault_pb2.AuthenticateEntityRequest(**request_data)
 
     authenticate_entity_method = grpc_server_mock.invoke_unary_unary(
@@ -467,3 +496,43 @@ def test_entity_authenticate_incorrect_password(grpc_server_mock):
 
     assert code == grpc.StatusCode.UNAUTHENTICATED
     assert "Incorrect credentials." in details
+
+
+def test_entity_complete_authentication_invalid_public_keys(grpc_server_mock):
+    """Test case for entity authentication with invalid public keys."""
+    from src.db_models import Entity
+
+    request_data = {
+        "phone_number": "+237123456789",
+        "password": "Password@1234",
+        "ownership_proof_response": "123456",
+        "client_publish_pub_key": "invalid_key",
+        "client_device_id_pub_key": "invalid_key",
+    }
+    hash_key = load_key(get_configs("HASHING_SALT"), 32)
+    phone_number_hash = generate_hmac(hash_key, request_data["phone_number"])
+
+    Entity.create(
+        phone_number_hash=phone_number_hash,
+        eid=generate_eid(phone_number_hash),
+        country_code="CM",
+        password_hash=generate_hmac(hash_key, request_data["password"]),
+    )
+
+    request = vault_pb2.AuthenticateEntityRequest(**request_data)
+
+    authenticate_entity_method = grpc_server_mock.invoke_unary_unary(
+        method_descriptor=(
+            vault_pb2.DESCRIPTOR.services_by_name["Entity"].methods_by_name[
+                "AuthenticateEntity"
+            ]
+        ),
+        invocation_metadata={},
+        request=request,
+        timeout=1,
+    )
+
+    _, _, code, details = authenticate_entity_method.termination()
+
+    assert code == grpc.StatusCode.INVALID_ARGUMENT
+    assert "Invalid fields:" in details

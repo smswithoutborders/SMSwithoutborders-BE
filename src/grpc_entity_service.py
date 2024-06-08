@@ -20,6 +20,7 @@ from src.utils import (
     generate_crypto_metadata,
     generate_eid,
     get_shared_key,
+    is_valid_x25519_public_key,
 )
 from src.long_lived_token import generate_llt
 
@@ -62,9 +63,9 @@ def error_response(context, sys_msg, status_code, user_msg=None, _type=None):
     return vault_pb2.CreateEntityResponse()
 
 
-def check_missing_fields(context, request, required_fields):
+def validate_request_fields(context, request, required_fields):
     """
-    Check for missing fields in the gRPC request.
+    Validates the fields in the gRPC request.
 
     Args:
         context: gRPC context.
@@ -82,6 +83,25 @@ def check_missing_fields(context, request, required_fields):
             f"Missing required fields: {', '.join(missing_fields)}",
             grpc.StatusCode.INVALID_ARGUMENT,
         )
+
+    x25519_fields = [
+        "client_publish_pub_key",
+        "client_device_id_pub_key",
+    ]
+    invalid_fields = {}
+
+    for field in set(x25519_fields) & set(required_fields):
+        is_valid, error = is_valid_x25519_public_key(getattr(request, field))
+        if not is_valid:
+            invalid_fields[field] = error
+
+    if invalid_fields:
+        return error_response(
+            context,
+            f"Invalid fields: {invalid_fields}",
+            grpc.StatusCode.INVALID_ARGUMENT,
+        )
+
     return None
 
 
@@ -169,6 +189,15 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 )
             )
 
+            shared_key = get_shared_key(
+                os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db"),
+                server_device_id_keypair.pnt_keystore,
+                server_device_id_keypair.secret_key,
+                base64.b64decode(request.client_device_id_pub_key),
+            )
+
+            long_lived_token = generate_llt(eid, shared_key)
+
             fields = {
                 "eid": eid,
                 "phone_number_hash": phone_number_hash,
@@ -180,15 +209,6 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             }
 
             create_entity(**fields)
-
-            shared_key = get_shared_key(
-                os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db"),
-                server_device_id_keypair.pnt_keystore,
-                server_device_id_keypair.secret_key,
-                base64.b64decode(request.client_device_id_pub_key),
-            )
-
-            long_lived_token = generate_llt(eid, shared_key)
 
             logger.info("Entity created successfully")
 
@@ -226,11 +246,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         try:
-            missing_fields_response = check_missing_fields(
+            invalid_fields_response = validate_request_fields(
                 context, request, ["phone_number"]
             )
-            if missing_fields_response:
-                return missing_fields_response
+            if invalid_fields_response:
+                return invalid_fields_response
 
             phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
             entity_obj = find_entity(phone_number_hash=phone_number_hash)
@@ -249,11 +269,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     "client_publish_pub_key",
                     "client_device_id_pub_key",
                 ]
-                missing_fields_response = check_missing_fields(
+                invalid_fields_response = validate_request_fields(
                     context, request, required_fields
                 )
-                if missing_fields_response:
-                    return missing_fields_response
+                if invalid_fields_response:
+                    return invalid_fields_response
 
                 return complete_creation(request)
 
@@ -282,11 +302,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             Returns:
                 vault_pb2.AuthenticateEntityResponse: Authentication response.
             """
-            missing_fields_response = check_missing_fields(
+            invalid_fields_response = validate_request_fields(
                 context, request, ["password"]
             )
-            if missing_fields_response:
-                return missing_fields_response
+            if invalid_fields_response:
+                return invalid_fields_response
 
             if not verify_hmac(HASHING_KEY, request.password, entity_obj.password_hash):
                 return error_response(
@@ -322,7 +342,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             Returns:
                 vault_pb2.AuthenticateEntityResponse: Authentication response.
             """
-            missing_fields_response = check_missing_fields(
+            invalid_fields_response = validate_request_fields(
                 context,
                 request,
                 [
@@ -330,8 +350,8 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     "client_device_id_pub_key",
                 ],
             )
-            if missing_fields_response:
-                return missing_fields_response
+            if invalid_fields_response:
+                return invalid_fields_response
 
             success, response = handle_pow_verification(context, request)
             if not success:
@@ -355,11 +375,6 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 )
             )
 
-            entity_obj.client_publish_pub_key = request.client_publish_pub_key
-            entity_obj.client_device_id_pub_key = request.client_device_id_pub_key
-            entity_obj.server_crypto_metadata = crypto_metadata_ciphertext_b64
-            entity_obj.save()
-
             shared_key = get_shared_key(
                 os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db"),
                 server_device_id_keypair.pnt_keystore,
@@ -368,6 +383,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
             long_lived_token = generate_llt(eid, shared_key)
+
+            entity_obj.client_publish_pub_key = request.client_publish_pub_key
+            entity_obj.client_device_id_pub_key = request.client_device_id_pub_key
+            entity_obj.server_crypto_metadata = crypto_metadata_ciphertext_b64
+            entity_obj.save()
 
             return vault_pb2.AuthenticateEntityResponse(
                 long_lived_token=long_lived_token,
@@ -381,11 +401,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         try:
-            missing_fields_response = check_missing_fields(
+            invalid_fields_response = validate_request_fields(
                 context, request, ["phone_number"]
             )
-            if missing_fields_response:
-                return missing_fields_response
+            if invalid_fields_response:
+                return invalid_fields_response
 
             phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
             entity_obj = find_entity(phone_number_hash=phone_number_hash)

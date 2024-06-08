@@ -7,6 +7,7 @@ import json
 import base64
 from functools import wraps
 
+from cryptography.hazmat.primitives.asymmetric import x25519 as x25519_core
 import mysql.connector
 from peewee import DatabaseError
 from smswithoutborders_libsig.keypairs import x25519
@@ -360,3 +361,30 @@ def convert_to_fernet_key(secret_key):
         raise ValueError("Secret key must be 32 bytes long")
 
     return base64.urlsafe_b64encode(secret_key)
+
+
+def is_valid_x25519_public_key(encoded_key):
+    """
+    Validates an X25519 public key encoded in base64.
+
+    Args:
+        encoded_key (bytes): The base64-encoded public key to validate.
+
+    Returns:
+        tuple[bool, str]: A tuple where the first element is a boolean i
+            ndicating whether the key is valid, and the second element is an
+            error message if the key is invalid, or None if the key
+            is valid.
+    """
+    try:
+        decoded_key = base64.b64decode(encoded_key)
+    except (TypeError, ValueError) as err:
+        logger.exception("Base64 decoding error: %s", err)
+        return False, "Invalid base64 encoding"
+
+    try:
+        x25519_core.X25519PublicKey.from_public_bytes(decoded_key)
+        return True, None
+    except ValueError as err:
+        logger.exception("X25519 public key validation error: %s", err)
+        return False, f"Invalid X25519 public key: {err}"
