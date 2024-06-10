@@ -9,6 +9,7 @@ mysql-connector-python==8.0.29
 mysqlclient==2.1.1
 nest-asyncio==1.5.6
 peewee==3.17.5
+tqdm==4.66.4
 phonenumbers==8.13.36
 pycryptodome==3.20.0
 pytest==8.2.1

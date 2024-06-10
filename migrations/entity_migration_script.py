@@ -1,3 +1,9 @@
+"""
+Entity Migration Script
+"""
+
+import logging
+from tqdm import tqdm
 from phonenumbers.phonenumberutil import region_code_for_country_code
 from src.schemas.users import Users
 from src.schemas.usersinfo import UsersInfos
@@ -8,6 +14,10 @@ from src.entity import create_entity
 from src.tokens import create_entity_token
 
 data = Data()
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 def fetch_users_data():
@@ -25,7 +35,7 @@ def fetch_users_wallets(user_id):
     return Wallets.select().where(Wallets.userId == user_id)
 
 
-def transform_user_data(user, user_info, wallets):
+def migrate_user_data(user, user_info, wallets):
     """Transform user data and migrate to Entity."""
     phone_number_hash = user_info.full_phone_number
     eid = generate_eid(phone_number_hash)
@@ -42,11 +52,13 @@ def transform_user_data(user, user_info, wallets):
 
     entity = create_entity(**entity_data)
     for wallet in wallets:
+        account_identifier = data.decrypt(wallet.uniqueId)
+        account_tokens = data.decrypt(wallet.token)
         token_data = {
             "platform": wallet.platformId,
-            "account_identifier": data.decrypt(wallet.uniqueId),
+            "account_identifier": encrypt_and_encode(account_identifier),
             "account_identifier_hash": wallet.uniqueIdHash,
-            "account_tokens": data.decrypt(wallet.token),
+            "account_tokens": encrypt_and_encode(account_tokens),
         }
         create_entity_token(entity, **token_data)
 
@@ -56,10 +68,20 @@ def migrate_data():
     users_data = fetch_users_data()
     users_infos_data = fetch_verified_users_infos_data()
 
-    for user_info in users_infos_data:
-        user = users_data.where(Users.id == user_info.userId).get()
-        wallets = fetch_users_wallets(user_info.userId)
-        transform_user_data(user, user_info, wallets)
+    total = users_infos_data.count()
+    with tqdm(total=total, desc="Migrating", unit="users") as pbar:
+        for user_info in users_infos_data:
+            try:
+                user = users_data.where(Users.id == user_info.userId).get()
+                wallets = fetch_users_wallets(user_info.userId)
+                migrate_user_data(user, user_info, wallets)
+                pbar.update(1)
+            except Exception:
+                logging.error(
+                    "Error migrating user: %s", user_info.userId, exc_info=True
+                )
+                pbar.update(1)
+                continue
 
 
 if __name__ == "__main__":

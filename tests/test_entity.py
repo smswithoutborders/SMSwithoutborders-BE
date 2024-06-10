@@ -35,7 +35,7 @@ def test_create_entity_required_fields():
     phone_number_hash = "phone_hash1"
     eid = generate_eid(phone_number_hash)
     password_hash = "password_hash1"
-    country_code = "+237"
+    country_code = "CM"
 
     entity = create_entity(eid, phone_number_hash, password_hash, country_code)
 
@@ -53,7 +53,7 @@ def test_create_entity_additional_fields():
     phone_number_hash = "phone_hash2"
     eid = generate_eid(phone_number_hash)
     password_hash = "password_hash2"
-    country_code = "+237"
+    country_code = "CM"
     publish_pub_key = "-----BEGIN PUBLIC KEY-----\n1234\n-----END PUBLIC KEY-----"
     device_id_pub_key = (
         "-----BEGIN DEVICE PUBLIC KEY-----\n1234\n-----END DEVICE PUBLIC KEY-----"
@@ -84,7 +84,7 @@ def test_find_entity_by_single_criterion():
     phone_number_hash = "phone_hash3"
     eid = generate_eid(phone_number_hash)
     password_hash = "password_hash3"
-    country_code = "+237"
+    country_code = "CM"
 
     create_entity(eid, phone_number_hash, password_hash, country_code)
     entity = find_entity(eid=eid)
@@ -100,7 +100,7 @@ def test_find_entity_by_multiple_criteria():
     phone_number_hash = "phone_hash4"
     eid = generate_eid(phone_number_hash)
     password_hash = "password_hash4"
-    country_code = "+237"
+    country_code = "CM"
 
     create_entity(eid, phone_number_hash, password_hash, country_code)
     entity = find_entity(eid=eid, phone_number_hash=phone_number_hash)
