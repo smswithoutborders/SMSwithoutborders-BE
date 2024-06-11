@@ -12,6 +12,7 @@
   - [Authenticate an Entity](#authenticate-an-entity)
     - [Initiate Authentication](#initiate-authentication)
     - [Complete Authentication](#complete-authentication)
+  - [List an Entity's Stored Tokens](#list-an-entitys-stored-tokens)
 
 ## Download Protocol Buffer File
 
@@ -426,5 +427,85 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
 	"serverPublishPubKey": "x25519 server publish public key",
 	"serverDeviceIdPubKey": "x25519 server publish public key",
 	"message": "Entity authenticated successfully!"
+}
+```
+
+### List an Entity's Stored Tokens
+
+This method retrieves the stored tokens for a given entity.
+
+---
+
+> `request` **ListEntityStoredTokensRequest**
+
+> [!IMPORTANT]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
+
+| Field            | Type   | Description                                                                      |
+| ---------------- | ------ | -------------------------------------------------------------------------------- |
+| long_lived_token | string | The long-lived token for the authenticated session, used to identify the entity. |
+
+---
+
+> `response` **ListEntityStoredTokensResponse**
+
+> [!IMPORTANT]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
+
+| Field         | Type   | Description                                                            |
+| ------------- | ------ | ---------------------------------------------------------------------- |
+| stored_tokens | array  | A list of stored tokens. Each token object may contain various fields. |
+| message       | string | A response message from the server.                                    |
+
+---
+
+> `method` **ListEntityStoredTokens**
+
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+---
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d '{"long_lived_token": "entity_id:long_lived_token"}' \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/ListEntityStoredTokens
+```
+
+---
+
+**Sample response**
+
+```json
+{
+	"stored_tokens": [
+		{
+			"account_identifier": "my_x_handle",
+			"platform": "x"
+		},
+		{
+			"account_identifier": "example@gmail.com",
+			"platform": "gmail"
+		}
+	],
+	"message": "Tokens retrieved successfully."
 }
 ```

@@ -74,6 +74,8 @@ message ListEntityStoredTokenRequest {
 message ListEntityStoredTokenResponse {
     // The list of stored tokens.
     repeated Token stored_tokens = 1;
+    // A response message.
+    string message = 2;
 }
 
 // Represents a token.

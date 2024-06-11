@@ -510,7 +510,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     if field in token:
                         token[field] = decrypt_and_decode(token[field])
 
-            return response(stored_tokens=tokens)
+            logger.info("Successfully retrieved tokens for %s", entity_obj.eid)
+
+            return response(
+                stored_tokens=tokens, message="Tokens retrieved successfully."
+            )
 
         except ValueError as e:
             return error_response(
