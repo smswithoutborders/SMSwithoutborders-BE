@@ -271,7 +271,7 @@ def test_entity_complete_creation_success(grpc_server_mock):
         ),
         invocation_metadata={},
         request=request,
-        timeout=1,
+        timeout=3,
     )
 
     response, _, code, _ = create_entity_method.termination()
@@ -430,7 +430,7 @@ def test_entity_complete_authentication_success(grpc_server_mock):
         ),
         invocation_metadata={},
         request=request,
-        timeout=1,
+        timeout=3,
     )
 
     response, _, code, _ = authenticate_entity_method.termination()

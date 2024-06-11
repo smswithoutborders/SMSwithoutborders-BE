@@ -27,24 +27,27 @@ def test_verify_llt_valid(encryption_key):
     """Test the verification of a valid Long-Lived Token."""
     eid = generate_eid("sample_data")
     llt_ciphertext = generate_llt(eid, encryption_key)
-    llt_plaintext = decrypt_fernet(
+
+    i_eid, llt_plaintext = decrypt_fernet(
         convert_to_fernet_key(encryption_key), base64.b64decode(llt_ciphertext)
-    )
+    ).split(":", 1)
+
     payload, error = verify_llt(llt_plaintext, encryption_key)
 
     assert payload is not None
     assert error is None
     assert isinstance(payload, dict)
     assert payload["eid"] == eid
+    assert payload["eid"] == i_eid
 
 
 def test_verify_llt_invalid(encryption_key):
     """Test the verification of an invalid Long-Lived Token."""
     eid = generate_eid("sample_data")
     llt_ciphertext = generate_llt(eid, encryption_key)
-    llt_plaintext = decrypt_fernet(
+    _, llt_plaintext = decrypt_fernet(
         convert_to_fernet_key(encryption_key), base64.b64decode(llt_ciphertext)
-    )
+    ).split(":", 1)
     manipulated_llt = llt_plaintext[:-1]
     payload, error = verify_llt(manipulated_llt, encryption_key)
 
