@@ -37,6 +37,7 @@ def configure_test_environment(session_temp_dir):
     the application mode to testing.
     """
     set_configs("MODE", "testing")
+    set_configs("MOCK_OTP", True)
     set_configs("KEYSTORE_PATH", str(session_temp_dir))
 
     hashing_key_path = session_temp_dir / "hash.key"

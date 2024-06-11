@@ -102,7 +102,6 @@ def remove_none_values(values):
             {"a": 1, "b": 2, "c": None}
         ]
         filtered_values = remove_none_values(values)
-        print(filtered_values)
         # Output: [{'a': 1, 'c': 3}, {'b': 2, 'c': 3}, {'a': 1, 'b': 2}]
     """
     return [{k: v for k, v in value.items() if v is not None} for value in values]

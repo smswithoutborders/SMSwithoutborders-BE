@@ -162,27 +162,28 @@ def get_configs(config_name: str, strict: bool = False) -> str:
         raise
 
 
-def set_configs(config_name: str, config_value: str) -> None:
+def set_configs(config_name, config_value) -> None:
     """
     Sets the value of a configuration in the environment variables.
 
     Args:
         config_name (str): The name of the configuration to set.
-        config_value (str): The value of the configuration to set.
+        config_value (str or bool): The value of the configuration to set.
 
     Raises:
-        ValueError: If config_name or config_value is empty.
+        ValueError: If config_name is empty.
     """
-    if not config_name or not config_value:
+    if not config_name:
         error_message = (
-            f"Cannot set configuration. Invalid config_name '{config_name}' ",
-            "or config_value '{config_value}'.",
+            f"Cannot set configuration. Invalid config_name '{config_name}'."
         )
         logger.error(error_message)
         raise ValueError(error_message)
 
     try:
-        os.environ[config_name] = config_value
+        if isinstance(config_value, bool):
+            config_value = str(config_value).lower()
+        os.environ[config_name] = str(config_value)
     except Exception as error:
         logger.error("Failed to set configuration '%s': %s", config_name, error)
         raise

@@ -1,8 +1,10 @@
 """Test module for entity controller functions."""
 
+import base64
 import pytest
 from peewee import SqliteDatabase
 from src.utils import create_tables, set_configs, generate_eid
+from src.device_id import compute_device_id
 
 
 @pytest.fixture()
@@ -54,16 +56,15 @@ def test_create_entity_additional_fields():
     eid = generate_eid(phone_number_hash)
     password_hash = "password_hash2"
     country_code = "CM"
-    publish_pub_key = "-----BEGIN PUBLIC KEY-----\n1234\n-----END PUBLIC KEY-----"
-    device_id_pub_key = (
-        "-----BEGIN DEVICE PUBLIC KEY-----\n1234\n-----END DEVICE PUBLIC KEY-----"
-    )
-
+    publish_pub_key = base64.b64encode(b"\x82" * 32).decode("utf-8")
+    device_id_pub_key = base64.b64encode(b"\x82" * 32).decode("utf-8")
+    device_id = compute_device_id(b"\x82" * 32, "+237123456789", publish_pub_key)
     entity = create_entity(
         eid,
         phone_number_hash,
         password_hash,
         country_code,
+        device_id=device_id,
         client_publish_pub_key=publish_pub_key,
         client_device_id_pub_key=device_id_pub_key,
     )
@@ -73,6 +74,7 @@ def test_create_entity_additional_fields():
     assert entity.phone_number_hash == phone_number_hash
     assert entity.password_hash == password_hash
     assert entity.country_code == country_code
+    assert entity.device_id == device_id
     assert entity.client_publish_pub_key == publish_pub_key
     assert entity.client_device_id_pub_key == device_id_pub_key
 
