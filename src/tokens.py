@@ -2,7 +2,7 @@
 Entity's Tokens Controllers
 """
 
-from peewee import DoesNotExist
+from playhouse.shortcuts import model_to_dict
 from src.db_models import Token
 
 database = Token._meta.database
@@ -43,19 +43,66 @@ def create_entity_token(
     return token
 
 
-def find_entity_token(entity, **search_criteria):
+def fetch_entity_tokens(entity, fetch_all=False, fields=None, **search_criteria):
     """
-    Find a token associated with the given entity by the given search criteria.
+    Fetch tokens associated with the given entity based on the provided search criteria,
+    or retrieve all tokens associated with the entity if fetch_all is set to True.
 
     Args:
-        entity (Entity): The entity associated with the token.
-        **search_criteria: Keyword arguments representing the fields
+        entity (Entity): The entity associated with the tokens.
+        fetch_all (bool, optional): If True, fetch all tokens associated with the entity
+            regardless of search criteria. If False (default), fetch tokens based on search criteria.
+        fields (list[str] or None, optional): Optional list of fields to select.
+        **search_criteria: Additional keyword arguments representing the fields
             and their values to search for.
 
     Returns:
-        Token or None: The found token if exists, else None.
+        list[dict]: A list of dictionaries containing token data.
     """
-    try:
-        return entity.tokens.get(**search_criteria)
-    except DoesNotExist:
-        return None
+    results = []
+
+    with database.atomic():
+        query = entity.tokens
+
+        if not fetch_all and search_criteria:
+            conditions = [
+                getattr(Token, key) == value
+                for key, value in search_criteria.items()
+                if value is not None
+            ]
+            query = query.where(*conditions)
+
+        if fields:
+            select = (getattr(Token, key) for key in fields)
+            query = query.select(*select)
+
+        tokens = query.execute()
+
+        for token in tokens:
+            token_dict = model_to_dict(token)
+            results.append(token_dict)
+
+    return remove_none_values(results)
+
+
+def remove_none_values(values):
+    """
+    Removes None values from a list of dictionaries.
+
+    Args:
+        values (list): A list of dictionaries.
+
+    Returns:
+        list: A new list of dictionaries where None values have been removed.
+
+    Example:
+        values = [
+            {"a": 1, "b": None, "c": 3},
+            {"a": None, "b": 2, "c": 3},
+            {"a": 1, "b": 2, "c": None}
+        ]
+        filtered_values = remove_none_values(values)
+        print(filtered_values)
+        # Output: [{'a': 1, 'c': 3}, {'b': 2, 'c': 3}, {'a': 1, 'b': 2}]
+    """
+    return [{k: v for k, v in value.items() if v is not None} for value in values]

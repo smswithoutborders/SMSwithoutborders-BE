@@ -34,7 +34,7 @@ def generate_llt(eid, key):
         "eid": eid,
         "iss": "https://smswithoutborders.com",
         "iat": get_int_from_datetime(datetime.now()),
-        "exp": get_int_from_datetime(datetime.now() + timedelta(minutes=5)),
+        "exp": get_int_from_datetime(datetime.now() + timedelta(days=180)),
     }
 
     signing_key = jwk_from_dict(
@@ -43,7 +43,7 @@ def generate_llt(eid, key):
 
     llt = token_obj.encode(payload, signing_key, alg="HS256")
 
-    llt_ciphertext = encrypt_fernet(convert_to_fernet_key(key), llt)
+    llt_ciphertext = encrypt_fernet(convert_to_fernet_key(key), f"{eid}:{llt}")
 
     return base64.b64encode(llt_ciphertext).decode("utf-8")
 

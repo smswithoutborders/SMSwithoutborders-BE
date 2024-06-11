@@ -10,6 +10,7 @@ import vault_pb2
 import vault_pb2_grpc
 
 from src.entity import create_entity, find_entity
+from src.tokens import fetch_entity_tokens
 from src.crypto import generate_hmac, verify_hmac
 from src.otp_service import send_otp, verify_otp
 from src.utils import (
@@ -21,8 +22,10 @@ from src.utils import (
     generate_eid,
     get_shared_key,
     is_valid_x25519_public_key,
+    load_crypto_metadata,
+    decrypt_and_decode,
 )
-from src.long_lived_token import generate_llt
+from src.long_lived_token import generate_llt, verify_llt
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
@@ -30,19 +33,20 @@ KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
 logger = logging.getLogger(__name__)
 
 
-def error_response(context, sys_msg, status_code, user_msg=None, _type=None):
+def error_response(context, response, sys_msg, status_code, user_msg=None, _type=None):
     """
     Create an error response.
 
     Args:
         context: gRPC context.
+        response: gRPC response object.
         sys_msg (str or tuple): System message.
         status_code: gRPC status code.
         user_msg (str or tuple): User-friendly message.
         _type (str): Type of error.
 
     Returns:
-        vault_pb2.CreateEntityResponse: Error response.
+        An instance of the specified response with the error set.
     """
     if not user_msg:
         user_msg = sys_msg
@@ -60,26 +64,28 @@ def error_response(context, sys_msg, status_code, user_msg=None, _type=None):
     context.set_details(user_msg)
     context.set_code(status_code)
 
-    return vault_pb2.CreateEntityResponse()
+    return response()
 
 
-def validate_request_fields(context, request, required_fields):
+def validate_request_fields(context, request, response, required_fields):
     """
     Validates the fields in the gRPC request.
 
     Args:
         context: gRPC context.
         request: gRPC request object.
+        response: gRPC response object.
         required_fields (list): List of required fields.
 
     Returns:
-        None or vault_pb2.CreateEntityResponse: None if no missing fields,
+        None or response: None if no missing fields,
             error response otherwise.
     """
     missing_fields = [field for field in required_fields if not getattr(request, field)]
     if missing_fields:
         return error_response(
             context,
+            response,
             f"Missing required fields: {', '.join(missing_fields)}",
             grpc.StatusCode.INVALID_ARGUMENT,
         )
@@ -98,6 +104,7 @@ def validate_request_fields(context, request, required_fields):
     if invalid_fields:
         return error_response(
             context,
+            response,
             f"Invalid fields: {invalid_fields}",
             grpc.StatusCode.INVALID_ARGUMENT,
         )
@@ -105,13 +112,14 @@ def validate_request_fields(context, request, required_fields):
     return None
 
 
-def handle_pow_verification(context, request):
+def handle_pow_verification(context, request, response):
     """
     Handle proof of ownership verification.
 
     Args:
         context: gRPC context.
         request: gRPC request object.
+        response: gRPC response object.
 
     Returns:
         tuple: Tuple containing success flag and message.
@@ -122,19 +130,21 @@ def handle_pow_verification(context, request):
     if not success:
         return success, error_response(
             context,
+            response,
             f"Ownership proof verification failed. Reason: {message}",
             grpc.StatusCode.UNAUTHENTICATED,
         )
     return success, message
 
 
-def handle_pow_initialization(context, request):
+def handle_pow_initialization(context, request, response):
     """
     Handle proof of ownership initialization.
 
     Args:
         context: gRPC context.
         request: gRPC request object.
+        response: gRPC response object.
 
     Returns:
         tuple: Tuple containing success flag, message, and expiration time.
@@ -143,6 +153,7 @@ def handle_pow_initialization(context, request):
     if not success:
         return success, error_response(
             context,
+            response,
             f"Ownership proof initialization failed. Reason: {message}",
             grpc.StatusCode.INVALID_ARGUMENT,
         )
@@ -155,6 +166,8 @@ class EntityService(vault_pb2_grpc.EntityServicer):
     def CreateEntity(self, request, context):
         """Handles the creation of an entity."""
 
+        response = vault_pb2.CreateEntityResponse
+
         def complete_creation(request):
             """
             Complete the creation process.
@@ -165,9 +178,9 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             Returns:
                 vault_pb2.CreateEntityResponse: Create entity response.
             """
-            success, response = handle_pow_verification(context, request)
+            success, pow_response = handle_pow_verification(context, request, response)
             if not success:
-                return response
+                return pow_response
 
             phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
             eid = generate_eid(phone_number_hash)
@@ -212,7 +225,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             logger.info("Entity created successfully")
 
-            return vault_pb2.CreateEntityResponse(
+            return response(
                 long_lived_token=long_lived_token,
                 message="Entity created successfully",
                 server_publish_pub_key=base64.b64encode(server_publish_pub_key).decode(
@@ -233,13 +246,15 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             Returns:
                 vault_pb2.CreateEntityResponse: Create entity response.
             """
-            success, response = handle_pow_initialization(context, request)
+            success, pow_response = handle_pow_initialization(
+                context, request, response
+            )
             if not success:
-                return response
+                return pow_response
 
-            message, expires = response
+            message, expires = pow_response
 
-            return vault_pb2.CreateEntityResponse(
+            return response(
                 requires_ownership_proof=True,
                 message=message,
                 next_attempt_timestamp=expires,
@@ -247,7 +262,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
         try:
             invalid_fields_response = validate_request_fields(
-                context, request, ["phone_number"]
+                context, request, response, ["phone_number"]
             )
             if invalid_fields_response:
                 return invalid_fields_response
@@ -258,6 +273,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if entity_obj:
                 return error_response(
                     context,
+                    response,
                     f"Entity with phone number `{request.phone_number}` already exists.",
                     grpc.StatusCode.ALREADY_EXISTS,
                 )
@@ -270,7 +286,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     "client_device_id_pub_key",
                 ]
                 invalid_fields_response = validate_request_fields(
-                    context, request, required_fields
+                    context, request, response, required_fields
                 )
                 if invalid_fields_response:
                     return invalid_fields_response
@@ -282,6 +298,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         except Exception as e:
             return error_response(
                 context,
+                response,
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
@@ -290,6 +307,8 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
     def AuthenticateEntity(self, request, context):
         """Handles the authentication of an entity."""
+
+        response = vault_pb2.AuthenticateEntityResponse
 
         def initiate_authentication(request, entity_obj):
             """
@@ -303,7 +322,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 vault_pb2.AuthenticateEntityResponse: Authentication response.
             """
             invalid_fields_response = validate_request_fields(
-                context, request, ["password"]
+                context, request, response, ["password"]
             )
             if invalid_fields_response:
                 return invalid_fields_response
@@ -311,6 +330,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if not verify_hmac(HASHING_KEY, request.password, entity_obj.password_hash):
                 return error_response(
                     context,
+                    response,
                     f"Incorrect Password provided for phone number {request.phone_number}",
                     grpc.StatusCode.UNAUTHENTICATED,
                     user_msg=(
@@ -319,13 +339,15 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     ),
                 )
 
-            success, response = handle_pow_initialization(context, request)
+            success, pow_response = handle_pow_initialization(
+                context, request, response
+            )
             if not success:
-                return response
+                return pow_response
 
-            message, expires = response
+            message, expires = pow_response
 
-            return vault_pb2.AuthenticateEntityResponse(
+            return response(
                 requires_ownership_proof=True,
                 message=message,
                 next_attempt_timestamp=expires,
@@ -345,6 +367,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             invalid_fields_response = validate_request_fields(
                 context,
                 request,
+                response,
                 [
                     "client_publish_pub_key",
                     "client_device_id_pub_key",
@@ -353,9 +376,9 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            success, response = handle_pow_verification(context, request)
+            success, pow_response = handle_pow_verification(context, request, response)
             if not success:
-                return response
+                return pow_response
 
             eid = entity_obj.eid.hex
 
@@ -389,7 +412,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             entity_obj.server_crypto_metadata = crypto_metadata_ciphertext_b64
             entity_obj.save()
 
-            return vault_pb2.AuthenticateEntityResponse(
+            return response(
                 long_lived_token=long_lived_token,
                 message="Entity authenticated successfully!",
                 server_publish_pub_key=base64.b64encode(server_publish_pub_key).decode(
@@ -402,7 +425,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
         try:
             invalid_fields_response = validate_request_fields(
-                context, request, ["phone_number"]
+                context, request, response, ["phone_number"]
             )
             if invalid_fields_response:
                 return invalid_fields_response
@@ -413,6 +436,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if not entity_obj:
                 return error_response(
                     context,
+                    response,
                     f"Entity with phone number `{request.phone_number}` not found.",
                     grpc.StatusCode.NOT_FOUND,
                 )
@@ -425,6 +449,86 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         except Exception as e:
             return error_response(
                 context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
+            )
+
+    def ListEntityStoredTokens(self, request, context):
+        """Handles listing an entity's stored tokens."""
+
+        response = vault_pb2.ListEntityStoredTokenResponse
+
+        try:
+            invalid_fields_response = validate_request_fields(
+                context, request, response, ["long_lived_token"]
+            )
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            eid, llt = request.long_lived_token.split(":", 1)
+
+            entity_obj = find_entity(eid=eid)
+            if not entity_obj:
+                raise ValueError(
+                    f"Possible token tampering detected. Invalid token for eid: {eid}"
+                )
+
+            entity_crypto_metadata = load_crypto_metadata(
+                decrypt_and_decode(entity_obj.server_crypto_metadata)
+            )
+            entity_device_id_keypair = entity_crypto_metadata.device_id_keypair
+            entity_device_id_shared_key = get_shared_key(
+                os.path.join(KEYSTORE_PATH, f"{entity_obj.eid.hex}_device_id.db"),
+                entity_device_id_keypair.pnt_keystore,
+                entity_device_id_keypair.secret_key,
+                base64.b64decode(entity_obj.client_device_id_pub_key),
+            )
+
+            llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
+
+            if not llt_payload:
+                return error_response(
+                    context,
+                    response,
+                    llt_error,
+                    grpc.StatusCode.UNAUTHENTICATED,
+                )
+
+            if llt_payload["eid"] != eid:
+                raise ValueError(
+                    f"Possible token tampering detected. Invalid token for eid: {eid}"
+                )
+
+            tokens = fetch_entity_tokens(
+                entity_obj, True, ["account_identifier", "platform"]
+            )
+            for token in tokens:
+                for field in ["account_identifier"]:
+                    if field in token:
+                        token[field] = decrypt_and_decode(token[field])
+
+            return response(stored_tokens=tokens)
+
+        except ValueError as e:
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.UNAUTHENTICATED,
+                user_msg=(
+                    "Your session has expired or the token is invalid. ",
+                    "Please log in again to generate a new token.",
+                ),
+                _type="UNKNOWN",
+            )
+
+        except Exception as e:
+            return error_response(
+                context,
+                response,
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",

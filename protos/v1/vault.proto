@@ -64,10 +64,32 @@ message AuthenticateEntityResponse {
     int32 next_attempt_timestamp = 6;
 }
 
+// Request message for listing entity's stored tokens.
+message ListEntityStoredTokenRequest {
+    // The long-lived token of the authenticated entity.
+    string long_lived_token = 1;
+}
+
+// Response message for listing entity's stored tokens.
+message ListEntityStoredTokenResponse {
+    // The list of stored tokens.
+    repeated Token stored_tokens = 1;
+}
+
+// Represents a token.
+message Token {
+    // The platform associated with the token.
+    string platform = 1;
+    // The unique identifier of the account associated with the token.
+    string account_identifier = 2;
+}
+
 // Service for managing entities.
 service Entity {
     // Creates an entity.
     rpc CreateEntity (CreateEntityRequest) returns (CreateEntityResponse);
     // Authenticates an entity.
     rpc AuthenticateEntity (AuthenticateEntityRequest) returns (AuthenticateEntityResponse);
+    // Lists stored tokens for an entity.
+    rpc ListEntityStoredTokens (ListEntityStoredTokenRequest) returns (ListEntityStoredTokenResponse);
 }
