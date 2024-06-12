@@ -10,7 +10,7 @@ import vault_pb2
 import vault_pb2_grpc
 
 from src.entity import create_entity, find_entity
-from src.tokens import fetch_entity_tokens
+from src.tokens import fetch_entity_tokens, create_entity_token
 from src.crypto import generate_hmac, verify_hmac
 from src.otp_service import send_otp, verify_otp
 from src.utils import (
@@ -27,10 +27,14 @@ from src.utils import (
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
+from src.grpc_publisher_client import exchange_oauth2_code
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
 
+logging.basicConfig(
+    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
 logger = logging.getLogger(__name__)
 
 
@@ -51,11 +55,6 @@ def error_response(context, response, sys_msg, status_code, user_msg=None, _type
     """
     if not user_msg:
         user_msg = sys_msg
-
-    if isinstance(user_msg, tuple):
-        user_msg = "".join(user_msg)
-    if isinstance(sys_msg, tuple):
-        sys_msg = "".join(sys_msg)
 
     if _type == "UNKNOWN":
         logger.exception(sys_msg, exc_info=True)
@@ -159,6 +158,75 @@ def handle_pow_initialization(context, request, response):
             grpc.StatusCode.INVALID_ARGUMENT,
         )
     return success, (message, expires)
+
+
+def verify_long_lived_token(request, context, response):
+    """
+    Verifies the long-lived token from the request.
+
+    Args:
+        context: gRPC context.
+        request: gRPC request object.
+        response: gRPC response object.
+
+    Returns:
+        tuple: Tuple containing entity object, and error response.
+    """
+    eid, llt = request.long_lived_token.split(":", 1)
+
+    entity_obj = find_entity(eid=eid)
+    if not entity_obj:
+        return None, error_response(
+            context,
+            response,
+            f"Possible token tampering detected. Entity not found with eid: {eid}",
+            grpc.StatusCode.UNAUTHENTICATED,
+            user_msg=(
+                "Your session has expired or the token is invalid. "
+                "Please log in again to generate a new token."
+            ),
+            _type="UNKNOWN",
+        )
+
+    entity_crypto_metadata = load_crypto_metadata(
+        decrypt_and_decode(entity_obj.server_crypto_metadata)
+    )
+    entity_device_id_keypair = entity_crypto_metadata.device_id_keypair
+    entity_device_id_shared_key = get_shared_key(
+        os.path.join(KEYSTORE_PATH, f"{entity_obj.eid.hex}_device_id.db"),
+        entity_device_id_keypair.pnt_keystore,
+        entity_device_id_keypair.secret_key,
+        base64.b64decode(entity_obj.client_device_id_pub_key),
+    )
+
+    llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
+
+    if not llt_payload:
+        return None, error_response(
+            context,
+            response,
+            llt_error,
+            grpc.StatusCode.UNAUTHENTICATED,
+            user_msg=(
+                "Your session has expired or the token is invalid. "
+                "Please log in again to generate a new token."
+            ),
+        )
+
+    if llt_payload["eid"] != eid:
+        return None, error_response(
+            context,
+            response,
+            f"Possible token tampering detected. EID mismatch: {eid}",
+            grpc.StatusCode.UNAUTHENTICATED,
+            user_msg=(
+                "Your session has expired or the token is invalid. "
+                "Please log in again to generate a new token."
+            ),
+            _type="UNKNOWN",
+        )
+
+    return entity_obj, None
 
 
 class EntityService(vault_pb2_grpc.EntityServicer):
@@ -477,39 +545,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            eid, llt = request.long_lived_token.split(":", 1)
-
-            entity_obj = find_entity(eid=eid)
-            if not entity_obj:
-                raise ValueError(
-                    f"Possible token tampering detected. Invalid token for eid: {eid}"
-                )
-
-            entity_crypto_metadata = load_crypto_metadata(
-                decrypt_and_decode(entity_obj.server_crypto_metadata)
+            entity_obj, llt_error_response = verify_long_lived_token(
+                request, context, response
             )
-            entity_device_id_keypair = entity_crypto_metadata.device_id_keypair
-            entity_device_id_shared_key = get_shared_key(
-                os.path.join(KEYSTORE_PATH, f"{entity_obj.eid.hex}_device_id.db"),
-                entity_device_id_keypair.pnt_keystore,
-                entity_device_id_keypair.secret_key,
-                base64.b64decode(entity_obj.client_device_id_pub_key),
-            )
-
-            llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
-
-            if not llt_payload:
-                return error_response(
-                    context,
-                    response,
-                    llt_error,
-                    grpc.StatusCode.UNAUTHENTICATED,
-                )
-
-            if llt_payload["eid"] != eid:
-                raise ValueError(
-                    f"Possible token tampering detected. Invalid token for eid: {eid}"
-                )
+            if llt_error_response:
+                return llt_error_response
 
             tokens = fetch_entity_tokens(
                 entity_obj, True, ["account_identifier", "platform"]
@@ -525,17 +565,66 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 stored_tokens=tokens, message="Tokens retrieved successfully."
             )
 
-        except ValueError as e:
+        except Exception as e:
             return error_response(
                 context,
                 response,
                 e,
-                grpc.StatusCode.UNAUTHENTICATED,
-                user_msg=(
-                    "Your session has expired or the token is invalid. ",
-                    "Please log in again to generate a new token.",
-                ),
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
                 _type="UNKNOWN",
+            )
+
+    def StoreEntityToken(self, request, context):
+        """Handles storing tokens for an entiry"""
+
+        response = vault_pb2.StoreEntityTokenResponse
+
+        try:
+            invalid_fields_response = validate_request_fields(
+                context,
+                request,
+                response,
+                ["long_lived_token", "authorization_code", "platform", "protocol"],
+            )
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            entity_obj, llt_error_response = verify_long_lived_token(
+                request, context, response
+            )
+            if llt_error_response:
+                return llt_error_response
+
+            if request.protocol.lower() == "oauth2":
+                oauth2_response, oauth2_error = exchange_oauth2_code(
+                    request.platform,
+                    request.authorization_code,
+                    getattr(request, "code_verifier"),
+                )
+
+                if oauth2_error:
+                    return response(message=oauth2_error, success=False)
+
+                new_token = {
+                    "entity": entity_obj,
+                    "platform": request.platform,
+                    "account_identifier_hash": "id",
+                    "account_identifier": "id",
+                    "account_tokens": encrypt_and_encode(oauth2_response.token),
+                }
+                create_entity_token(**new_token)
+
+            logger.info("Successfully stored tokens for %s", entity_obj.eid)
+
+            return response(message="Token stored successfully.", success=True)
+
+        except NotImplementedError as e:
+            return error_response(
+                context,
+                response,
+                str(e),
+                grpc.StatusCode.UNIMPLEMENTED,
             )
 
         except Exception as e:

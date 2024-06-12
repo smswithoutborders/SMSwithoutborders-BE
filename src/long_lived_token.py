@@ -13,7 +13,9 @@ from jwt.utils import get_int_from_datetime
 from src.crypto import encrypt_fernet
 from src.utils import convert_to_fernet_key
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
 logger = logging.getLogger(__name__)
 
 
