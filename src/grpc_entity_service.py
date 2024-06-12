@@ -26,6 +26,7 @@ from src.utils import (
     decrypt_and_decode,
 )
 from src.long_lived_token import generate_llt, verify_llt
+from src.device_id import compute_device_id
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
@@ -216,6 +217,9 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 "phone_number_hash": phone_number_hash,
                 "password_hash": password_hash,
                 "country_code": country_code_ciphertext_b64,
+                "device_id": compute_device_id(
+                    shared_key, request.phone_number, request.client_device_id_pub_key
+                ),
                 "client_publish_pub_key": request.client_publish_pub_key,
                 "client_device_id_pub_key": request.client_device_id_pub_key,
                 "server_crypto_metadata": crypto_metadata_ciphertext_b64,
@@ -346,6 +350,8 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 return pow_response
 
             message, expires = pow_response
+            entity_obj.device_id = None
+            entity_obj.save()
 
             return response(
                 requires_ownership_proof=True,
@@ -407,6 +413,9 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             long_lived_token = generate_llt(eid, shared_key)
 
+            entity_obj.device_id = compute_device_id(
+                shared_key, request.phone_number, request.client_device_id_pub_key
+            )
             entity_obj.client_publish_pub_key = request.client_publish_pub_key
             entity_obj.client_device_id_pub_key = request.client_device_id_pub_key
             entity_obj.server_crypto_metadata = crypto_metadata_ciphertext_b64

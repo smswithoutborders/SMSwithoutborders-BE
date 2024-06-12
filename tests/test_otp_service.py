@@ -10,6 +10,7 @@ from src.utils import create_tables, set_configs
 def set_testing_mode():
     """Set the application mode to testing."""
     set_configs("MODE", "testing")
+    set_configs("MOCK_OTP", True)
 
 
 @pytest.fixture(autouse=True)

@@ -14,7 +14,7 @@ TWILIO_ACCOUNT_SID = get_configs("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = get_configs("TWILIO_AUTH_TOKEN")
 TWILIO_SERVICE_SID = get_configs("TWILIO_SERVICE_SID")
 MOCK_OTP = get_configs("MOCK_OTP")
-MOCK_OTP = True if MOCK_OTP and MOCK_OTP.lower() == "true" else False
+MOCK_OTP = MOCK_OTP.lower() == "true" if MOCK_OTP is not None else False
 
 RATE_LIMIT_WINDOWS = [
     {"duration": 2, "count": 1},  # 2 minute window
