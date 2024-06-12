@@ -7,8 +7,10 @@ from twilio.base.exceptions import TwilioRestException
 from src.db_models import OTPRateLimit
 from src.utils import get_configs
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
+logger = logging.getLogger("[OTP Service]")
 
 TWILIO_ACCOUNT_SID = get_configs("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = get_configs("TWILIO_AUTH_TOKEN")

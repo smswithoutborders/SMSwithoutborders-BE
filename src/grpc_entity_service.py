@@ -1,6 +1,7 @@
-"""GRPC Entity Service"""
+"""gRPC Entity Service"""
 
 import os
+import json
 import logging
 import base64
 
@@ -35,7 +36,7 @@ KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("[gRPC Entity Service]")
 
 
 def error_response(context, response, sys_msg, status_code, user_msg=None, _type=None):
@@ -606,11 +607,17 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 if oauth2_error:
                     return response(message=oauth2_error, success=False)
 
+                profile_data = json.loads(oauth2_response.profile)
+                account_identifier = profile_data.get("email") or profile_data.get(
+                    "username"
+                )
                 new_token = {
                     "entity": entity_obj,
                     "platform": request.platform,
-                    "account_identifier_hash": "id",
-                    "account_identifier": "id",
+                    "account_identifier_hash": generate_hmac(
+                        HASHING_KEY, account_identifier
+                    ),
+                    "account_identifier": encrypt_and_encode(account_identifier),
                     "account_tokens": encrypt_and_encode(oauth2_response.token),
                 }
                 create_entity_token(**new_token)

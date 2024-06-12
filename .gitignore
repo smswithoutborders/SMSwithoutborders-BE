@@ -142,3 +142,9 @@ dmypy.json
 *.sqlite
 *.sqlite3
 *.db
+
+# Ignore all .proto files
+*.proto
+
+# Except for vault.proto
+!vault.proto

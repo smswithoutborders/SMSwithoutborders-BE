@@ -14,7 +14,9 @@ from smswithoutborders_libsig.keypairs import x25519
 
 from src.crypto import encrypt_aes, decrypt_aes
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
 logger = logging.getLogger(__name__)
 
 

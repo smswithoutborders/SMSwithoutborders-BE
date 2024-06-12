@@ -1,4 +1,4 @@
-"""gRPC Publisher Client"""
+"""Publisher gRPC Client"""
 
 import logging
 import json
@@ -12,7 +12,7 @@ from src.utils import get_configs
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("[Publisher gRPC Client]")
 
 
 def get_channel():
@@ -28,6 +28,8 @@ def get_channel():
     server_certificate = get_configs("SSL_CERTIFICATE")
     private_key = get_configs("SSL_KEY")
 
+    logger.info("Connecting to publisher gRPC server at %s:%s", hostname, port)
+
     if mode == "production":
         with open(server_certificate, "rb") as cert_file, open(
             private_key, "rb"
@@ -37,6 +39,7 @@ def get_channel():
             )
         return grpc.secure_channel(f"{hostname}:{secure_port}", credentials)
 
+    logger.warning("Using insecure channel for gRPC communication")
     return grpc.insecure_channel(f"{hostname}:{port}")
 
 
@@ -68,6 +71,7 @@ def get_platform_creds(platform):
     return {
         "auth_uri": oauth2_credentials.get("auth_uri", ""),
         "token_uri": oauth2_credentials.get("token_uri", ""),
+        "userinfo_uri": oauth2_credentials.get("userinfo_uri", ""),
         "client_id": oauth2_credentials.get("client_id", ""),
         "client_secret": oauth2_credentials.get("client_secret", ""),
         "redirect_uri": redirect_uri,
@@ -109,6 +113,7 @@ def load_oauth2_credentials(file_path):
             data = json.load(file)
             credentials = find_credentials_recursive(data)
             if credentials:
+                logger.info("Loaded OAuth2 credentials from %s", file_path)
                 return credentials
 
             logger.warning("OAuth2 credentials not found in '%s'", file_path)
@@ -119,8 +124,6 @@ def load_oauth2_credentials(file_path):
         logger.error(
             "Error decoding JSON from OAuth2 credentials file: '%s'", file_path
         )
-    except Exception as error:
-        logger.error("Error decoding JSON from OAuth2 credentials file: '%s'", error)
     return {}
 
 
@@ -148,9 +151,12 @@ def exchange_oauth2_code(platform, authorization_code, code_verifier=None):
             client_id=platform_creds["client_id"],
             client_secret=platform_creds["client_secret"],
             token_endpoint=platform_creds["token_uri"],
+            userinfo_endpoint=platform_creds["userinfo_uri"],
         )
 
+        logger.debug("Exchanging OAuth2 code for platform '%s'", platform)
         response = stub.ExchangeOAuth2Code(request)
+        logger.info("OAuth2 code exchanged successfully for platform '%s'", platform)
         return (response, None)
     except grpc.RpcError as e:
         if e.code() == grpc.StatusCode.INVALID_ARGUMENT:
