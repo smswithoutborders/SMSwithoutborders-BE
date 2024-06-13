@@ -11,7 +11,10 @@ from settings import Configurations
 from src.utils import get_configs
 from src.grpc_entity_service import EntityService
 
-logger = logging.getLogger("[GRPC SERVER]")
+logging.basicConfig(
+    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
+logger = logging.getLogger("[Vault gRPC Server]")
 
 
 def serve():
@@ -74,7 +77,9 @@ def serve():
             raise
     else:
         server.add_insecure_port(f"{hostname}:{port}")
-        logger.info("The server is running in insecure mode at %s:%s", hostname, port)
+        logger.warning(
+            "The server is running in insecure mode at %s:%s", hostname, port
+        )
 
     server.start()
 
@@ -87,5 +92,4 @@ def serve():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     serve()

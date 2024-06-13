@@ -14,7 +14,9 @@ from smswithoutborders_libsig.keypairs import x25519
 
 from src.crypto import encrypt_aes, decrypt_aes
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
 logger = logging.getLogger(__name__)
 
 
@@ -130,23 +132,31 @@ def ensure_database_exists(host, user, password, database_name):
     return decorator
 
 
-def get_configs(config_name: str, strict: bool = False) -> str:
+def get_configs(config_name, strict=False, default_value=None):
     """
     Retrieves the value of a configuration from the environment variables.
 
     Args:
         config_name (str): The name of the configuration to retrieve.
-        strict (bool): If True, raises an error if the configuration is not found. Default is False.
+        strict (bool): If True, raises an error if the configuration
+            is not found. Default is False.
+        default_value (str): The default value to return if the configuration
+            is not found and strict is False. Default is None.
 
     Returns:
-        str: The value of the configuration, or None if not found and strict is False.
+        str: The value of the configuration, or default_value if not found and s
+            trict is False.
 
     Raises:
         KeyError: If the configuration is not found and strict is True.
         ValueError: If the configuration value is empty and strict is True.
     """
     try:
-        value = os.environ[config_name] if strict else os.environ.get(config_name)
+        value = (
+            os.environ[config_name]
+            if strict
+            else os.environ.get(config_name) or default_value
+        )
         if strict and (value is None or value.strip() == ""):
             raise ValueError(f"Configuration '{config_name}' is missing or empty.")
         return value

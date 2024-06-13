@@ -6,6 +6,9 @@ from playhouse.shortcuts import ReconnectMixin
 from src.utils import ensure_database_exists, get_configs
 from settings import Configurations
 
+logging.basicConfig(
+    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
 logger = logging.getLogger(__name__)
 
 DATABASE_CONFIGS = {
