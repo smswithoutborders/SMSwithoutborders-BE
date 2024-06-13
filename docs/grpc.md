@@ -13,6 +13,7 @@
     - [Initiate Authentication](#initiate-authentication)
     - [Complete Authentication](#complete-authentication)
   - [List an Entity's Stored Tokens](#list-an-entitys-stored-tokens)
+  - [Store an Entity's Token](#store-an-entitys-token)
 
 ## Download Protocol Buffer File
 
@@ -507,5 +508,93 @@ localhost:6000 vault.v1.Entity/ListEntityStoredTokens
 		}
 	],
 	"message": "Tokens retrieved successfully."
+}
+```
+
+### Store an Entity's Token
+
+This step involves storing tokens securely for the authenticated entity.
+
+---
+
+> `request` **StoreEntityTokenRequest**
+
+> [!IMPORTANT]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
+
+| Field              | Type   | Description                                                         |
+| ------------------ | ------ | ------------------------------------------------------------------- |
+| long_lived_token   | string | The long-lived token for the authenticated session.                 |
+| authorization_code | string | The authorization code obtained from the OAuth2 flow.               |
+| platform           | string | The platform from which the token is being issued. (e.g., "gmail"). |
+| protocol           | string | The protocol used for authentication (e.g., "oauth2").              |
+| code_verifier      | string | Optional. The code verifier used in OAuth2 PKCE flows.              |
+
+---
+
+> `response` **StoreEntityTokenResponse**
+
+> [!IMPORTANT]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
+
+| Field   | Type    | Description                                |
+| ------- | ------- | ------------------------------------------ |
+| message | string  | A response message from the server.        |
+| success | boolean | Indicates if the operation was successful. |
+
+---
+
+> `method` **StoreEntityToken**
+
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+---
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d @ \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/StoreEntityToken
+```
+
+---
+
+**Sample payload.json**
+
+```json
+{
+	"long_lived_token": "long_lived_token",
+	"authorization_code": "oauth2_code",
+	"platform": "gmail",
+	"protocol": "oauth2"
+}
+```
+
+---
+
+**Sample response**
+
+```json
+{
+	"message": "Token stored successfully.",
+	"success": true
 }
 ```
