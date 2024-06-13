@@ -74,5 +74,4 @@ def verify_llt(llt, key):
         return payload, None
 
     except JWTDecodeError as error:
-        logger.error("Unable to decode the token %s, error: %s", llt, error)
-        return None, f"Failed to verify LLT. Reason {str(error).replace('JWT', 'LLT')}."
+        return None, error

@@ -553,7 +553,7 @@ This step involves storing tokens securely for the authenticated entity.
 >
 > You can use the publisher's [Get Authorization URL](#) function to help
 > generate the URL for you, or utilize other tools that can construct the URL.
->
+
 > [!TIP]
 >
 > The URL parameters should be Base64URL encoded. You can easily encode your
