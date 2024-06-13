@@ -25,20 +25,16 @@ def get_channel():
     hostname = get_configs("PUBLISHER_GRPC_HOST")
     port = get_configs("PUBLISHER_GRPC_PORT")
     secure_port = get_configs("PUBLISHER_GRPC_SSL_PORT")
-    server_certificate = get_configs("SSL_CERTIFICATE")
-    private_key = get_configs("SSL_KEY")
-
-    logger.info("Connecting to publisher gRPC server at %s:%s", hostname, port)
 
     if mode == "production":
-        with open(server_certificate, "rb") as cert_file, open(
-            private_key, "rb"
-        ) as key_file:
-            credentials = grpc.ssl_channel_credentials(
-                root_certificates=cert_file.read(), private_key=key_file.read()
-            )
+        logger.info(
+            "Connecting to publisher gRPC server at %s:%s", hostname, secure_port
+        )
+        credentials = grpc.ssl_channel_credentials()
+        logger.info("Using secure channel for gRPC communication")
         return grpc.secure_channel(f"{hostname}:{secure_port}", credentials)
 
+    logger.info("Connecting to publisher gRPC server at %s:%s", hostname, port)
     logger.warning("Using insecure channel for gRPC communication")
     return grpc.insecure_channel(f"{hostname}:{port}")
 
@@ -140,24 +136,28 @@ def exchange_oauth2_code(platform, authorization_code, code_verifier=None):
     """
     try:
         channel = get_channel()
-        stub = publisher_pb2_grpc.PublisherStub(channel)
 
-        platform_creds = get_platform_creds(platform)
+        with channel as conn:
+            stub = publisher_pb2_grpc.PublisherStub(conn)
 
-        request = publisher_pb2.ExchangeOAuth2CodeRequest(
-            authorization_code=authorization_code,
-            code_verifier=code_verifier,
-            redirect_uri=platform_creds["redirect_uri"],
-            client_id=platform_creds["client_id"],
-            client_secret=platform_creds["client_secret"],
-            token_endpoint=platform_creds["token_uri"],
-            userinfo_endpoint=platform_creds["userinfo_uri"],
-        )
+            platform_creds = get_platform_creds(platform)
 
-        logger.debug("Exchanging OAuth2 code for platform '%s'", platform)
-        response = stub.ExchangeOAuth2Code(request)
-        logger.info("OAuth2 code exchanged successfully for platform '%s'", platform)
-        return (response, None)
+            request = publisher_pb2.ExchangeOAuth2CodeRequest(
+                authorization_code=authorization_code,
+                code_verifier=code_verifier,
+                redirect_uri=platform_creds["redirect_uri"],
+                client_id=platform_creds["client_id"],
+                client_secret=platform_creds["client_secret"],
+                token_endpoint=platform_creds["token_uri"],
+                userinfo_endpoint=platform_creds["userinfo_uri"],
+            )
+
+            logger.debug("Exchanging OAuth2 code for platform '%s'", platform)
+            response = stub.ExchangeOAuth2Code(request)
+            logger.info(
+                "OAuth2 code exchanged successfully for platform '%s'", platform
+            )
+            return (response, None)
     except grpc.RpcError as e:
         if e.code() == grpc.StatusCode.INVALID_ARGUMENT:
             logger.error(e)
