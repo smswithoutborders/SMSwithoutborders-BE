@@ -523,20 +523,41 @@ This step involves storing tokens securely for the authenticated entity.
 > For Gmail and Twitter offline access, use the following recommended
 > parameters:
 >
-> **Gmail:**
+> #### Gmail:
 >
-> - **scope:** >
->   `openid https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email`
+> - **scope:**
+>   - `openid`
+>   - `https://www.googleapis.com/auth/gmail.send`
+>   - `https://www.googleapis.com/auth/userinfo.profile`
+>   - `https://www.googleapis.com/auth/userinfo.email`
 > - **access_type:** `offline`
 > - **prompt:** `consent`
 >
-> **Twitter:**
+> A well-generated Gmail authorization URL will look something like this:
 >
-> - **scope:** `tweet.read tweet.write users.read offline.access`
+> ```bash
+> https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=your_application_client_id&redirect_uri=your_application_redirect_uri&scope=openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile&state=random_state_string&prompt=consent&access_type=offline
+> ```
+>
+> Ensure to replace `your_application_client_id` and
+> `your_application_redirect_uri` with your actual client ID and redirect URI.
+>
+> #### Twitter:
+>
+> - **scope:**
+>   - `tweet.read`
+>   - `tweet.write`
+>   - `users.read`
+>   - `offline.access`
 > - **prompt:** `consent`
 >
 > You can use the publisher's [Get Authorization URL](#) function to help
-> generate the URL for you, or use other tools that can construct the URL.
+> generate the URL for you, or utilize other tools that can construct the URL.
+>
+> [!TIP]
+>
+> The URL parameters should be Base64URL encoded. You can easily encode your
+> parameters using [Base64URL Encoder](https://www.base64url.com/).
 
 ---
 
