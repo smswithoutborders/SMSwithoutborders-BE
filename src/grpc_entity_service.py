@@ -28,10 +28,10 @@ from src.utils import (
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
-from src.grpc_publisher_client import exchange_oauth2_code
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
+SUPPORTED_PLATFORMS = ("gmail",)
 
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -173,20 +173,29 @@ def verify_long_lived_token(request, context, response):
     Returns:
         tuple: Tuple containing entity object, and error response.
     """
-    eid, llt = request.long_lived_token.split(":", 1)
 
-    entity_obj = find_entity(eid=eid)
-    if not entity_obj:
-        return None, error_response(
+    def create_error_response(error_msg, error_detail=None):
+        return error_response(
             context,
             response,
-            f"Possible token tampering detected. Entity not found with eid: {eid}",
+            error_msg,
             grpc.StatusCode.UNAUTHENTICATED,
             user_msg=(
                 "Your session has expired or the token is invalid. "
                 "Please log in again to generate a new token."
             ),
-            _type="UNKNOWN",
+            _type=error_detail,
+        )
+
+    try:
+        eid, llt = request.long_lived_token.split(":", 1)
+    except ValueError as err:
+        return None, create_error_response(err, "UNKNOWN")
+
+    entity_obj = find_entity(eid=eid)
+    if not entity_obj:
+        return None, create_error_response(
+            f"Possible token tampering detected. Entity not found with eid: {eid}"
         )
 
     entity_crypto_metadata = load_crypto_metadata(
@@ -203,28 +212,11 @@ def verify_long_lived_token(request, context, response):
     llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
 
     if not llt_payload:
-        return None, error_response(
-            context,
-            response,
-            llt_error,
-            grpc.StatusCode.UNAUTHENTICATED,
-            user_msg=(
-                "Your session has expired or the token is invalid. "
-                "Please log in again to generate a new token."
-            ),
-        )
+        return None, create_error_response(llt_error, "UNKNOWN")
 
-    if llt_payload["eid"] != eid:
-        return None, error_response(
-            context,
-            response,
-            f"Possible token tampering detected. EID mismatch: {eid}",
-            grpc.StatusCode.UNAUTHENTICATED,
-            user_msg=(
-                "Your session has expired or the token is invalid. "
-                "Please log in again to generate a new token."
-            ),
-            _type="UNKNOWN",
+    if llt_payload.get("eid") != eid:
+        return None, create_error_response(
+            f"Possible token tampering detected. EID mismatch: {eid}"
         )
 
     return entity_obj, None
@@ -577,7 +569,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
     def StoreEntityToken(self, request, context):
-        """Handles storing tokens for an entiry"""
+        """Handles storing tokens for an entity"""
 
         response = vault_pb2.StoreEntityTokenResponse
 
@@ -586,7 +578,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 context,
                 request,
                 response,
-                ["long_lived_token", "authorization_code", "platform", "protocol"],
+                ["long_lived_token", "token", "platform", "account_identifier"],
             )
             if invalid_fields_response:
                 return invalid_fields_response
@@ -597,30 +589,38 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if llt_error_response:
                 return llt_error_response
 
-            if request.protocol.lower() == "oauth2":
-                oauth2_response, oauth2_error = exchange_oauth2_code(
-                    request.platform,
-                    request.authorization_code,
-                    getattr(request, "code_verifier"),
+            if request.platform.lower() not in SUPPORTED_PLATFORMS:
+                raise NotImplementedError(
+                    f"The protocol '{request.platform}' is currently not supported. "
+                    "Please contact the developers for more information on when "
+                    "this platform will be implemented."
                 )
 
-                if oauth2_error:
-                    return response(message=oauth2_error, success=False)
-
-                profile_data = json.loads(oauth2_response.profile)
-                account_identifier = profile_data.get("email") or profile_data.get(
-                    "username"
+            if fetch_entity_tokens(
+                entity=entity_obj,
+                account_identifier_hash=generate_hmac(
+                    HASHING_KEY, request.account_identifier
+                ),
+                platform=request.platform,
+            ):
+                return error_response(
+                    context,
+                    response,
+                    "Entity already has a token associated with account "
+                    f"identifier {request.account_identifier} for {request.platform}",
+                    grpc.StatusCode.ALREADY_EXISTS,
                 )
-                new_token = {
-                    "entity": entity_obj,
-                    "platform": request.platform,
-                    "account_identifier_hash": generate_hmac(
-                        HASHING_KEY, account_identifier
-                    ),
-                    "account_identifier": encrypt_and_encode(account_identifier),
-                    "account_tokens": encrypt_and_encode(oauth2_response.token),
-                }
-                create_entity_token(**new_token)
+
+            new_token = {
+                "entity": entity_obj,
+                "platform": request.platform,
+                "account_identifier_hash": generate_hmac(
+                    HASHING_KEY, request.account_identifier
+                ),
+                "account_identifier": encrypt_and_encode(request.account_identifier),
+                "account_tokens": encrypt_and_encode(request.token),
+            }
+            create_entity_token(**new_token)
 
             logger.info("Successfully stored tokens for %s", entity_obj.eid)
 

@@ -1,7 +1,4 @@
 python=python3
-PROTO_URL=https://raw.githubusercontent.com/smswithoutborders/SMSWithoutBorders-Publisher/feature/grpc-api/protos/v1/publisher.proto
-PROTO_DIR=protos/v1
-PROTO_FILE=$(PROTO_DIR)/publisher.proto
 
 define log_message
 	@echo "[$(shell date +'%Y-%m-%d %H:%M:%S')] - $1"
@@ -65,8 +62,3 @@ grpc-compile:
 		./protos/v1/*.proto
 	$(call log_message,INFO - gRPC Compilation complete!)
 
-download-publisher-proto:
-	$(call log_message,INFO - Downloading publisher.proto ...)
-	@mkdir -p $(PROTO_DIR)
-	@curl -o $(PROTO_FILE) -L $(PROTO_URL)
-	$(call log_message,INFO - Publisher.proto downloaded successfully!)

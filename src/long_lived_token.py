@@ -44,7 +44,6 @@ def generate_llt(eid, key):
     )
 
     llt = token_obj.encode(payload, signing_key, alg="HS256")
-
     llt_ciphertext = encrypt_fernet(convert_to_fernet_key(key), f"{eid}:{llt}")
 
     logger.info("Successfully generated long-lived token for %s", eid)
@@ -74,5 +73,4 @@ def verify_llt(llt, key):
         return payload, None
 
     except JWTDecodeError as error:
-        logger.error("Unable to decode the token %s, error: %s", llt, error)
-        return None, f"Failed to verify LLT. Reason {str(error).replace('JWT', 'LLT')}."
+        return None, error

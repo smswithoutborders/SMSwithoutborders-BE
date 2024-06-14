@@ -517,29 +517,6 @@ This step involves storing tokens securely for the authenticated entity.
 
 ---
 
-> [!NOTE]
->
-> Ensure you have generated your authorization URL before using this function.
-> For Gmail and Twitter offline access, use the following recommended
-> parameters:
->
-> **Gmail:**
->
-> - **scope:** >
->   `openid https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email`
-> - **access_type:** `offline`
-> - **prompt:** `consent`
->
-> **Twitter:**
->
-> - **scope:** `tweet.read tweet.write users.read offline.access`
-> - **prompt:** `consent`
->
-> You can use the publisher's [Get Authorization URL](#) function to help
-> generate the URL for you, or use other tools that can construct the URL.
-
----
-
 > `request` **StoreEntityTokenRequest**
 
 > [!IMPORTANT]
@@ -550,9 +527,9 @@ This step involves storing tokens securely for the authenticated entity.
 | Field              | Type   | Description                                                         |
 | ------------------ | ------ | ------------------------------------------------------------------- |
 | long_lived_token   | string | The long-lived token for the authenticated session.                 |
-| authorization_code | string | The authorization code obtained from the OAuth2 flow.               |
+| token              | string | The token to be stored.                                             |
 | platform           | string | The platform from which the token is being issued. (e.g., "gmail"). |
-| protocol           | string | The protocol used for authentication (e.g., "oauth2").              |
+| account_identifier | string | The identifier of the account associated with the token.            |
 
 Optional fields:
 

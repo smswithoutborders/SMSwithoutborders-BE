@@ -45,13 +45,15 @@ def create_entity_token(
 
 def fetch_entity_tokens(entity, fetch_all=False, fields=None, **search_criteria):
     """
-    Fetch tokens associated with the given entity based on the provided search criteria,
-    or retrieve all tokens associated with the entity if fetch_all is set to True.
+    Fetch tokens associated with the given entity based on 
+    the provided search criteria, or retrieve all tokens 
+    associated with the entity if fetch_all is set to True.
 
     Args:
         entity (Entity): The entity associated with the tokens.
-        fetch_all (bool, optional): If True, fetch all tokens associated with the entity
-            regardless of search criteria. If False (default), fetch tokens based on search criteria.
+        fetch_all (bool, optional): If True, fetch all tokens 
+            associated with the entity regardless of search criteria. 
+            If False (default), fetch tokens based on search criteria.
         fields (list[str] or None, optional): Optional list of fields to select.
         **search_criteria: Additional keyword arguments representing the fields
             and their values to search for.
