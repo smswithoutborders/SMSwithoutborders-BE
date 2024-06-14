@@ -90,14 +90,12 @@ message Token {
 message StoreEntityTokenRequest {
     // The long-lived token of the authenticated entity.
     string long_lived_token = 1;
-    // The authorization code for the token.
-    string authorization_code = 2;
-    // The code verifier for the token.
-    string code_verifier = 3;
+    // The OAuth2 token to be stored.
+    string token = 2;
     // The platform associated with the token.
-    string platform = 4;
-    // The protocol used for the request.
-    string protocol = 5;
+    string platform = 3;
+    // The identifier of the account associated with the token.
+    string account_identifier = 4;
 }
 
 // Response message for storing an entity's token.

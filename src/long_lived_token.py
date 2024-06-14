@@ -44,7 +44,6 @@ def generate_llt(eid, key):
     )
 
     llt = token_obj.encode(payload, signing_key, alg="HS256")
-
     llt_ciphertext = encrypt_fernet(convert_to_fernet_key(key), f"{eid}:{llt}")
 
     logger.info("Successfully generated long-lived token for %s", eid)

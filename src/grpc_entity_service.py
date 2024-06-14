@@ -28,11 +28,10 @@ from src.utils import (
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
-from src.grpc_publisher_client import exchange_oauth2_code
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
-SUPPORTED_PROTOCOLS = ("oauth2",)
+SUPPORTED_PLATFORMS = ("gmail",)
 
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -570,7 +569,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
     def StoreEntityToken(self, request, context):
-        """Handles storing tokens for an entiry"""
+        """Handles storing tokens for an entity"""
 
         response = vault_pb2.StoreEntityTokenResponse
 
@@ -579,7 +578,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 context,
                 request,
                 response,
-                ["long_lived_token", "authorization_code", "platform", "protocol"],
+                ["long_lived_token", "token", "platform", "account_identifier"],
             )
             if invalid_fields_response:
                 return invalid_fields_response
@@ -590,34 +589,36 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if llt_error_response:
                 return llt_error_response
 
-            if request.protocol.lower() not in SUPPORTED_PROTOCOLS:
+            if request.platform.lower() not in SUPPORTED_PLATFORMS:
                 raise NotImplementedError(
-                    f"The protocol '{request.protocol}' is currently not supported. "
+                    f"The protocol '{request.platform}' is currently not supported. "
                     "Please contact the developers for more information on when "
                     "this platform will be implemented."
                 )
 
-            oauth2_response, oauth2_error = exchange_oauth2_code(
-                request.platform,
-                request.authorization_code,
-                getattr(request, "code_verifier"),
-            )
+            if fetch_entity_tokens(
+                entity=entity_obj,
+                account_identifier_hash=generate_hmac(
+                    HASHING_KEY, request.account_identifier
+                ),
+                platform=request.platform,
+            ):
+                return error_response(
+                    context,
+                    response,
+                    "Entity already has a token associated with account "
+                    f"identifier {request.account_identifier} for {request.platform}",
+                    grpc.StatusCode.ALREADY_EXISTS,
+                )
 
-            if oauth2_error:
-                return response(message=oauth2_error, success=False)
-
-            profile_data = json.loads(oauth2_response.profile)
-            account_identifier = profile_data.get("email") or profile_data.get(
-                "username"
-            )
             new_token = {
                 "entity": entity_obj,
                 "platform": request.platform,
                 "account_identifier_hash": generate_hmac(
-                    HASHING_KEY, account_identifier
+                    HASHING_KEY, request.account_identifier
                 ),
-                "account_identifier": encrypt_and_encode(account_identifier),
-                "account_tokens": encrypt_and_encode(oauth2_response.token),
+                "account_identifier": encrypt_and_encode(request.account_identifier),
+                "account_tokens": encrypt_and_encode(request.token),
             }
             create_entity_token(**new_token)
 
