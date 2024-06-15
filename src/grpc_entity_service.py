@@ -6,6 +6,8 @@ import logging
 import base64
 
 import grpc
+from smswithoutborders_libsig.ratchets import States
+from smswithoutborders_libsig.keypairs import x25519
 
 import vault_pb2
 import vault_pb2_grpc
@@ -28,6 +30,7 @@ from src.utils import (
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
+from src.relaysms_payload import decode_relay_sms_payload, initialize_ratchet
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
@@ -284,6 +287,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 "client_publish_pub_key": request.client_publish_pub_key,
                 "client_device_id_pub_key": request.client_device_id_pub_key,
                 "server_crypto_metadata": crypto_metadata_ciphertext_b64,
+                "server_state": States(),
             }
 
             create_entity(**fields)
@@ -480,6 +484,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             entity_obj.client_publish_pub_key = request.client_publish_pub_key
             entity_obj.client_device_id_pub_key = request.client_device_id_pub_key
             entity_obj.server_crypto_metadata = crypto_metadata_ciphertext_b64
+            entity_obj.server_state = States()
             entity_obj.save()
 
             return response(
@@ -632,6 +637,90 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 response,
                 str(e),
                 grpc.StatusCode.UNIMPLEMENTED,
+            )
+
+        except Exception as e:
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
+            )
+
+    def GetEntityAccessTokenAndDecryptPayload(self, request, context):
+        """Handles getting an entity's access token and decrypting payload"""
+
+        response = vault_pb2.GetEntityAccessTokenAndDecryptPayloadResponse
+
+        try:
+            invalid_fields_response = validate_request_fields(
+                context,
+                request,
+                response,
+                ["device_id", "payload_ciphertext"],
+            )
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            entity_obj = find_entity(device_id=request.device_id)
+
+            if not entity_obj:
+                return error_response(
+                    context,
+                    response,
+                    f"Invalid device ID '{request.device_id}'. "
+                    "Please log in again to obtain a valid device ID.",
+                    grpc.StatusCode.UNAUTHENTICATED,
+                )
+
+            entity_crypto_metadata = load_crypto_metadata(
+                decrypt_and_decode(entity_obj.server_crypto_metadata)
+            )
+            entity_publish_keypair = entity_crypto_metadata.publish_keypair
+            entity_publish_keypair_obj = x25519(
+                os.path.join(KEYSTORE_PATH, f"{entity_obj.eid.hex}_publish.db"),
+                entity_publish_keypair.pnt_keystore,
+                entity_publish_keypair.secret_key,
+            )
+            entity_publish_shared_key = entity_publish_keypair_obj.agree(
+                base64.b64decode(entity_obj.client_publish_pub_key)
+            )
+
+            header, content_ciphertext = decode_relay_sms_payload(
+                request.payload_ciphertext
+            )
+
+            state = States.deserialize(entity_obj.server_state)
+
+            content_plaintext = initialize_ratchet(
+                state,
+                entity_publish_shared_key,
+                entity_publish_keypair_obj,
+                header,
+                content_ciphertext,
+                base64.b64decode(entity_obj.client_publish_pub_key),
+            )
+
+            tokens = fetch_entity_tokens(
+                entity=entity_obj,
+                fields=["account_tokens"],
+                platform=request.platform,
+            )
+            for token in tokens:
+                for field in ["account_tokens"]:
+                    if field in token:
+                        token[field] = decrypt_and_decode(token[field])
+
+            entity_obj.server_state = state.serialize()
+            entity_obj.save()
+
+            return response(
+                message="Successfully fetched tokens and decrypted payload",
+                success=True,
+                payload_plaintext=content_plaintext,
+                token=json.loads(tokens[0]),
             )
 
         except Exception as e:

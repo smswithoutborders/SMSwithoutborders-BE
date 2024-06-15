@@ -9,6 +9,7 @@ from peewee import (
     IntegerField,
     UUIDField,
     ForeignKeyField,
+    BlobField,
 )
 from src.db import connect
 from src.utils import create_tables
@@ -28,6 +29,7 @@ class Entity(Model):
     client_publish_pub_key = TextField(null=True)
     client_device_id_pub_key = TextField(null=True)
     server_crypto_metadata = TextField(null=True)
+    server_state = BlobField(null=True)
     date_created = DateTimeField(default=datetime.datetime.now)
 
     class Meta:
@@ -35,7 +37,16 @@ class Entity(Model):
 
         database = database
         table_name = "entities"
-        indexes = ((("phone_number_hash",), True),)
+        indexes = (
+            (
+                ("phone_number_hash",),
+                True,
+            ),
+            (
+                ("device_id",),
+                True,
+            ),
+        )
 
 
 class OTPRateLimit(Model):

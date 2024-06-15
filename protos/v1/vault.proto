@@ -106,6 +106,28 @@ message StoreEntityTokenResponse {
     bool success = 2;
 }
 
+// Request message for getting entity access token and decrypting payload.
+message GetEntityAccessTokenAndDecryptPayloadRequest {
+    // Device ID for identifying the requesting device.
+    string device_id = 1;
+    // Encrypted payload that needs to be decrypted.
+    string payload_ciphertext = 2;
+}
+
+// Response message for getting entity access token and decrypting payload.
+message GetEntityAccessTokenAndDecryptPayloadResponse {
+    // Entity access token obtained from the operation.
+    string token = 1;
+    // Decrypted plaintext payload.
+    string payload_plaintext = 2;
+    // A response message.
+    string message = 3;
+    // Indicates whether the operation was successful.
+    bool success = 4;
+    // The platform associated with the token.
+    string platform = 5;
+}
+
 // Service for managing entities.
 service Entity {
     // Creates an entity.
@@ -116,4 +138,6 @@ service Entity {
     rpc ListEntityStoredTokens (ListEntityStoredTokenRequest) returns (ListEntityStoredTokenResponse);
     // Stores a token for an entity.
     rpc StoreEntityToken (StoreEntityTokenRequest) returns (StoreEntityTokenResponse);
+    // Get an entity's access token and decrypt payload.
+    rpc GetEntityAccessTokenAndDecryptPayload (GetEntityAccessTokenAndDecryptPayloadRequest) returns (GetEntityAccessTokenAndDecryptPayloadResponse);
 }
