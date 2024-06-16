@@ -3,7 +3,6 @@
 import os
 import logging
 import uuid
-import json
 import base64
 from functools import wraps
 
@@ -231,6 +230,20 @@ def generate_keypair_and_public_key(keystore_path):
     return keypair_obj, peer_pub_key
 
 
+def load_keypair_object(keypair):
+    """
+    Deserialize a serialized x25519 keypair object from bytes.
+
+    Args:
+        keypair (bytes): Serialized x25519 keypair object.
+
+    Returns:
+        x25519: Deserialized x25519 keypair object.
+    """
+    keypair_obj = x25519()
+    return keypair_obj.deserialize(keypair)
+
+
 def get_shared_key(keystore_path, pnt_keystore, secret_key, peer_pub_key):
     """
     Generate a shared key.
@@ -249,77 +262,33 @@ def get_shared_key(keystore_path, pnt_keystore, secret_key, peer_pub_key):
     return shared_key
 
 
-def generate_crypto_metadata(publish_keypair, device_id_keypair):
+def error_response(context, response, sys_msg, status_code, user_msg=None, _type=None):
     """
-    Generate cryptographic metadata.
+    Create an error response.
 
     Args:
-        publish_keypair: Publish keypair object.
-        device_id_keypair: Device ID keypair object.
+        context: gRPC context.
+        response: gRPC response object.
+        sys_msg (str or tuple): System message.
+        status_code: gRPC status code.
+        user_msg (str or tuple): User-friendly message.
+        _type (str): Type of error.
 
     Returns:
-        str: JSON string representing cryptographic metadata.
+        An instance of the specified response with the error set.
     """
-    crypto_metadata = {
-        "publish_keypair": {
-            "pnt_keystore": publish_keypair.pnt_keystore,
-            "secret_key": publish_keypair.secret_key,
-        },
-        "device_id_keypair": {
-            "pnt_keystore": device_id_keypair.pnt_keystore,
-            "secret_key": device_id_keypair.secret_key,
-        },
-    }
+    if not user_msg:
+        user_msg = sys_msg
 
-    return json.dumps(crypto_metadata)
+    if _type == "UNKNOWN":
+        logger.exception(sys_msg, exc_info=True)
+    else:
+        logger.error(sys_msg)
 
+    context.set_details(user_msg)
+    context.set_code(status_code)
 
-def load_crypto_metadata(metadata):
-    """
-    Load cryptographic metadata.
-
-    Args:
-        metadata (str): JSON string representing cryptographic metadata.
-
-    Returns:
-        CryptoMetadata: Object representing cryptographic metadata.
-    """
-
-    class CryptoMetadata:
-        """
-        Represents cryptographic metadata.
-        """
-
-        def __init__(self, metadata):
-            self.__dict__.update(self._convert(json.loads(metadata)))
-
-        def _convert(self, data):
-            for key, value in data.items():
-                if isinstance(value, dict):
-                    data[key] = CryptoMetadata(json.dumps(value))
-                elif isinstance(value, list):
-                    data[key] = [
-                        (
-                            CryptoMetadata(json.dumps(item))
-                            if isinstance(item, dict)
-                            else item
-                        )
-                        for item in value
-                    ]
-            return data
-
-        def __getattr__(self, name):
-            try:
-                return self.__dict__[name]
-            except KeyError as exc:
-                raise AttributeError(
-                    f"'CryptoMetadata' object has no attribute '{name}'"
-                ) from exc
-
-        def __setattr__(self, name, value):
-            self.__dict__[name] = value
-
-    return CryptoMetadata(metadata)
+    return response()
 
 
 def encrypt_and_encode(plaintext):
@@ -399,3 +368,25 @@ def is_valid_x25519_public_key(encoded_key):
     except ValueError as err:
         logger.exception("X25519 public key validation error: %s", err)
         return False, f"Invalid X25519 public key: {err}"
+
+
+def remove_none_values(values):
+    """
+    Removes None values from a list of dictionaries.
+
+    Args:
+        values (list): A list of dictionaries.
+
+    Returns:
+        list: A new list of dictionaries where None values have been removed.
+
+    Example:
+        values = [
+            {"a": 1, "b": None, "c": 3},
+            {"a": None, "b": 2, "c": 3},
+            {"a": 1, "b": 2, "c": None}
+        ]
+        filtered_values = remove_none_values(values)
+        # Output: [{'a': 1, 'c': 3}, {'b': 2, 'c': 3}, {'a': 1, 'b': 2}]
+    """
+    return [{k: v for k, v in value.items() if v is not None} for value in values]

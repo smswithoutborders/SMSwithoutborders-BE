@@ -1,31 +1,58 @@
 """Module for decoding and extracting information from RelaySMS payloads."""
 
+import logging
 import base64
 import struct
-from smswithoutborders_libsig.ratchets import Ratchets
+from smswithoutborders_libsig.ratchets import Ratchets, States, HEADERS
+
+logging.basicConfig(
+    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
+logger = logging.getLogger(__name__)
 
 
 def initialize_ratchet(
-    state, share_key, keypair_obj, header, ciphertext, client_public_key
+    server_state, keypair, ratchet_header, encrypted_content, **kwargs
 ):
     """
     Initialize a ratchet.
 
     Args:
-    - state (obj): State object for ratchet initialization.
-    - share_key (bytes): Shared key for cryptographic operations.
-    - keypair_obj (obj): Object containing keypair information.
-    - header (bytes): Encrypted header data to decrypt.
-    - ciphertext (bytes): Encrypted content data.
-    - client_public_key (bytes): Public key of the client.
+        server_state (bytes or None): Current state of the server-side
+            ratchet. If None, initializes a new state.
+        keypair (object): Key pair object containing keys for encryption
+            and decryption.
+        ratchet_header (bytes): The ratchet header containing metadata for
+            the ratchet protocol.
+        encrypted_content (bytes): Encrypted content to be decrypted.
+        kwargs (dict): Additional keyword arguments:
+            - publish_shared_key (bytes): The shared key object to publish.
+            - client_pub_key (bytes): The client's public key for decryption.
 
     Returns:
-    - bytes: Decrypted plaintext header.
+        tuple:
+            - plaintext (str): Decrypted plaintext content.
+            - state (bytes): Updated server state.
     """
+    if not server_state:
+        state = States()
+    else:
+        state = States.deserialize(server_state)
 
-    Ratchets.bob_init(state, share_key, keypair_obj)
-    plaintext_header = Ratchets.decrypt(state, header, ciphertext, client_public_key)
-    return plaintext_header
+    publish_shared_key = kwargs.get("publish_shared_key")
+    client_pub_key = kwargs.get("client_pub_key")
+
+    Ratchets.bob_init(state, publish_shared_key, keypair)
+    logger.info("Ratchet initialized successfully.")
+
+    header = HEADERS(keypair)
+    header.deserialize(ratchet_header)
+    logger.info("Header deserialized successfully.")
+
+    plaintext = Ratchets.decrypt(state, header, encrypted_content, client_pub_key)
+    logger.info("Content decrypted successfully.")
+
+    return plaintext, state
 
 
 def decode_relay_sms_payload(content):
@@ -36,24 +63,23 @@ def decode_relay_sms_payload(content):
     - content (str): Base64-encoded string representing the payload.
 
     Returns:
-    - tuple: A tuple containing the header (bytes) and encrypted content (bytes).
-
-    Raises:
-    - ValueError: If the payload format is invalid or decoding fails.
+    - tuple:
+        - header (bytes): The ratchet header containing metadata for
+            the ratchet protocol.
+        - encrypted content (bytes): The encrypted payload.
     """
-    if not isinstance(content, str) or not content:
-        raise ValueError("Invalid input: content must be a non-empty string")
-
     try:
-        # Decode base64 content
         payload = base64.b64decode(content)
 
-        # Extract length of header
+        # Unpack the length of the header (first 4 bytes)
         len_header = struct.unpack("<i", payload[:4])[0]
 
-        # Extract header and encrypted content
+        # Extract the header (next len_header bytes)
         header = payload[4 : 4 + len_header]
+
+        # Extract the remaining payload as the encrypted content
         encrypted_content = payload[4 + len_header :]
+        logger.info("Header and encrypted content extracted.")
 
         return header, encrypted_content
 

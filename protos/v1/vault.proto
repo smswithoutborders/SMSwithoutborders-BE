@@ -96,6 +96,8 @@ message StoreEntityTokenRequest {
     string platform = 3;
     // The identifier of the account associated with the token.
     string account_identifier = 4;
+    // Indicates whether to update existing tokens
+    bool update_token = 5;
 }
 
 // Response message for storing an entity's token.
@@ -112,6 +114,8 @@ message GetEntityAccessTokenAndDecryptPayloadRequest {
     string device_id = 1;
     // Encrypted payload that needs to be decrypted.
     string payload_ciphertext = 2;
+    // The platform associated with the token.
+    string platform = 3;
 }
 
 // Response message for getting entity access token and decrypting payload.
@@ -124,8 +128,6 @@ message GetEntityAccessTokenAndDecryptPayloadResponse {
     string message = 3;
     // Indicates whether the operation was successful.
     bool success = 4;
-    // The platform associated with the token.
-    string platform = 5;
 }
 
 // Service for managing entities.

@@ -6,8 +6,6 @@ import logging
 import base64
 
 import grpc
-from smswithoutborders_libsig.ratchets import States
-from smswithoutborders_libsig.keypairs import x25519
 
 import vault_pb2
 import vault_pb2_grpc
@@ -21,12 +19,11 @@ from src.utils import (
     get_configs,
     encrypt_and_encode,
     generate_keypair_and_public_key,
-    generate_crypto_metadata,
     generate_eid,
-    get_shared_key,
     is_valid_x25519_public_key,
-    load_crypto_metadata,
     decrypt_and_decode,
+    load_keypair_object,
+    error_response,
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
@@ -40,35 +37,6 @@ logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 )
 logger = logging.getLogger("[gRPC Entity Service]")
-
-
-def error_response(context, response, sys_msg, status_code, user_msg=None, _type=None):
-    """
-    Create an error response.
-
-    Args:
-        context: gRPC context.
-        response: gRPC response object.
-        sys_msg (str or tuple): System message.
-        status_code: gRPC status code.
-        user_msg (str or tuple): User-friendly message.
-        _type (str): Type of error.
-
-    Returns:
-        An instance of the specified response with the error set.
-    """
-    if not user_msg:
-        user_msg = sys_msg
-
-    if _type == "UNKNOWN":
-        logger.exception(sys_msg, exc_info=True)
-    else:
-        logger.error(sys_msg)
-
-    context.set_details(user_msg)
-    context.set_code(status_code)
-
-    return response()
 
 
 def validate_request_fields(context, request, response, required_fields):
@@ -201,14 +169,8 @@ def verify_long_lived_token(request, context, response):
             f"Possible token tampering detected. Entity not found with eid: {eid}"
         )
 
-    entity_crypto_metadata = load_crypto_metadata(
-        decrypt_and_decode(entity_obj.server_crypto_metadata)
-    )
-    entity_device_id_keypair = entity_crypto_metadata.device_id_keypair
-    entity_device_id_shared_key = get_shared_key(
-        os.path.join(KEYSTORE_PATH, f"{entity_obj.eid.hex}_device_id.db"),
-        entity_device_id_keypair.pnt_keystore,
-        entity_device_id_keypair.secret_key,
+    entity_device_id_keypair = load_keypair_object(entity_obj.device_id_keypair)
+    entity_device_id_shared_key = entity_device_id_keypair.agree(
         base64.b64decode(entity_obj.client_device_id_pub_key),
     )
 
@@ -251,30 +213,23 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             eid = generate_eid(phone_number_hash)
             password_hash = generate_hmac(HASHING_KEY, request.password)
             country_code_ciphertext_b64 = encrypt_and_encode(request.country_code)
-            server_publish_keypair, server_publish_pub_key = (
+
+            entity_publish_keypair, entity_publish_pub_key = (
                 generate_keypair_and_public_key(
                     os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
                 )
             )
-            server_device_id_keypair, server_device_id_pub_key = (
+            entity_device_id_keypair, entity_device_id_pub_key = (
                 generate_keypair_and_public_key(
                     os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db")
                 )
             )
-            crypto_metadata_ciphertext_b64 = encrypt_and_encode(
-                generate_crypto_metadata(
-                    server_publish_keypair, server_device_id_keypair
-                )
+
+            device_id_shared_key = entity_device_id_keypair.agree(
+                base64.b64decode(request.client_device_id_pub_key)
             )
 
-            shared_key = get_shared_key(
-                os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db"),
-                server_device_id_keypair.pnt_keystore,
-                server_device_id_keypair.secret_key,
-                base64.b64decode(request.client_device_id_pub_key),
-            )
-
-            long_lived_token = generate_llt(eid, shared_key)
+            long_lived_token = generate_llt(eid, device_id_shared_key)
 
             fields = {
                 "eid": eid,
@@ -282,12 +237,14 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 "password_hash": password_hash,
                 "country_code": country_code_ciphertext_b64,
                 "device_id": compute_device_id(
-                    shared_key, request.phone_number, request.client_device_id_pub_key
+                    device_id_shared_key,
+                    request.phone_number,
+                    request.client_device_id_pub_key,
                 ),
                 "client_publish_pub_key": request.client_publish_pub_key,
                 "client_device_id_pub_key": request.client_device_id_pub_key,
-                "server_crypto_metadata": crypto_metadata_ciphertext_b64,
-                "server_state": States(),
+                "publish_keypair": entity_publish_keypair.serialize(),
+                "device_id_keypair": entity_device_id_keypair.serialize(),
             }
 
             create_entity(**fields)
@@ -297,11 +254,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             return response(
                 long_lived_token=long_lived_token,
                 message="Entity created successfully",
-                server_publish_pub_key=base64.b64encode(server_publish_pub_key).decode(
+                server_publish_pub_key=base64.b64encode(entity_publish_pub_key).decode(
                     "utf-8"
                 ),
                 server_device_id_pub_key=base64.b64encode(
-                    server_device_id_pub_key
+                    entity_device_id_pub_key
                 ).decode("utf-8"),
             )
 
@@ -453,48 +410,42 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             eid = entity_obj.eid.hex
 
-            server_publish_keypair, server_publish_pub_key = (
+            entity_publish_keypair, entity_publish_pub_key = (
                 generate_keypair_and_public_key(
                     os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
                 )
             )
-            server_device_id_keypair, server_device_id_pub_key = (
+            entity_device_id_keypair, entity_device_id_pub_key = (
                 generate_keypair_and_public_key(
                     os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db")
                 )
             )
-            crypto_metadata_ciphertext_b64 = encrypt_and_encode(
-                generate_crypto_metadata(
-                    server_publish_keypair, server_device_id_keypair
-                )
+
+            device_id_shared_key = entity_device_id_keypair.agree(
+                base64.b64decode(request.client_device_id_pub_key)
             )
 
-            shared_key = get_shared_key(
-                os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db"),
-                server_device_id_keypair.pnt_keystore,
-                server_device_id_keypair.secret_key,
-                base64.b64decode(request.client_device_id_pub_key),
-            )
-
-            long_lived_token = generate_llt(eid, shared_key)
+            long_lived_token = generate_llt(eid, device_id_shared_key)
 
             entity_obj.device_id = compute_device_id(
-                shared_key, request.phone_number, request.client_device_id_pub_key
+                device_id_shared_key,
+                request.phone_number,
+                request.client_device_id_pub_key,
             )
             entity_obj.client_publish_pub_key = request.client_publish_pub_key
             entity_obj.client_device_id_pub_key = request.client_device_id_pub_key
-            entity_obj.server_crypto_metadata = crypto_metadata_ciphertext_b64
-            entity_obj.server_state = States()
+            entity_obj.publish_keypair = entity_publish_keypair.serialize()
+            entity_obj.device_id_keypair = entity_device_id_keypair.serialize()
             entity_obj.save()
 
             return response(
                 long_lived_token=long_lived_token,
                 message="Entity authenticated successfully!",
-                server_publish_pub_key=base64.b64encode(server_publish_pub_key).decode(
+                server_publish_pub_key=base64.b64encode(entity_publish_pub_key).decode(
                     "utf-8"
                 ),
                 server_device_id_pub_key=base64.b64encode(
-                    server_device_id_pub_key
+                    entity_device_id_pub_key
                 ).decode("utf-8"),
             )
 
@@ -550,7 +501,10 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 return llt_error_response
 
             tokens = fetch_entity_tokens(
-                entity_obj, True, ["account_identifier", "platform"]
+                entity=entity_obj,
+                fetch_all=True,
+                fields=["account_identifier", "platform"],
+                return_json=True,
             )
             for token in tokens:
                 for field in ["account_identifier"]:
@@ -558,7 +512,6 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                         token[field] = decrypt_and_decode(token[field])
 
             logger.info("Successfully retrieved tokens for %s", entity_obj.eid)
-
             return response(
                 stored_tokens=tokens, message="Tokens retrieved successfully."
             )
@@ -601,35 +554,54 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     "this platform will be implemented."
                 )
 
-            if fetch_entity_tokens(
+            account_identifier_hash = generate_hmac(
+                HASHING_KEY, request.account_identifier
+            )
+
+            existing_tokens = fetch_entity_tokens(
                 entity=entity_obj,
-                account_identifier_hash=generate_hmac(
-                    HASHING_KEY, request.account_identifier
-                ),
+                account_identifier_hash=account_identifier_hash,
                 platform=request.platform,
-            ):
-                return error_response(
-                    context,
-                    response,
-                    "Entity already has a token associated with account "
-                    f"identifier {request.account_identifier} for {request.platform}",
-                    grpc.StatusCode.ALREADY_EXISTS,
-                )
+            )
 
-            new_token = {
-                "entity": entity_obj,
-                "platform": request.platform,
-                "account_identifier_hash": generate_hmac(
-                    HASHING_KEY, request.account_identifier
-                ),
-                "account_identifier": encrypt_and_encode(request.account_identifier),
-                "account_tokens": encrypt_and_encode(request.token),
-            }
-            create_entity_token(**new_token)
+            if request.update_token:
+                if not existing_tokens:
+                    return error_response(
+                        context,
+                        response,
+                        "No token found with account "
+                        f"identifier {request.account_identifier} for {request.platform}",
+                        grpc.StatusCode.NOT_FOUND,
+                    )
 
-            logger.info("Successfully stored tokens for %s", entity_obj.eid)
+                existing_tokens[0].account_tokens = encrypt_and_encode(request.token)
+                existing_tokens[0].save()
+                logger.info("Successfully updated token for %s", entity_obj.eid)
+            else:
+                if existing_tokens:
+                    return error_response(
+                        context,
+                        response,
+                        "Entity already has a token associated with account "
+                        f"identifier {request.account_identifier} for {request.platform}",
+                        grpc.StatusCode.ALREADY_EXISTS,
+                    )
+                new_token = {
+                    "entity": entity_obj,
+                    "platform": request.platform,
+                    "account_identifier_hash": generate_hmac(
+                        HASHING_KEY, request.account_identifier
+                    ),
+                    "account_identifier": encrypt_and_encode(
+                        request.account_identifier
+                    ),
+                    "account_tokens": encrypt_and_encode(request.token),
+                }
+                create_entity_token(**new_token)
+                logger.info("Successfully stored tokens for %s", entity_obj.eid)
 
-            return response(message="Token stored successfully.", success=True)
+            action = "updated" if request.update_token else "stored"
+            return response(message=f"Token {action} successfully.", success=True)
 
         except NotImplementedError as e:
             return error_response(
@@ -675,37 +647,30 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     grpc.StatusCode.UNAUTHENTICATED,
                 )
 
-            entity_crypto_metadata = load_crypto_metadata(
-                decrypt_and_decode(entity_obj.server_crypto_metadata)
-            )
-            entity_publish_keypair = entity_crypto_metadata.publish_keypair
-            entity_publish_keypair_obj = x25519(
-                os.path.join(KEYSTORE_PATH, f"{entity_obj.eid.hex}_publish.db"),
-                entity_publish_keypair.pnt_keystore,
-                entity_publish_keypair.secret_key,
-            )
-            entity_publish_shared_key = entity_publish_keypair_obj.agree(
+            entity_publish_keypair = load_keypair_object(entity_obj.publish_keypair)
+            publish_shared_key = entity_publish_keypair.agree(
                 base64.b64decode(entity_obj.client_publish_pub_key)
             )
+
+            print("publish_shared_key", publish_shared_key)
 
             header, content_ciphertext = decode_relay_sms_payload(
                 request.payload_ciphertext
             )
 
-            state = States.deserialize(entity_obj.server_state)
-
-            content_plaintext = initialize_ratchet(
-                state,
-                entity_publish_shared_key,
-                entity_publish_keypair_obj,
-                header,
-                content_ciphertext,
-                base64.b64decode(entity_obj.client_publish_pub_key),
+            content_plaintext, state = initialize_ratchet(
+                server_state=entity_obj.server_state,
+                publish_shared_key=publish_shared_key,
+                keypair=load_keypair_object(entity_obj.publish_keypair),
+                ratchet_header=header,
+                encrypted_content=content_ciphertext,
+                client_pub_key=base64.b64decode(entity_obj.client_publish_pub_key),
             )
 
             tokens = fetch_entity_tokens(
                 entity=entity_obj,
                 fields=["account_tokens"],
+                return_json=True,
                 platform=request.platform,
             )
             for token in tokens:

@@ -28,7 +28,8 @@ class Entity(Model):
     device_id = CharField(null=True)
     client_publish_pub_key = TextField(null=True)
     client_device_id_pub_key = TextField(null=True)
-    server_crypto_metadata = TextField(null=True)
+    publish_keypair = BlobField(null=True)
+    device_id_keypair = BlobField(null=True)
     server_state = BlobField(null=True)
     date_created = DateTimeField(default=datetime.datetime.now)
 
