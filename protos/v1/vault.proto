@@ -90,14 +90,12 @@ message Token {
 message StoreEntityTokenRequest {
     // The long-lived token of the authenticated entity.
     string long_lived_token = 1;
-    // The OAuth2 token to be stored.
+    // The OAuth2 token to be stored (JSON string).
     string token = 2;
     // The platform associated with the token.
     string platform = 3;
     // The identifier of the account associated with the token.
     string account_identifier = 4;
-    // Indicates whether to update existing tokens
-    bool update_token = 5;
 }
 
 // Response message for storing an entity's token.
@@ -120,7 +118,7 @@ message GetEntityAccessTokenAndDecryptPayloadRequest {
 
 // Response message for getting entity access token and decrypting payload.
 message GetEntityAccessTokenAndDecryptPayloadResponse {
-    // Entity access token obtained from the operation.
+    // Entity access token (JSON string).
     string token = 1;
     // Decrypted plaintext payload.
     string payload_plaintext = 2;
@@ -128,6 +126,24 @@ message GetEntityAccessTokenAndDecryptPayloadResponse {
     string message = 3;
     // Indicates whether the operation was successful.
     bool success = 4;
+}
+
+// Request message for encrypting payload.
+message EncryptPayloadRequest {
+    // Device ID for identifying the requesting device.
+    string device_id = 1;
+    // Plaintext payload to be encrypted.
+    string payload_plaintext = 2;
+}
+
+// Response message for encrypting payload.
+message EncryptPayloadResponse {
+    // Encrypted payload.
+    string payload_ciphertext = 1;
+    // A response message.
+    string message = 2;
+    // Indicates whether the operation was successful.
+    bool success = 3;
 }
 
 // Service for managing entities.
@@ -142,4 +158,6 @@ service Entity {
     rpc StoreEntityToken (StoreEntityTokenRequest) returns (StoreEntityTokenResponse);
     // Get an entity's access token and decrypt payload.
     rpc GetEntityAccessTokenAndDecryptPayload (GetEntityAccessTokenAndDecryptPayloadRequest) returns (GetEntityAccessTokenAndDecryptPayloadResponse);
+    // Encrypt payload.
+    rpc EncryptPayload (EncryptPayloadRequest) returns (EncryptPayloadResponse);
 }

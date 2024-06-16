@@ -27,7 +27,12 @@ from src.utils import (
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
-from src.relaysms_payload import decode_relay_sms_payload, initialize_ratchet
+from src.relaysms_payload import (
+    decode_relay_sms_payload,
+    encode_relay_sms_payload,
+    encrypt_payload,
+    decrypt_payload,
+)
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
@@ -564,44 +569,29 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 platform=request.platform,
             )
 
-            if request.update_token:
-                if not existing_tokens:
-                    return error_response(
-                        context,
-                        response,
-                        "No token found with account "
-                        f"identifier {request.account_identifier} for {request.platform}",
-                        grpc.StatusCode.NOT_FOUND,
-                    )
+            if existing_tokens:
+                return error_response(
+                    context,
+                    response,
+                    "Entity already has a token associated with account "
+                    f"identifier {request.account_identifier} for {request.platform}",
+                    grpc.StatusCode.ALREADY_EXISTS,
+                )
 
-                existing_tokens[0].account_tokens = encrypt_and_encode(request.token)
-                existing_tokens[0].save()
-                logger.info("Successfully updated token for %s", entity_obj.eid)
-            else:
-                if existing_tokens:
-                    return error_response(
-                        context,
-                        response,
-                        "Entity already has a token associated with account "
-                        f"identifier {request.account_identifier} for {request.platform}",
-                        grpc.StatusCode.ALREADY_EXISTS,
-                    )
-                new_token = {
-                    "entity": entity_obj,
-                    "platform": request.platform,
-                    "account_identifier_hash": generate_hmac(
-                        HASHING_KEY, request.account_identifier
-                    ),
-                    "account_identifier": encrypt_and_encode(
-                        request.account_identifier
-                    ),
-                    "account_tokens": encrypt_and_encode(request.token),
-                }
-                create_entity_token(**new_token)
-                logger.info("Successfully stored tokens for %s", entity_obj.eid)
+            new_token = {
+                "entity": entity_obj,
+                "platform": request.platform,
+                "account_identifier_hash": account_identifier_hash,
+                "account_identifier": encrypt_and_encode(request.account_identifier),
+                "account_tokens": encrypt_and_encode(request.token),
+            }
+            create_entity_token(**new_token)
+            logger.info("Successfully stored tokens for %s", entity_obj.eid)
 
-            action = "updated" if request.update_token else "stored"
-            return response(message=f"Token {action} successfully.", success=True)
+            return response(
+                message=f"Token stored successfully.",
+                success=True,
+            )
 
         except NotImplementedError as e:
             return error_response(
@@ -652,13 +642,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 base64.b64decode(entity_obj.client_publish_pub_key)
             )
 
-            print("publish_shared_key", publish_shared_key)
-
             header, content_ciphertext = decode_relay_sms_payload(
                 request.payload_ciphertext
             )
 
-            content_plaintext, state = initialize_ratchet(
+            content_plaintext, state = decrypt_payload(
                 server_state=entity_obj.server_state,
                 publish_shared_key=publish_shared_key,
                 keypair=load_keypair_object(entity_obj.publish_keypair),
@@ -686,6 +674,69 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 success=True,
                 payload_plaintext=content_plaintext,
                 token=json.loads(tokens[0]),
+            )
+
+        except Exception as e:
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
+            )
+
+    def EncryptPayload(self, request, context):
+        """Handles encrypting payload"""
+
+        response = vault_pb2.EncryptPayloadResponse
+
+        try:
+            invalid_fields_response = validate_request_fields(
+                context,
+                request,
+                response,
+                ["device_id", "payload_plaintext"],
+            )
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            entity_obj = find_entity(device_id=request.device_id)
+
+            if not entity_obj:
+                return error_response(
+                    context,
+                    response,
+                    f"Invalid device ID '{request.device_id}'. "
+                    "Please log in again to obtain a valid device ID.",
+                    grpc.StatusCode.UNAUTHENTICATED,
+                )
+
+            entity_publish_keypair = load_keypair_object(entity_obj.publish_keypair)
+            publish_shared_key = entity_publish_keypair.agree(
+                base64.b64decode(entity_obj.client_publish_pub_key)
+            )
+
+            header, content_ciphertext, state = encrypt_payload(
+                server_state=entity_obj.server_state,
+                publish_shared_key=publish_shared_key,
+                keypair=load_keypair_object(entity_obj.publish_keypair),
+                content=request.payload_plaintext,
+                client_pub_key=base64.b64decode(entity_obj.client_publish_pub_key),
+                client_keystore_path=os.path.join(
+                    KEYSTORE_PATH, f"{entity_obj.eid.hex}_publish.db"
+                ),
+            )
+
+            b64_encoded_content = encode_relay_sms_payload(header, content_ciphertext)
+
+            entity_obj.server_state = state.serialize()
+            entity_obj.save()
+
+            return response(
+                message="Successfully encrypted payload.",
+                payload_ciphertext=b64_encoded_content,
+                success=True,
             )
 
         except Exception as e:
