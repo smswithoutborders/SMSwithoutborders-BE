@@ -4,6 +4,7 @@ Entity's Tokens Controllers
 
 from playhouse.shortcuts import model_to_dict
 from src.db_models import Token
+from src.utils import remove_none_values
 
 database = Token._meta.database
 
@@ -43,23 +44,26 @@ def create_entity_token(
     return token
 
 
-def fetch_entity_tokens(entity, fetch_all=False, fields=None, **search_criteria):
+def fetch_entity_tokens(
+    entity, fetch_all=False, fields=None, return_json=False, **search_criteria
+):
     """
-    Fetch tokens associated with the given entity based on 
-    the provided search criteria, or retrieve all tokens 
-    associated with the entity if fetch_all is set to True.
+    Fetch tokens associated with the given entity.
 
     Args:
         entity (Entity): The entity associated with the tokens.
-        fetch_all (bool, optional): If True, fetch all tokens 
-            associated with the entity regardless of search criteria. 
+        fetch_all (bool, optional): If True, fetch all tokens
+            associated with the entity regardless of search criteria.
             If False (default), fetch tokens based on search criteria.
         fields (list[str] or None, optional): Optional list of fields to select.
+        return_json (bool, optional): If True, return the results as a list of dicts.
+            If False (default), return the results as a list of token objects.
         **search_criteria: Additional keyword arguments representing the fields
             and their values to search for.
 
     Returns:
-        list[dict]: A list of dictionaries containing token data.
+        list[dict] or list[Token]: A list of token objects or a list of dictionaries
+            containing token data if return_json is True.
     """
     results = []
 
@@ -78,32 +82,12 @@ def fetch_entity_tokens(entity, fetch_all=False, fields=None, **search_criteria)
             select = (getattr(Token, key) for key in fields)
             query = query.select(*select)
 
-        tokens = query.execute()
+        tokens = list(query.execute())
 
+    if return_json:
         for token in tokens:
             token_dict = model_to_dict(token)
             results.append(token_dict)
+        return remove_none_values(results)
 
-    return remove_none_values(results)
-
-
-def remove_none_values(values):
-    """
-    Removes None values from a list of dictionaries.
-
-    Args:
-        values (list): A list of dictionaries.
-
-    Returns:
-        list: A new list of dictionaries where None values have been removed.
-
-    Example:
-        values = [
-            {"a": 1, "b": None, "c": 3},
-            {"a": None, "b": 2, "c": 3},
-            {"a": 1, "b": 2, "c": None}
-        ]
-        filtered_values = remove_none_values(values)
-        # Output: [{'a': 1, 'c': 3}, {'b': 2, 'c': 3}, {'a': 1, 'b': 2}]
-    """
-    return [{k: v for k, v in value.items() if v is not None} for value in values]
+    return tokens

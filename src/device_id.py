@@ -19,5 +19,5 @@ def compute_device_id(secret_key, phone_number, public_key) -> str:
         str: The hexadecimal representation of the HMAC digest.
     """
     combined_input = phone_number + public_key
-    hmac_object = hmac.new(secret_key, combined_input.encode(), hashlib.sha256)
+    hmac_object = hmac.new(secret_key, combined_input.encode("utf-8"), hashlib.sha256)
     return hmac_object.hexdigest()
