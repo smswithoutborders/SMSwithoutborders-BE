@@ -621,7 +621,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 context,
                 request,
                 response,
-                ["device_id", "payload_ciphertext"],
+                ["device_id", "payload_ciphertext", "platform"],
             )
             if invalid_fields_response:
                 return invalid_fields_response
@@ -642,38 +642,67 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 base64.b64decode(entity_obj.client_publish_pub_key)
             )
 
-            header, content_ciphertext = decode_relay_sms_payload(
+            header, content_ciphertext, decode_error = decode_relay_sms_payload(
                 request.payload_ciphertext
             )
 
-            content_plaintext, state = decrypt_payload(
-                server_state=entity_obj.server_state,
-                publish_shared_key=publish_shared_key,
-                keypair=load_keypair_object(entity_obj.publish_keypair),
-                ratchet_header=header,
-                encrypted_content=content_ciphertext,
-                client_pub_key=base64.b64decode(entity_obj.client_publish_pub_key),
-            )
+            if decode_error:
+                return error_response(
+                    context,
+                    response,
+                    decode_error,
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                    user_msg="Invalid content format.",
+                    _type="UNKNOWN",
+                )
 
+            content_plaintext = content_ciphertext.decode("utf-8")
+            # content_plaintext, state, decrypt_error = decrypt_payload(
+            #     server_state=entity_obj.server_state,
+            #     publish_shared_key=publish_shared_key,
+            #     keypair=load_keypair_object(entity_obj.publish_keypair),
+            #     ratchet_header=header,
+            #     encrypted_content=content_ciphertext,
+            #     client_pub_key=base64.b64decode(entity_obj.client_publish_pub_key),
+            # )
+
+            # if decrypt_error:
+            #     return error_response(
+            #         context,
+            #         response,
+            #         decrypt_error,
+            #         grpc.StatusCode.INVALID_ARGUMENT,
+            #         user_msg="Invalid content format.",
+            #         _type="UNKNOWN",
+            #     )
+
+            account_identifier_hash = generate_hmac(
+                HASHING_KEY, content_plaintext.split(":")[0]
+            )
             tokens = fetch_entity_tokens(
                 entity=entity_obj,
                 fields=["account_tokens"],
                 return_json=True,
                 platform=request.platform,
+                account_identifier_hash=account_identifier_hash,
             )
             for token in tokens:
                 for field in ["account_tokens"]:
                     if field in token:
                         token[field] = decrypt_and_decode(token[field])
 
-            entity_obj.server_state = state.serialize()
-            entity_obj.save()
+            # entity_obj.server_state = state.serialize()
+            # entity_obj.save()
+            logger.info(
+                "Successfully fetched tokens and decrypted payload for %s",
+                entity_obj.eid,
+            )
 
             return response(
                 message="Successfully fetched tokens and decrypted payload",
                 success=True,
                 payload_plaintext=content_plaintext,
-                token=json.loads(tokens[0]),
+                token=tokens[0]["account_tokens"],
             )
 
         except Exception as e:
@@ -712,30 +741,95 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     grpc.StatusCode.UNAUTHENTICATED,
                 )
 
-            entity_publish_keypair = load_keypair_object(entity_obj.publish_keypair)
-            publish_shared_key = entity_publish_keypair.agree(
-                base64.b64decode(entity_obj.client_publish_pub_key)
-            )
+            # entity_publish_keypair = load_keypair_object(entity_obj.publish_keypair)
+            # publish_shared_key = entity_publish_keypair.agree(
+            #     base64.b64decode(entity_obj.client_publish_pub_key)
+            # )
 
-            header, content_ciphertext, state = encrypt_payload(
-                server_state=entity_obj.server_state,
-                publish_shared_key=publish_shared_key,
-                keypair=load_keypair_object(entity_obj.publish_keypair),
-                content=request.payload_plaintext,
-                client_pub_key=base64.b64decode(entity_obj.client_publish_pub_key),
-                client_keystore_path=os.path.join(
-                    KEYSTORE_PATH, f"{entity_obj.eid.hex}_publish.db"
-                ),
-            )
+            # header, content_ciphertext, state = encrypt_payload(
+            #     server_state=entity_obj.server_state,
+            #     publish_shared_key=publish_shared_key,
+            #     keypair=load_keypair_object(entity_obj.publish_keypair),
+            #     content=request.payload_plaintext,
+            #     client_pub_key=base64.b64decode(entity_obj.client_publish_pub_key),
+            #     client_keystore_path=os.path.join(
+            #         KEYSTORE_PATH, f"{entity_obj.eid.hex}_publish.db"
+            #     ),
+            # )
 
-            b64_encoded_content = encode_relay_sms_payload(header, content_ciphertext)
+            # b64_encoded_content = encode_relay_sms_payload(header, content_ciphertext)
 
-            entity_obj.server_state = state.serialize()
-            entity_obj.save()
+            # entity_obj.server_state = state.serialize()
+            # entity_obj.save()
+            b64_encoded_content = request.payload_plaintext
 
             return response(
                 message="Successfully encrypted payload.",
                 payload_ciphertext=b64_encoded_content,
+                success=True,
+            )
+
+        except Exception as e:
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
+            )
+
+    def UpdateEntityToken(self, request, context):
+        """Handles updating tokens for an entity"""
+
+        response = vault_pb2.UpdateEntityTokenResponse
+
+        try:
+            invalid_fields_response = validate_request_fields(
+                context,
+                request,
+                response,
+                ["device_id", "token", "platform", "account_identifier"],
+            )
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            entity_obj = find_entity(device_id=request.device_id)
+
+            if not entity_obj:
+                return error_response(
+                    context,
+                    response,
+                    f"Invalid device ID '{request.device_id}'. "
+                    "Please log in again to obtain a valid device ID.",
+                    grpc.StatusCode.UNAUTHENTICATED,
+                )
+
+            account_identifier_hash = generate_hmac(
+                HASHING_KEY, request.account_identifier
+            )
+
+            existing_tokens = fetch_entity_tokens(
+                entity=entity_obj,
+                account_identifier_hash=account_identifier_hash,
+                platform=request.platform,
+            )
+
+            if not existing_tokens:
+                return error_response(
+                    context,
+                    response,
+                    "No token found with account "
+                    f"identifier {request.account_identifier} for {request.platform}",
+                    grpc.StatusCode.NOT_FOUND,
+                )
+
+            existing_tokens[0].account_tokens = encrypt_and_encode(request.token)
+            existing_tokens[0].save()
+            logger.info("Successfully updated token for %s", entity_obj.eid)
+
+            return response(
+                message="Token updated successfully.",
                 success=True,
             )
 

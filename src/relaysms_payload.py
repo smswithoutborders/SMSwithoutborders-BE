@@ -31,26 +31,30 @@ def decrypt_payload(server_state, keypair, ratchet_header, encrypted_content, **
         tuple:
             - plaintext (str): Decrypted plaintext content.
             - state (bytes): Updated server state.
+            - error (Exception or None)
     """
-    if not server_state:
-        state = States()
-    else:
-        state = States.deserialize(server_state)
+    try:
+        if not server_state:
+            state = States()
+        else:
+            state = States.deserialize(server_state)
 
-    publish_shared_key = kwargs.get("publish_shared_key")
-    client_pub_key = kwargs.get("client_pub_key")
+        publish_shared_key = kwargs.get("publish_shared_key")
+        client_pub_key = kwargs.get("client_pub_key")
 
-    Ratchets.bob_init(state, publish_shared_key, keypair)
-    logger.info("Ratchet initialized successfully.")
+        Ratchets.bob_init(state, publish_shared_key, keypair)
+        logger.info("Ratchet initialized successfully.")
 
-    header = HEADERS(keypair)
-    header.deserialize(ratchet_header)
-    logger.info("Header deserialized successfully.")
+        header = HEADERS(keypair)
+        header.deserialize(ratchet_header)
+        logger.info("Header deserialized successfully.")
 
-    plaintext = Ratchets.decrypt(state, header, encrypted_content, client_pub_key)
-    logger.info("Content decrypted successfully.")
+        plaintext = Ratchets.decrypt(state, header, encrypted_content, client_pub_key)
+        logger.info("Content decrypted successfully.")
 
-    return plaintext, state
+        return plaintext, state, None
+    except (struct.error, IndexError, base64.binascii.Error) as e:
+        return None, None, e
 
 
 def encrypt_payload(
@@ -93,6 +97,7 @@ def decode_relay_sms_payload(content):
         tuple:
             - header (bytes): Ratchet header.
             - encrypted_content (bytes): Encrypted payload.
+            - error (Exception or None)
     """
     try:
         payload = base64.b64decode(content)
@@ -107,10 +112,10 @@ def decode_relay_sms_payload(content):
         encrypted_content = payload[4 + len_header :]
         logger.info("Header and encrypted content extracted.")
 
-        return header, encrypted_content
+        return header, encrypted_content, None
 
     except (struct.error, IndexError, base64.binascii.Error) as e:
-        raise ValueError("Invalid payload format") from e
+        return None, None, e
 
 
 def encode_relay_sms_payload(header, content_ciphertext):

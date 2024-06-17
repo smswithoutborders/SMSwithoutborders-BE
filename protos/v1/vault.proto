@@ -146,6 +146,26 @@ message EncryptPayloadResponse {
     bool success = 3;
 }
 
+// Request message for updating an entity's token.
+message UpdateEntityTokenRequest {
+    // Device ID for identifying the requesting device.
+    string device_id = 1;
+    // The OAuth2 token to be stored (JSON string).
+    string token = 2;
+    // The platform associated with the token.
+    string platform = 3;
+    // The identifier of the account associated with the token.
+    string account_identifier = 4;
+}
+
+// Response message for updating an entity's token.
+message UpdateEntityTokenResponse {
+    // A response message.
+    string message = 1;
+    // Indicates whether the operation was successful.
+    bool success = 2;
+}
+
 // Service for managing entities.
 service Entity {
     // Creates an entity.
@@ -160,4 +180,6 @@ service Entity {
     rpc GetEntityAccessTokenAndDecryptPayload (GetEntityAccessTokenAndDecryptPayloadRequest) returns (GetEntityAccessTokenAndDecryptPayloadResponse);
     // Encrypt payload.
     rpc EncryptPayload (EncryptPayloadRequest) returns (EncryptPayloadResponse);
+    // Updates a token for an entity.
+    rpc UpdateEntityToken (UpdateEntityTokenRequest) returns (UpdateEntityTokenResponse);
 }
