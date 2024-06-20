@@ -589,7 +589,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             logger.info("Successfully stored tokens for %s", entity_obj.eid)
 
             return response(
-                message=f"Token stored successfully.",
+                message="Token stored successfully.",
                 success=True,
             )
 
@@ -642,13 +642,18 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             return (header, content_ciphertext), None
 
         def decrypt_message(entity_obj, header, content_ciphertext):
+            publish_keypair = load_keypair_object(entity_obj.publish_keypair)
+            publish_shared_key = publish_keypair.agree(
+                base64.b64decode(entity_obj.client_publish_pub_key)
+            )
+
             content_plaintext, state, decrypt_error = decrypt_payload(
                 server_state=entity_obj.server_state,
                 publish_shared_key=publish_shared_key,
-                publish_keypair=publsih_keypair,
+                publish_keypair=publish_keypair,
                 ratchet_header=header,
                 encrypted_content=content_ciphertext,
-                client_pub_key=publsih_keypair.get_public_key(),
+                publish_pub_key=publish_keypair.get_public_key(),
             )
 
             if decrypt_error:
@@ -689,12 +694,6 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     "Please log in again to obtain a valid device ID.",
                     grpc.StatusCode.UNAUTHENTICATED,
                 )
-
-            entity_publish_keypair = load_keypair_object(entity_obj.publish_keypair)
-            publish_shared_key = entity_publish_keypair.agree(
-                base64.b64decode(entity_obj.client_publish_pub_key)
-            )
-            publsih_keypair = load_keypair_object(entity_obj.publish_keypair)
 
             decoded_response, decoding_error = decode_message()
             if decoding_error:

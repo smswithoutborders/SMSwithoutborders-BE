@@ -222,9 +222,6 @@ def generate_keypair_and_public_key(keystore_path):
     Returns:
         tuple: Tuple containing keypair object and public key.
     """
-    if os.path.isfile(keystore_path):
-        os.remove(keystore_path)
-
     keypair_obj = x25519(keystore_path)
     peer_pub_key = keypair_obj.init()
     return keypair_obj, peer_pub_key
