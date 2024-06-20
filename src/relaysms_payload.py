@@ -13,7 +13,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def decrypt_payload(server_state, keypair, ratchet_header, encrypted_content, **kwargs):
+def decrypt_payload(
+    server_state, publish_keypair, ratchet_header, encrypted_content, **kwargs
+):
     """
     Decrypts a RelaySMS payload.
 
@@ -40,16 +42,15 @@ def decrypt_payload(server_state, keypair, ratchet_header, encrypted_content, **
             state = States.deserialize(server_state)
 
         publish_shared_key = kwargs.get("publish_shared_key")
-        client_pub_key = kwargs.get("client_pub_key")
+        publish_pub_key = kwargs.get("publish_pub_key")
 
-        Ratchets.bob_init(state, publish_shared_key, keypair)
+        Ratchets.bob_init(state, publish_shared_key, publish_keypair)
         logger.info("Ratchet initialized successfully.")
 
-        header = HEADERS(keypair)
-        header.deserialize(ratchet_header)
+        header = HEADERS.deserialize(ratchet_header)
         logger.info("Header deserialized successfully.")
 
-        plaintext = Ratchets.decrypt(state, header, encrypted_content, client_pub_key)
+        plaintext = Ratchets.decrypt(state, header, encrypted_content, publish_pub_key)
         logger.info("Content decrypted successfully.")
 
         return plaintext, state, None

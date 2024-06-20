@@ -106,26 +106,41 @@ message StoreEntityTokenResponse {
     bool success = 2;
 }
 
-// Request message for getting entity access token and decrypting payload.
-message GetEntityAccessTokenAndDecryptPayloadRequest {
+// Request message for getting entity access token.
+message GetEntityAccessTokenRequest {
+    // Device ID for identifying the requesting device.
+    string device_id = 1;
+    // The platform associated with the token.
+    string platform = 2;
+    // The identifier of the account associated with the token.
+    string account_identifier = 3;
+}
+
+// Response message for getting entity access token.
+message GetEntityAccessTokenResponse {
+    // Entity access token (JSON string).
+    string token = 1;
+    // A response message.
+    string message = 2;
+    // Indicates whether the operation was successful.
+    bool success = 3;
+}
+
+// Request message for decrypting payload.
+message DecryptPayloadRequest {
     // Device ID for identifying the requesting device.
     string device_id = 1;
     // Encrypted payload that needs to be decrypted.
     string payload_ciphertext = 2;
-    // The platform associated with the token.
-    string platform = 3;
 }
 
-// Response message for getting entity access token and decrypting payload.
-message GetEntityAccessTokenAndDecryptPayloadResponse {
-    // Entity access token (JSON string).
-    string token = 1;
+message DecryptPayloadResponse {
     // Decrypted plaintext payload.
-    string payload_plaintext = 2;
+    string payload_plaintext = 1;
     // A response message.
-    string message = 3;
+    string message = 2;
     // Indicates whether the operation was successful.
-    bool success = 4;
+    bool success = 3;
 }
 
 // Request message for encrypting payload.
@@ -176,8 +191,10 @@ service Entity {
     rpc ListEntityStoredTokens (ListEntityStoredTokenRequest) returns (ListEntityStoredTokenResponse);
     // Stores a token for an entity.
     rpc StoreEntityToken (StoreEntityTokenRequest) returns (StoreEntityTokenResponse);
-    // Get an entity's access token and decrypt payload.
-    rpc GetEntityAccessTokenAndDecryptPayload (GetEntityAccessTokenAndDecryptPayloadRequest) returns (GetEntityAccessTokenAndDecryptPayloadResponse);
+    // Get an entity's access token.
+    rpc GetEntityAccessToken (GetEntityAccessTokenRequest) returns (GetEntityAccessTokenResponse);
+    // Decrypt payload.
+    rpc DecryptPayload (DecryptPayloadRequest) returns (DecryptPayloadResponse);
     // Encrypt payload.
     rpc EncryptPayload (EncryptPayloadRequest) returns (EncryptPayloadResponse);
     // Updates a token for an entity.

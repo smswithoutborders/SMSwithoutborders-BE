@@ -611,18 +611,71 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 _type="UNKNOWN",
             )
 
-    def GetEntityAccessTokenAndDecryptPayload(self, request, context):
-        """Handles getting an entity's access token and decrypting payload"""
+    def DecryptPayload(self, request, context):
+        """Handles decrypting relaysms payload"""
 
-        response = vault_pb2.GetEntityAccessTokenAndDecryptPayloadResponse
+        response = vault_pb2.DecryptPayloadResponse
 
-        try:
-            invalid_fields_response = validate_request_fields(
+        def validate_fields():
+            return validate_request_fields(
                 context,
                 request,
                 response,
-                ["device_id", "payload_ciphertext", "platform"],
+                ["device_id", "payload_ciphertext"],
             )
+
+        def decode_message():
+            header, content_ciphertext, decode_error = decode_relay_sms_payload(
+                request.payload_ciphertext
+            )
+
+            if decode_error:
+                return None, error_response(
+                    context,
+                    response,
+                    decode_error,
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                    user_msg="Invalid content format.",
+                    _type="UNKNOWN",
+                )
+
+            return (header, content_ciphertext), None
+
+        def decrypt_message(entity_obj, header, content_ciphertext):
+            content_plaintext, state, decrypt_error = decrypt_payload(
+                server_state=entity_obj.server_state,
+                publish_shared_key=publish_shared_key,
+                publish_keypair=publsih_keypair,
+                ratchet_header=header,
+                encrypted_content=content_ciphertext,
+                client_pub_key=publsih_keypair.get_public_key(),
+            )
+
+            if decrypt_error:
+                return error_response(
+                    context,
+                    response,
+                    decrypt_error,
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                    user_msg="Invalid content format.",
+                    _type="UNKNOWN",
+                )
+
+            entity_obj.server_state = state.serialize()
+            entity_obj.save()
+            logger.info(
+                "Successfully decrypted payload for %s",
+                entity_obj.eid,
+            )
+
+            return response(
+                message="Successfully fetched tokens and decrypted payload",
+                success=True,
+                payload_plaintext=content_plaintext,
+            )
+
+        try:
+            invalid_fields_response = validate_fields()
             if invalid_fields_response:
                 return invalid_fields_response
 
@@ -641,43 +694,48 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             publish_shared_key = entity_publish_keypair.agree(
                 base64.b64decode(entity_obj.client_publish_pub_key)
             )
+            publsih_keypair = load_keypair_object(entity_obj.publish_keypair)
 
-            header, content_ciphertext, decode_error = decode_relay_sms_payload(
-                request.payload_ciphertext
+            decoded_response, decoding_error = decode_message()
+            if decoding_error:
+                return decoding_error
+
+            header, content_ciphertext = decoded_response
+
+            return decrypt_message(entity_obj, header, content_ciphertext)
+
+        except Exception as e:
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
             )
 
-            if decode_error:
-                return error_response(
-                    context,
-                    response,
-                    decode_error,
-                    grpc.StatusCode.INVALID_ARGUMENT,
-                    user_msg="Invalid content format.",
-                    _type="UNKNOWN",
-                )
+    def GetEntityAccessToken(self, request, context):
+        """Handles getting an entity's access token."""
 
-            content_plaintext = content_ciphertext.decode("utf-8")
-            # content_plaintext, state, decrypt_error = decrypt_payload(
-            #     server_state=entity_obj.server_state,
-            #     publish_shared_key=publish_shared_key,
-            #     keypair=load_keypair_object(entity_obj.publish_keypair),
-            #     ratchet_header=header,
-            #     encrypted_content=content_ciphertext,
-            #     client_pub_key=base64.b64decode(entity_obj.client_publish_pub_key),
-            # )
+        response = vault_pb2.GetEntityAccessTokenResponse
 
-            # if decrypt_error:
-            #     return error_response(
-            #         context,
-            #         response,
-            #         decrypt_error,
-            #         grpc.StatusCode.INVALID_ARGUMENT,
-            #         user_msg="Invalid content format.",
-            #         _type="UNKNOWN",
-            #     )
+        def validate_fields():
+            return validate_request_fields(
+                context,
+                request,
+                response,
+                ["device_id", "platform", "account_identifier"],
+            )
+
+        try:
+            invalid_fields_response = validate_fields()
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            entity_obj = find_entity(device_id=request.device_id)
 
             account_identifier_hash = generate_hmac(
-                HASHING_KEY, content_plaintext.split(":")[0]
+                HASHING_KEY, request.account_identifier
             )
             tokens = fetch_entity_tokens(
                 entity=entity_obj,
@@ -691,17 +749,23 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     if field in token:
                         token[field] = decrypt_and_decode(token[field])
 
-            # entity_obj.server_state = state.serialize()
-            # entity_obj.save()
             logger.info(
-                "Successfully fetched tokens and decrypted payload for %s",
+                "Successfully fetched tokens for %s",
                 entity_obj.eid,
             )
 
+            if not tokens:
+                return error_response(
+                    context,
+                    response,
+                    "No token found with account "
+                    f"identifier {request.account_identifier} for {request.platform}",
+                    grpc.StatusCode.NOT_FOUND,
+                )
+
             return response(
-                message="Successfully fetched tokens and decrypted payload",
+                message="Successfully fetched tokens.",
                 success=True,
-                payload_plaintext=content_plaintext,
                 token=tokens[0]["account_tokens"],
             )
 
