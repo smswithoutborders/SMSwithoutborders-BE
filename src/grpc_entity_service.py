@@ -80,13 +80,22 @@ def validate_request_fields(context, request, response, required_fields):
         context: gRPC context.
         request: gRPC request object.
         response: gRPC response object.
-        required_fields (list): List of required fields.
+        required_fields (list): List of required fields, can include tuples.
 
     Returns:
         None or response: None if no missing fields,
             error response otherwise.
     """
-    missing_fields = [field for field in required_fields if not getattr(request, field)]
+    missing_fields = []
+
+    for field in required_fields:
+        if isinstance(field, tuple):
+            if not any(getattr(request, f, None) for f in field):
+                missing_fields.append(f"({' or '.join(field)})")
+        else:
+            if not getattr(request, field, None):
+                missing_fields.append(field)
+
     if missing_fields:
         return error_response(
             context,
@@ -178,7 +187,7 @@ def verify_long_lived_token(request, context, response):
         tuple: Tuple containing entity object, and error response.
     """
 
-    def create_error_response(error_msg, error_detail=None):
+    def create_error_response(error_msg):
         return error_response(
             context,
             response,
@@ -188,13 +197,12 @@ def verify_long_lived_token(request, context, response):
                 "Your session has expired or the token is invalid. "
                 "Please log in again to generate a new token."
             ),
-            _type=error_detail,
         )
 
     try:
         eid, llt = request.long_lived_token.split(":", 1)
     except ValueError as err:
-        return None, create_error_response(err, "UNKNOWN")
+        return None, create_error_response(err)
 
     entity_obj = find_entity(eid=eid)
     if not entity_obj:
@@ -210,7 +218,7 @@ def verify_long_lived_token(request, context, response):
     llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
 
     if not llt_payload:
-        return None, create_error_response(llt_error, "UNKNOWN")
+        return None, create_error_response(llt_error)
 
     if llt_payload.get("eid") != eid:
         return None, create_error_response(
@@ -583,7 +591,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             if request.platform.lower() not in SUPPORTED_PLATFORMS:
                 raise NotImplementedError(
-                    f"The protocol '{request.platform}' is currently not supported. "
+                    f"The platform '{request.platform}' is currently not supported. "
                     "Please contact the developers for more information on when "
                     "this platform will be implemented."
                 )
@@ -752,19 +760,10 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 context,
                 request,
                 response,
-                ["device_id", "platform", "account_identifier"],
+                [("device_id", "long_lived_token"), "platform", "account_identifier"],
             )
 
-        try:
-            invalid_fields_response = validate_fields()
-            if invalid_fields_response:
-                return invalid_fields_response
-
-            entity_obj = find_entity(device_id=request.device_id)
-
-            account_identifier_hash = generate_hmac(
-                HASHING_KEY, request.account_identifier
-            )
+        def fetch_tokens(entity_obj, account_identifier_hash):
             tokens = fetch_entity_tokens(
                 entity=entity_obj,
                 fields=["account_tokens"],
@@ -795,6 +794,50 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 message="Successfully fetched tokens.",
                 success=True,
                 token=tokens[0]["account_tokens"],
+            )
+
+        try:
+            invalid_fields_response = validate_fields()
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            if request.long_lived_token:
+                entity_obj, llt_error_response = verify_long_lived_token(
+                    request, context, response
+                )
+                if llt_error_response:
+                    return llt_error_response
+            elif request.device_id:
+                entity_obj = find_entity(device_id=request.device_id)
+
+                if not entity_obj:
+                    return error_response(
+                        context,
+                        response,
+                        f"Invalid device ID '{request.device_id}'. "
+                        "Please log in again to obtain a valid device ID.",
+                        grpc.StatusCode.UNAUTHENTICATED,
+                    )
+
+            if request.platform.lower() not in SUPPORTED_PLATFORMS:
+                raise NotImplementedError(
+                    f"The platform '{request.platform}' is currently not supported. "
+                    "Please contact the developers for more information on when "
+                    "this platform will be implemented."
+                )
+
+            account_identifier_hash = generate_hmac(
+                HASHING_KEY, request.account_identifier
+            )
+
+            return fetch_tokens(entity_obj, account_identifier_hash)
+
+        except NotImplementedError as e:
+            return error_response(
+                context,
+                response,
+                str(e),
+                grpc.StatusCode.UNIMPLEMENTED,
             )
 
         except Exception as e:
@@ -923,6 +966,80 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             return response(
                 message="Token updated successfully.",
                 success=True,
+            )
+
+        except Exception as e:
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
+            )
+
+    def DeleteEntityToken(self, request, context):
+        """Handles deleting tokens for an entity"""
+
+        response = vault_pb2.DeleteEntityTokenResponse
+
+        try:
+            invalid_fields_response = validate_request_fields(
+                context,
+                request,
+                response,
+                ["long_lived_token", "platform", "account_identifier"],
+            )
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            entity_obj, llt_error_response = verify_long_lived_token(
+                request, context, response
+            )
+            if llt_error_response:
+                return llt_error_response
+
+            if request.platform.lower() not in SUPPORTED_PLATFORMS:
+                raise NotImplementedError(
+                    f"The platform '{request.platform}' is currently not supported. "
+                    "Please contact the developers for more information on when "
+                    "this platform will be implemented."
+                )
+
+            account_identifier_hash = generate_hmac(
+                HASHING_KEY, request.account_identifier
+            )
+
+            existing_tokens = fetch_entity_tokens(
+                entity=entity_obj,
+                account_identifier_hash=account_identifier_hash,
+                platform=request.platform,
+            )
+
+            if not existing_tokens:
+                return error_response(
+                    context,
+                    response,
+                    "No token found with account "
+                    f"identifier {request.account_identifier} for {request.platform}",
+                    grpc.StatusCode.NOT_FOUND,
+                )
+
+            existing_tokens[0].delete_instance()
+
+            logger.info("Successfully deleted token for %s", entity_obj.eid)
+
+            return response(
+                message="Token deleted successfully.",
+                success=True,
+            )
+
+        except NotImplementedError as e:
+            return error_response(
+                context,
+                response,
+                str(e),
+                grpc.StatusCode.UNIMPLEMENTED,
             )
 
         except Exception as e:
