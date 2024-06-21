@@ -14,7 +14,8 @@
     - [Complete Authentication](#complete-authentication)
   - [List an Entity's Stored Tokens](#list-an-entitys-stored-tokens)
   - [Store an Entity's Token](#store-an-entitys-token)
-  - [Get Entity Access Token and Decrypt Payload](#get-entity-access-token-and-decrypt-payload)
+  - [Get Entity Access Token](#get-entity-access-token)
+  - [Decrypt Payload](#decrypt-payload)
   - [Encrypt Payload](#encrypt-payload)
   - [Update An Entity Token](#update-an-entitys-token)
 
@@ -607,13 +608,13 @@ localhost:6000 vault.v1.Entity/StoreEntityToken <payload.json
 }
 ```
 
-#### Get Entity Access Token And Decrypt Payload
+#### Get Entity Access Token
 
-This function retrieves an entity's access token and decrypts the payload.
+This function retrieves an entity's access token.
 
 ---
 
-> `request` **GetEntityAccessTokenAndDecryptPayloadRequest**
+> `request` **GetEntityAccessTokenRequest**
 
 > [!IMPORTANT]
 >
@@ -623,28 +624,27 @@ This function retrieves an entity's access token and decrypts the payload.
 | Field              | Type   | Description                                                         |
 | ------------------ | ------ | ------------------------------------------------------------------- |
 | device_id          | string | The unique identifier of the device used by the entity.             |
-| payload_ciphertext | string | The encrypted payload ciphertext that needs to be decrypted.        |
 | platform           | string | The platform from which the token is being issued. (e.g., "gmail"). |
+| account_identifier | string | The identifier of the account associated with the token.            |
 
 ---
 
-> `response` **GetEntityAccessTokenAndDecryptPayloadResponse**
+> `response` **GetEntityAccessTokenResponse**
 
 > [!IMPORTANT]
 >
 > The table lists only the fields that are populated for this step. Other fields
 > may be empty, omitted, or false.
 
-| Field             | Type   | Description                                                                |
-| ----------------- | ------ | -------------------------------------------------------------------------- |
-| message           | string | A response message from the server.                                        |
-| success           | bool   | Indicates if the operation was successful.                                 |
-| payload_plaintext | string | The decrypted payload plaintext.                                           |
-| token             | string | The retrieved token associated with the entity for the specified platform. |
+| Field   | Type   | Description                                                                |
+| ------- | ------ | -------------------------------------------------------------------------- |
+| message | string | A response message from the server.                                        |
+| success | bool   | Indicates if the operation was successful.                                 |
+| token   | string | The retrieved token associated with the entity for the specified platform. |
 
 ---
 
-> `method` **GetEntityAccessTokenAndDecryptPayload**
+> `method` **GetEntityAccessToken**
 
 > [!TIP]
 >
@@ -666,9 +666,9 @@ This function retrieves an entity's access token and decrypts the payload.
 
 ```bash
 grpcurl -plaintext \
-    -d '{"device_id": "device_id", "payload_ciphertext": "encrypted_payload", "platform": "gmail"}' \
+    -d '{"device_id": "device_id", "platform": "gmail", "account_identifier": "sample@mail.com"}' \
     -proto protos/v1/vault.proto \
-localhost:6000 vault.v1.Entity/GetEntityAccessTokenAndDecryptPayload
+localhost:6000 vault.v1.Entity/GetEntityAccessToken
 ```
 
 ---
@@ -677,10 +677,85 @@ localhost:6000 vault.v1.Entity/GetEntityAccessTokenAndDecryptPayload
 
 ```json
 {
-	"message": "Successfully fetched tokens and decrypted payload",
+	"message": "Successfully fetched tokens",
 	"success": true,
-	"payload_plaintext": "Decrypted payload content",
 	"token": "retrieved_token"
+}
+```
+
+---
+
+#### Decrypt Payload
+
+This function handles decrypting payload content.
+
+---
+
+> `request` **DecryptPayloadRequest**
+
+> [!IMPORTANT]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
+
+| Field              | Type   | Description                                                  |
+| ------------------ | ------ | ------------------------------------------------------------ |
+| device_id          | string | The unique identifier of the device used by the entity.      |
+| payload_ciphertext | string | The encrypted payload ciphertext that needs to be decrypted. |
+
+---
+
+> `response` **DecryptPayloadResponse**
+
+> [!IMPORTANT]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
+
+| Field             | Type   | Description                                |
+| ----------------- | ------ | ------------------------------------------ |
+| message           | string | A response message from the server.        |
+| success           | bool   | Indicates if the operation was successful. |
+| payload_plaintext | string | The decrypted payload plaintext.           |
+
+---
+
+> `method` **DecryptPayload**
+
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+---
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d '{"device_id": "device_id", "payload_ciphertext": "encrypted_payload"}' \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/DecryptPayload
+```
+
+---
+
+**Sample response**
+
+```json
+{
+	"message": "Successfully decrypted payload",
+	"success": true,
+	"payload_plaintext": "Decrypted payload content"
 }
 ```
 
@@ -820,7 +895,7 @@ This function updates tokens associated with an entity.
 
 ```bash
 grpcurl -plaintext \
-    -d '{"device_id": "device_id", "token": "new_token", "platform": "gmail", "account_identifier": "account_id"}' \
+    -d '{"device_id": "device_id", "token": "new_token", "platform": "gmail", "account_identifier": "sample@mail.com"}' \
     -proto protos/v1/vault.proto \
 localhost:6000 vault.v1.Entity/UpdateEntityToken
 ```
