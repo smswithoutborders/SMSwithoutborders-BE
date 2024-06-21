@@ -262,35 +262,6 @@ def get_shared_key(keystore_path, pnt_keystore, secret_key, peer_pub_key):
     return shared_key
 
 
-def error_response(context, response, sys_msg, status_code, user_msg=None, _type=None):
-    """
-    Create an error response.
-
-    Args:
-        context: gRPC context.
-        response: gRPC response object.
-        sys_msg (str or tuple): System message.
-        status_code: gRPC status code.
-        user_msg (str or tuple): User-friendly message.
-        _type (str): Type of error.
-
-    Returns:
-        An instance of the specified response with the error set.
-    """
-    if not user_msg:
-        user_msg = sys_msg
-
-    if _type == "UNKNOWN":
-        logger.exception(sys_msg, exc_info=True)
-    else:
-        logger.error(sys_msg)
-
-    context.set_details(user_msg)
-    context.set_code(status_code)
-
-    return response()
-
-
 def encrypt_and_encode(plaintext):
     """
     Encrypt and encode plaintext.

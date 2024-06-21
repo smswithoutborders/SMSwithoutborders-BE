@@ -5,7 +5,9 @@ RUN apt-get update && \
     apache2 apache2-dev \
     python3-dev \
     default-libmysqlclient-dev \
-    supervisor && \
+    supervisor \
+    libsqlcipher-dev \
+    libsqlite3-dev && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /smswithoutborders-backend

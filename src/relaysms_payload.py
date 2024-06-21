@@ -13,7 +13,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def decrypt_payload(server_state, keypair, ratchet_header, encrypted_content, **kwargs):
+def decrypt_payload(
+    server_state, publish_keypair, ratchet_header, encrypted_content, **kwargs
+):
     """
     Decrypts a RelaySMS payload.
 
@@ -33,32 +35,31 @@ def decrypt_payload(server_state, keypair, ratchet_header, encrypted_content, **
             - state (bytes): Updated server state.
             - error (Exception or None)
     """
+    publish_shared_key = kwargs.get("publish_shared_key")
+    publish_pub_key = kwargs.get("publish_pub_key")
+
     try:
         if not server_state:
             state = States()
+            Ratchets.bob_init(state, publish_shared_key, publish_keypair)
+            logger.info("Ratchet initialized successfully.")
         else:
             state = States.deserialize(server_state)
 
-        publish_shared_key = kwargs.get("publish_shared_key")
-        client_pub_key = kwargs.get("client_pub_key")
-
-        Ratchets.bob_init(state, publish_shared_key, keypair)
-        logger.info("Ratchet initialized successfully.")
-
-        header = HEADERS(keypair)
-        header.deserialize(ratchet_header)
+        header = HEADERS.deserialize(ratchet_header)
         logger.info("Header deserialized successfully.")
 
-        plaintext = Ratchets.decrypt(state, header, encrypted_content, client_pub_key)
+        plaintext = Ratchets.decrypt(state, header, encrypted_content, publish_pub_key)
         logger.info("Content decrypted successfully.")
 
         return plaintext, state, None
-    except (struct.error, IndexError, base64.binascii.Error) as e:
+    except Exception as e:
+        logger.error("Error decrypting relaysms payload: %s", e, exc_info=True)
         return None, None, e
 
 
 def encrypt_payload(
-    server_state, publish_shared_key, client_pub_key, content, **kwargs
+    server_state, publish_shared_key, client_publish_pub_key, content, **kwargs
 ):
     """
     Encrypts content into a RelaySMS payload.
@@ -66,7 +67,7 @@ def encrypt_payload(
     Args:
         server_state (bytes): Current state of the server-side ratchet.
         publish_shared_key (bytes): Publish shared key.
-        client_pub_key (bytes): Client's public key for encryption.
+        client_publish_pub_key (bytes): Client's public key for encryption.
         content (str): Plaintext content to encrypt.
         kwargs (dict): Additional keyword arguments:
             - client_keystore_path (str): Path to client's keystore.
@@ -78,10 +79,14 @@ def encrypt_payload(
             - state (bytes): Updated server state.
     """
     state = States.deserialize(server_state)
-    client_keystore_path = kwargs.get("client_keystore_path")
+    server_keystore_path = kwargs.get("server_keystore_path")
 
-    Ratchets.alice_init(state, publish_shared_key, client_pub_key, client_keystore_path)
-    header, content_ciphertext = Ratchets.encrypt(state, content, client_pub_key)
+    Ratchets.alice_init(
+        state, publish_shared_key, client_publish_pub_key, server_keystore_path
+    )
+    header, content_ciphertext = Ratchets.encrypt(
+        state, content, client_publish_pub_key
+    )
 
     return header.serialize(), content_ciphertext, state
 
@@ -114,7 +119,8 @@ def decode_relay_sms_payload(content):
 
         return header, encrypted_content, None
 
-    except (struct.error, IndexError, base64.binascii.Error) as e:
+    except Exception as e:
+        logger.error("Error decoding relaysms payload: %s", e, exc_info=True)
         return None, None, e
 
 
