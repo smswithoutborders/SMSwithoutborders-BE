@@ -23,7 +23,6 @@ from src.utils import (
     is_valid_x25519_public_key,
     decrypt_and_decode,
     load_keypair_object,
-    error_response,
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
@@ -42,6 +41,35 @@ logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 )
 logger = logging.getLogger("[gRPC Entity Service]")
+
+
+def error_response(context, response, sys_msg, status_code, user_msg=None, _type=None):
+    """
+    Create an error response.
+
+    Args:
+        context: gRPC context.
+        response: gRPC response object.
+        sys_msg (str or tuple): System message.
+        status_code: gRPC status code.
+        user_msg (str or tuple): User-friendly message.
+        _type (str): Type of error.
+
+    Returns:
+        An instance of the specified response with the error set.
+    """
+    if not user_msg:
+        user_msg = sys_msg
+
+    if _type == "UNKNOWN":
+        logger.exception(sys_msg, exc_info=True)
+    else:
+        logger.error(sys_msg)
+
+    context.set_details(user_msg)
+    context.set_code(status_code)
+
+    return response()
 
 
 def validate_request_fields(context, request, response, required_fields):
@@ -365,8 +393,8 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     f"Incorrect Password provided for phone number {request.phone_number}",
                     grpc.StatusCode.UNAUTHENTICATED,
                     user_msg=(
-                        "Incorrect credentials. Please double-check ",
-                        "your details and try again.",
+                        "Incorrect credentials. Please double-check "
+                        "your details and try again."
                     ),
                 )
 
@@ -378,6 +406,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             message, expires = pow_response
             entity_obj.device_id = None
+            entity_obj.server_state = None
             entity_obj.save()
 
             return response(
@@ -674,7 +703,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
             return response(
-                message="Successfully fetched tokens and decrypted payload",
+                message="Successfully decrypted payload",
                 success=True,
                 payload_plaintext=content_plaintext,
             )

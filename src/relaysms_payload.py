@@ -50,7 +50,6 @@ def decrypt_payload(
         logger.info("Header deserialized successfully.")
 
         plaintext = Ratchets.decrypt(state, header, encrypted_content, publish_pub_key)
-        print(plaintext)
         logger.info("Content decrypted successfully.")
 
         return plaintext, state, None
