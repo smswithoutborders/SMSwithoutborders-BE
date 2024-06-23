@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 import base64
 
 from jwt import JWT, jwk_from_dict
-from jwt.exceptions import JWTDecodeError
 from jwt.utils import get_int_from_datetime
 
 from src.crypto import encrypt_fernet
@@ -72,5 +71,6 @@ def verify_llt(llt, key):
         logger.info("Successfully verified long-lived token: %s", llt)
         return payload, None
 
-    except JWTDecodeError as error:
+    except Exception as error:
+        logger.error("Error verifying long-lived token: %s", error)
         return None, error

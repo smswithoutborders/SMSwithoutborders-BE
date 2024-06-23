@@ -201,6 +201,20 @@ message DeleteEntityTokenResponse {
     bool success = 2;
 }
 
+// Request message for deleting an entity.
+message DeleteEntityRequest {
+    // The long-lived token of the authenticated entity.
+    string long_lived_token = 1;
+}
+
+// Response message for deleting an entity.
+message DeleteEntityResponse {
+    // A response message.
+    string message = 1;
+    // Indicates whether the operation was successful.
+    bool success = 2;
+}
+
 // Service for managing entities.
 service Entity {
     // Creates an entity.
@@ -221,4 +235,6 @@ service Entity {
     rpc UpdateEntityToken (UpdateEntityTokenRequest) returns (UpdateEntityTokenResponse);
     // Deletes an entity's access token.
     rpc DeleteEntityToken (DeleteEntityTokenRequest) returns (DeleteEntityTokenResponse);
+    // Deletes an entity.
+    rpc DeleteEntity (DeleteEntityRequest) returns (DeleteEntityResponse);
 }
