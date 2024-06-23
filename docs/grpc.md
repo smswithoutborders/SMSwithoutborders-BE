@@ -18,6 +18,7 @@
   - [Decrypt Payload](#decrypt-payload)
   - [Encrypt Payload](#encrypt-payload)
   - [Update An Entity Token](#update-an-entitys-token)
+  - [Delete An Entity's Token](#delete-an-entitys-token)
 
 ## Download Protocol Buffer File
 
@@ -907,6 +908,93 @@ localhost:6000 vault.v1.Entity/UpdateEntityToken
 ```json
 {
 	"message": "Token updated successfully.",
+	"success": true
+}
+```
+
+---
+
+#### Delete An Entity's Token
+
+This function deletes tokens associated with an entity.
+
+---
+
+> `request` **DeleteEntityTokenRequest**
+
+> [!IMPORTANT]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
+
+| Field              | Type   | Description                                                          |
+| ------------------ | ------ | -------------------------------------------------------------------- |
+| long_lived_token   | string | The long-lived token for the authenticated session.                  |
+| platform           | string | The platform from which the token is being updated. (e.g., "gmail"). |
+| account_identifier | string | The identifier of the account associated with the token.             |
+
+---
+
+> `response` **DeleteEntityTokenResponse**
+
+> [!IMPORTANT]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
+
+| Field   | Type   | Description                                |
+| ------- | ------ | ------------------------------------------ |
+| message | string | A response message from the server.        |
+| success | bool   | Indicates if the operation was successful. |
+
+---
+
+> `method` **DeleteEntityToken**
+
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+---
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d @ \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/DeleteEntityToken <payload.json
+```
+
+---
+
+**Sample payload.json**
+
+```json
+{
+	"long_lived_token": "long_lived_token",
+	"platform": "gmail",
+	"account_identifier": "sample@mail.com"
+}
+```
+
+---
+
+**Sample response**
+
+```json
+{
+	"message": "Token deleted successfully.",
 	"success": true
 }
 ```
