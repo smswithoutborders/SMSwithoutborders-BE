@@ -84,6 +84,8 @@ python3 grpc_server.py
 
 An entity represents a user or client in the vault.
 
+---
+
 #### Initiate Creation
 
 Before creating an entity, you must prove ownership of the phone number you
@@ -91,6 +93,8 @@ intend to use. This step ensures the security and authenticity of the entity
 creation process.
 
 ---
+
+##### Request
 
 > `request` **CreateEntityRequest**
 
@@ -104,6 +108,8 @@ creation process.
 | phone_number | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
 
 ---
+
+##### Response
 
 > `response` **CreateEntityResponse**
 
@@ -119,6 +125,8 @@ creation process.
 | message                  | string | A response message from the server.                                                                         |
 
 ---
+
+##### Method
 
 > `method` **CreateEntity**
 
@@ -170,6 +178,8 @@ localhost:6000 vault.v1.Entity/CreateEntity
 
 ---
 
+##### Request
+
 > `request` **CreateEntityRequest**
 
 > [!IMPORTANT]
@@ -188,6 +198,8 @@ localhost:6000 vault.v1.Entity/CreateEntity
 
 ---
 
+##### Response
+
 > `response` **CreateEntityResponse**
 
 > [!IMPORTANT]
@@ -203,6 +215,8 @@ localhost:6000 vault.v1.Entity/CreateEntity
 | long_lived_token         | string | A token for the authenticated session, to be used for subsequent requests. |
 
 ---
+
+##### Method
 
 > `method` **CreateEntity**
 
@@ -272,6 +286,8 @@ of ownership for the phone number.
 
 ---
 
+##### Request
+
 > `request` **AuthenticateEntityRequest**
 
 > [!IMPORTANT]
@@ -285,6 +301,8 @@ of ownership for the phone number.
 | password     | string | A secure password for the entity.                                                                                                     |
 
 ---
+
+##### Response
 
 > `response` **AuthenticateEntityResponse**
 
@@ -300,6 +318,8 @@ of ownership for the phone number.
 | message                  | string | A response message from the server.                                                                         |
 
 ---
+
+##### Method
 
 > `method` **AuthenticateEntity**
 
@@ -352,6 +372,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 
 ---
 
+##### Request
+
 > `request` **AuthenticateEntityRequest**
 
 > [!IMPORTANT]
@@ -368,6 +390,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 
 ---
 
+##### Response
+
 > `response` **AuthenticateEntityResponse**
 
 > [!IMPORTANT]
@@ -383,6 +407,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 | long_lived_token         | string | A token for the authenticated session, to be used for subsequent requests. |
 
 ---
+
+##### Method
 
 > `method` **AuthenticateEntity**
 
@@ -443,6 +469,8 @@ This method retrieves the stored tokens for a given entity.
 
 ---
 
+##### Request
+
 > `request` **ListEntityStoredTokensRequest**
 
 > [!IMPORTANT]
@@ -455,6 +483,8 @@ This method retrieves the stored tokens for a given entity.
 | long_lived_token | string | The long-lived token for the authenticated session, used to identify the entity. |
 
 ---
+
+##### Response
 
 > `response` **ListEntityStoredTokensResponse**
 
@@ -469,6 +499,8 @@ This method retrieves the stored tokens for a given entity.
 | message       | string | A response message from the server.                                    |
 
 ---
+
+##### Method
 
 > `method` **ListEntityStoredTokens**
 
@@ -523,6 +555,8 @@ This step involves storing tokens securely for the authenticated entity.
 
 ---
 
+##### Request
+
 > `request` **StoreEntityTokenRequest**
 
 > [!IMPORTANT]
@@ -545,6 +579,8 @@ Optional fields:
 
 ---
 
+##### Response
+
 > `response` **StoreEntityTokenResponse**
 
 > [!IMPORTANT]
@@ -558,6 +594,8 @@ Optional fields:
 | success | boolean | Indicates if the operation was successful. |
 
 ---
+
+##### Method
 
 > `method` **StoreEntityToken**
 
@@ -616,6 +654,8 @@ This function retrieves an entity's access token.
 
 ---
 
+##### Request
+
 > `request` **GetEntityAccessTokenRequest**
 
 > [!IMPORTANT]
@@ -631,6 +671,8 @@ This function retrieves an entity's access token.
 
 ---
 
+##### Response
+
 > `response` **GetEntityAccessTokenResponse**
 
 > [!IMPORTANT]
@@ -645,6 +687,8 @@ This function retrieves an entity's access token.
 | token   | string | The retrieved token associated with the entity for the specified platform. |
 
 ---
+
+##### Method
 
 > `method` **GetEntityAccessToken**
 
@@ -693,6 +737,8 @@ This function handles decrypting payload content.
 
 ---
 
+##### Request
+
 > `request` **DecryptPayloadRequest**
 
 > [!IMPORTANT]
@@ -706,6 +752,8 @@ This function handles decrypting payload content.
 | payload_ciphertext | string | The encrypted payload ciphertext that needs to be decrypted. |
 
 ---
+
+##### Response
 
 > `response` **DecryptPayloadResponse**
 
@@ -721,6 +769,8 @@ This function handles decrypting payload content.
 | payload_plaintext | string | The decrypted payload plaintext.           |
 
 ---
+
+##### Method
 
 > `method` **DecryptPayload**
 
@@ -769,6 +819,8 @@ This function handles the encryption of payload content.
 
 ---
 
+##### Request
+
 > `request` **EncryptPayloadRequest**
 
 > [!IMPORTANT]
@@ -782,6 +834,8 @@ This function handles the encryption of payload content.
 | payload_plaintext | string | The plaintext payload content to be encrypted.          |
 
 ---
+
+##### Response
 
 > `response` **EncryptPayloadResponse**
 
@@ -797,6 +851,8 @@ This function handles the encryption of payload content.
 | success            | bool   | Indicates if the operation was successful. |
 
 ---
+
+##### Method
 
 > `method` **EncryptPayload**
 
@@ -845,6 +901,8 @@ This function updates tokens associated with an entity.
 
 ---
 
+##### Request
+
 > `request` **UpdateEntityTokenRequest**
 
 > [!IMPORTANT]
@@ -861,6 +919,8 @@ This function updates tokens associated with an entity.
 
 ---
 
+##### Response
+
 > `response` **UpdateEntityTokenResponse**
 
 > [!IMPORTANT]
@@ -874,6 +934,8 @@ This function updates tokens associated with an entity.
 | success | bool   | Indicates if the operation was successful. |
 
 ---
+
+##### Method
 
 > `method` **UpdateEntityToken**
 
@@ -921,6 +983,8 @@ This function deletes tokens associated with an entity.
 
 ---
 
+##### Request
+
 > `request` **DeleteEntityTokenRequest**
 
 > [!IMPORTANT]
@@ -936,6 +1000,8 @@ This function deletes tokens associated with an entity.
 
 ---
 
+##### Response
+
 > `response` **DeleteEntityTokenResponse**
 
 > [!IMPORTANT]
@@ -949,6 +1015,8 @@ This function deletes tokens associated with an entity.
 | success | bool   | Indicates if the operation was successful. |
 
 ---
+
+##### Method
 
 > `method` **DeleteEntityToken**
 
@@ -1014,6 +1082,8 @@ This function deletes an entity.
 
 ---
 
+##### Request
+
 > `request` **DeleteEntityRequest**
 
 > [!IMPORTANT]
@@ -1026,6 +1096,8 @@ This function deletes an entity.
 | long_lived_token | string | The long-lived token for the authenticated session. |
 
 ---
+
+##### Response
 
 > `response` **DeleteEntityResponse**
 
@@ -1040,6 +1112,8 @@ This function deletes an entity.
 | success | bool   | Indicates if the operation was successful. |
 
 ---
+
+##### Method
 
 > `method` **DeleteEntity**
 
