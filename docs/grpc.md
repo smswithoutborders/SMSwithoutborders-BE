@@ -609,7 +609,7 @@ localhost:6000 vault.v1.Entity/StoreEntityToken <payload.json
 }
 ```
 
-#### Get Entity Access Token
+### Get Entity Access Token
 
 This function retrieves an entity's access token.
 
@@ -686,7 +686,7 @@ localhost:6000 vault.v1.Entity/GetEntityAccessToken
 
 ---
 
-#### Decrypt Payload
+### Decrypt Payload
 
 This function handles decrypting payload content.
 
@@ -762,7 +762,7 @@ localhost:6000 vault.v1.Entity/DecryptPayload
 
 ---
 
-#### Encrypt Payload
+### Encrypt Payload
 
 This function handles the encryption of payload content.
 
@@ -838,7 +838,7 @@ localhost:6000 vault.v1.Entity/EncryptPayload
 
 ---
 
-#### Update An Entity's Token
+### Update An Entity's Token
 
 This function updates tokens associated with an entity.
 
@@ -914,7 +914,7 @@ localhost:6000 vault.v1.Entity/UpdateEntityToken
 
 ---
 
-#### Delete An Entity's Token
+### Delete An Entity's Token
 
 This function deletes tokens associated with an entity.
 
