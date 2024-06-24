@@ -1,4 +1,4 @@
-"""Vault gRPC server"""
+"""Vault gRPC Internal Server"""
 
 import logging
 import os
@@ -10,12 +10,12 @@ import vault_pb2_grpc
 
 from settings import Configurations
 from src.utils import get_configs
-from src.grpc_entity_service import EntityService
+from src.grpc_entity_internal_service import EntityInternalService
 
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 )
-logger = logging.getLogger("[Vault gRPC Server]")
+logger = logging.getLogger("[Vault gRPC Internal Server]")
 
 
 class LoggingInterceptor(ServerInterceptor):
@@ -53,14 +53,14 @@ class LoggingInterceptor(ServerInterceptor):
 
 def serve():
     """
-    Starts the gRPC server and listens for requests.
+    Starts the gRPC internal server and listens for requests.
     """
     mode = Configurations.MODE
     server_certificate = get_configs("SSL_CERTIFICATE")
     private_key = get_configs("SSL_KEY")
     hostname = get_configs("GRPC_HOST")
-    secure_port = get_configs("GRPC_SSL_PORT")
-    port = get_configs("GRPC_PORT")
+    secure_port = get_configs("GRPC_INTERNAL_SSL_PORT")
+    port = get_configs("GRPC_INTERNAL_PORT")
 
     num_cpu_cores = os.cpu_count()
     max_workers = 10
@@ -76,7 +76,7 @@ def serve():
         futures.ThreadPoolExecutor(max_workers=max_workers),
         interceptors=[LoggingInterceptor()],
     )
-    vault_pb2_grpc.add_EntityServicer_to_server(EntityService(), server)
+    vault_pb2_grpc.add_EntityInternalServicer_to_server(EntityInternalService(), server)
 
     if mode == "production":
         try:

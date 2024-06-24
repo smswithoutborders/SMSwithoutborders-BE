@@ -1,7 +1,5 @@
 """gRPC Entity Service"""
 
-import os
-import json
 import logging
 import base64
 
@@ -11,7 +9,7 @@ import vault_pb2
 import vault_pb2_grpc
 
 from src.entity import create_entity, find_entity
-from src.tokens import fetch_entity_tokens, create_entity_token
+from src.tokens import fetch_entity_tokens
 from src.crypto import generate_hmac, verify_hmac
 from src.otp_service import send_otp, verify_otp
 from src.utils import (
@@ -23,18 +21,13 @@ from src.utils import (
     is_valid_x25519_public_key,
     decrypt_and_decode,
     load_keypair_object,
+    clear_keystore,
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
-from src.relaysms_payload import (
-    decode_relay_sms_payload,
-    encode_relay_sms_payload,
-    encrypt_payload,
-    decrypt_payload,
-)
+
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
-KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
 SUPPORTED_PLATFORMS = ("gmail",)
 
 logging.basicConfig(
@@ -80,13 +73,22 @@ def validate_request_fields(context, request, response, required_fields):
         context: gRPC context.
         request: gRPC request object.
         response: gRPC response object.
-        required_fields (list): List of required fields.
+        required_fields (list): List of required fields, can include tuples.
 
     Returns:
         None or response: None if no missing fields,
             error response otherwise.
     """
-    missing_fields = [field for field in required_fields if not getattr(request, field)]
+    missing_fields = []
+
+    for field in required_fields:
+        if isinstance(field, tuple):
+            if not any(getattr(request, f, None) for f in field):
+                missing_fields.append(f"({' or '.join(field)})")
+        else:
+            if not getattr(request, field, None):
+                missing_fields.append(field)
+
     if missing_fields:
         return error_response(
             context,
@@ -178,7 +180,7 @@ def verify_long_lived_token(request, context, response):
         tuple: Tuple containing entity object, and error response.
     """
 
-    def create_error_response(error_msg, error_detail=None):
+    def create_error_response(error_msg):
         return error_response(
             context,
             response,
@@ -188,13 +190,12 @@ def verify_long_lived_token(request, context, response):
                 "Your session has expired or the token is invalid. "
                 "Please log in again to generate a new token."
             ),
-            _type=error_detail,
         )
 
     try:
         eid, llt = request.long_lived_token.split(":", 1)
     except ValueError as err:
-        return None, create_error_response(err, "UNKNOWN")
+        return None, create_error_response(err)
 
     entity_obj = find_entity(eid=eid)
     if not entity_obj:
@@ -210,7 +211,7 @@ def verify_long_lived_token(request, context, response):
     llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
 
     if not llt_payload:
-        return None, create_error_response(llt_error, "UNKNOWN")
+        return None, create_error_response(llt_error)
 
     if llt_payload.get("eid") != eid:
         return None, create_error_response(
@@ -247,15 +248,12 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             password_hash = generate_hmac(HASHING_KEY, request.password)
             country_code_ciphertext_b64 = encrypt_and_encode(request.country_code)
 
+            clear_keystore(eid)
             entity_publish_keypair, entity_publish_pub_key = (
-                generate_keypair_and_public_key(
-                    os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
-                )
+                generate_keypair_and_public_key(eid, "publish")
             )
             entity_device_id_keypair, entity_device_id_pub_key = (
-                generate_keypair_and_public_key(
-                    os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db")
-                )
+                generate_keypair_and_public_key(eid, "device_id")
             )
 
             device_id_shared_key = entity_device_id_keypair.agree(
@@ -444,15 +442,12 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             eid = entity_obj.eid.hex
 
+            clear_keystore(eid)
             entity_publish_keypair, entity_publish_pub_key = (
-                generate_keypair_and_public_key(
-                    os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
-                )
+                generate_keypair_and_public_key(eid, "publish")
             )
             entity_device_id_keypair, entity_device_id_pub_key = (
-                generate_keypair_and_public_key(
-                    os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db")
-                )
+                generate_keypair_and_public_key(eid, "device_id")
             )
 
             device_id_shared_key = entity_device_id_keypair.agree(
@@ -560,18 +555,60 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 _type="UNKNOWN",
             )
 
-    def StoreEntityToken(self, request, context):
-        """Handles storing tokens for an entity"""
+    def DeleteEntity(self, request, context):
+        """Handles deleting an entity"""
 
-        response = vault_pb2.StoreEntityTokenResponse
+        response = vault_pb2.DeleteEntityResponse
+
+        def validate_fields():
+            return validate_request_fields(
+                context, request, response, ["long_lived_token"]
+            )
+
+        def fetch_stored_tokens(entity_obj):
+            stored_tokens = fetch_entity_tokens(
+                entity=entity_obj,
+                fetch_all=True,
+                fields=["account_identifier", "platform"],
+                return_json=True,
+            )
+            for token in stored_tokens:
+                for field in ["account_identifier"]:
+                    if field in token:
+                        token[field] = decrypt_and_decode(token[field])
+
+            if stored_tokens:
+                token_info = [
+                    {
+                        "account_identifier": token.get("account_identifier"),
+                        "platform": token.get("platform"),
+                    }
+                    for token in stored_tokens
+                ]
+
+                token_details = "; ".join(
+                    str(
+                        {
+                            "account_identifier": token["account_identifier"],
+                            "platform": token["platform"],
+                        }
+                    )
+                    for token in token_info
+                )
+
+                return error_response(
+                    context,
+                    response,
+                    f"You cannot delete entity because it still has stored tokens. "
+                    f"Revoke stored tokens with the following platforms and try again: "
+                    f"{token_details}.",
+                    grpc.StatusCode.FAILED_PRECONDITION,
+                )
+
+            return None
 
         try:
-            invalid_fields_response = validate_request_fields(
-                context,
-                request,
-                response,
-                ["long_lived_token", "token", "platform", "account_identifier"],
-            )
+            invalid_fields_response = validate_fields()
             if invalid_fields_response:
                 return invalid_fields_response
 
@@ -581,347 +618,17 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if llt_error_response:
                 return llt_error_response
 
-            if request.platform.lower() not in SUPPORTED_PLATFORMS:
-                raise NotImplementedError(
-                    f"The protocol '{request.platform}' is currently not supported. "
-                    "Please contact the developers for more information on when "
-                    "this platform will be implemented."
-                )
+            stored_tokens = fetch_stored_tokens(entity_obj)
+            if stored_tokens:
+                return stored_tokens
 
-            account_identifier_hash = generate_hmac(
-                HASHING_KEY, request.account_identifier
-            )
+            entity_obj.delete_instance()
+            clear_keystore(entity_obj.eid.hex)
 
-            existing_tokens = fetch_entity_tokens(
-                entity=entity_obj,
-                account_identifier_hash=account_identifier_hash,
-                platform=request.platform,
-            )
-
-            if existing_tokens:
-                return error_response(
-                    context,
-                    response,
-                    "Entity already has a token associated with account "
-                    f"identifier {request.account_identifier} for {request.platform}",
-                    grpc.StatusCode.ALREADY_EXISTS,
-                )
-
-            new_token = {
-                "entity": entity_obj,
-                "platform": request.platform,
-                "account_identifier_hash": account_identifier_hash,
-                "account_identifier": encrypt_and_encode(request.account_identifier),
-                "account_tokens": encrypt_and_encode(request.token),
-            }
-            create_entity_token(**new_token)
-            logger.info("Successfully stored tokens for %s", entity_obj.eid)
+            logger.info("Successfully deleted entity %s", entity_obj.eid)
 
             return response(
-                message="Token stored successfully.",
-                success=True,
-            )
-
-        except NotImplementedError as e:
-            return error_response(
-                context,
-                response,
-                str(e),
-                grpc.StatusCode.UNIMPLEMENTED,
-            )
-
-        except Exception as e:
-            return error_response(
-                context,
-                response,
-                e,
-                grpc.StatusCode.INTERNAL,
-                user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
-            )
-
-    def DecryptPayload(self, request, context):
-        """Handles decrypting relaysms payload"""
-
-        response = vault_pb2.DecryptPayloadResponse
-
-        def validate_fields():
-            return validate_request_fields(
-                context,
-                request,
-                response,
-                ["device_id", "payload_ciphertext"],
-            )
-
-        def decode_message():
-            header, content_ciphertext, decode_error = decode_relay_sms_payload(
-                request.payload_ciphertext
-            )
-
-            if decode_error:
-                return None, error_response(
-                    context,
-                    response,
-                    decode_error,
-                    grpc.StatusCode.INVALID_ARGUMENT,
-                    user_msg="Invalid content format.",
-                    _type="UNKNOWN",
-                )
-
-            return (header, content_ciphertext), None
-
-        def decrypt_message(entity_obj, header, content_ciphertext):
-            publish_keypair = load_keypair_object(entity_obj.publish_keypair)
-            publish_shared_key = publish_keypair.agree(
-                base64.b64decode(entity_obj.client_publish_pub_key)
-            )
-
-            content_plaintext, state, decrypt_error = decrypt_payload(
-                server_state=entity_obj.server_state,
-                publish_shared_key=publish_shared_key,
-                publish_keypair=publish_keypair,
-                ratchet_header=header,
-                encrypted_content=content_ciphertext,
-                publish_pub_key=publish_keypair.get_public_key(),
-            )
-
-            if decrypt_error:
-                return error_response(
-                    context,
-                    response,
-                    decrypt_error,
-                    grpc.StatusCode.INVALID_ARGUMENT,
-                    user_msg="Invalid content format.",
-                    _type="UNKNOWN",
-                )
-
-            entity_obj.server_state = state.serialize()
-            entity_obj.save()
-            logger.info(
-                "Successfully decrypted payload for %s",
-                entity_obj.eid,
-            )
-
-            return response(
-                message="Successfully decrypted payload",
-                success=True,
-                payload_plaintext=content_plaintext,
-            )
-
-        try:
-            invalid_fields_response = validate_fields()
-            if invalid_fields_response:
-                return invalid_fields_response
-
-            entity_obj = find_entity(device_id=request.device_id)
-
-            if not entity_obj:
-                return error_response(
-                    context,
-                    response,
-                    f"Invalid device ID '{request.device_id}'. "
-                    "Please log in again to obtain a valid device ID.",
-                    grpc.StatusCode.UNAUTHENTICATED,
-                )
-
-            decoded_response, decoding_error = decode_message()
-            if decoding_error:
-                return decoding_error
-
-            header, content_ciphertext = decoded_response
-
-            return decrypt_message(entity_obj, header, content_ciphertext)
-
-        except Exception as e:
-            return error_response(
-                context,
-                response,
-                e,
-                grpc.StatusCode.INTERNAL,
-                user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
-            )
-
-    def GetEntityAccessToken(self, request, context):
-        """Handles getting an entity's access token."""
-
-        response = vault_pb2.GetEntityAccessTokenResponse
-
-        def validate_fields():
-            return validate_request_fields(
-                context,
-                request,
-                response,
-                ["device_id", "platform", "account_identifier"],
-            )
-
-        try:
-            invalid_fields_response = validate_fields()
-            if invalid_fields_response:
-                return invalid_fields_response
-
-            entity_obj = find_entity(device_id=request.device_id)
-
-            account_identifier_hash = generate_hmac(
-                HASHING_KEY, request.account_identifier
-            )
-            tokens = fetch_entity_tokens(
-                entity=entity_obj,
-                fields=["account_tokens"],
-                return_json=True,
-                platform=request.platform,
-                account_identifier_hash=account_identifier_hash,
-            )
-            for token in tokens:
-                for field in ["account_tokens"]:
-                    if field in token:
-                        token[field] = decrypt_and_decode(token[field])
-
-            logger.info(
-                "Successfully fetched tokens for %s",
-                entity_obj.eid,
-            )
-
-            if not tokens:
-                return error_response(
-                    context,
-                    response,
-                    "No token found with account "
-                    f"identifier {request.account_identifier} for {request.platform}",
-                    grpc.StatusCode.NOT_FOUND,
-                )
-
-            return response(
-                message="Successfully fetched tokens.",
-                success=True,
-                token=tokens[0]["account_tokens"],
-            )
-
-        except Exception as e:
-            return error_response(
-                context,
-                response,
-                e,
-                grpc.StatusCode.INTERNAL,
-                user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
-            )
-
-    def EncryptPayload(self, request, context):
-        """Handles encrypting payload"""
-
-        response = vault_pb2.EncryptPayloadResponse
-
-        try:
-            invalid_fields_response = validate_request_fields(
-                context,
-                request,
-                response,
-                ["device_id", "payload_plaintext"],
-            )
-            if invalid_fields_response:
-                return invalid_fields_response
-
-            entity_obj = find_entity(device_id=request.device_id)
-
-            if not entity_obj:
-                return error_response(
-                    context,
-                    response,
-                    f"Invalid device ID '{request.device_id}'. "
-                    "Please log in again to obtain a valid device ID.",
-                    grpc.StatusCode.UNAUTHENTICATED,
-                )
-
-            # entity_publish_keypair = load_keypair_object(entity_obj.publish_keypair)
-            # publish_shared_key = entity_publish_keypair.agree(
-            #     base64.b64decode(entity_obj.client_publish_pub_key)
-            # )
-
-            # header, content_ciphertext, state = encrypt_payload(
-            #     server_state=entity_obj.server_state,
-            #     publish_shared_key=publish_shared_key,
-            #     keypair=load_keypair_object(entity_obj.publish_keypair),
-            #     content=request.payload_plaintext,
-            #     client_pub_key=base64.b64decode(entity_obj.client_publish_pub_key),
-            #     client_keystore_path=os.path.join(
-            #         KEYSTORE_PATH, f"{entity_obj.eid.hex}_publish.db"
-            #     ),
-            # )
-
-            # b64_encoded_content = encode_relay_sms_payload(header, content_ciphertext)
-
-            # entity_obj.server_state = state.serialize()
-            # entity_obj.save()
-            b64_encoded_content = request.payload_plaintext
-
-            return response(
-                message="Successfully encrypted payload.",
-                payload_ciphertext=b64_encoded_content,
-                success=True,
-            )
-
-        except Exception as e:
-            return error_response(
-                context,
-                response,
-                e,
-                grpc.StatusCode.INTERNAL,
-                user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
-            )
-
-    def UpdateEntityToken(self, request, context):
-        """Handles updating tokens for an entity"""
-
-        response = vault_pb2.UpdateEntityTokenResponse
-
-        try:
-            invalid_fields_response = validate_request_fields(
-                context,
-                request,
-                response,
-                ["device_id", "token", "platform", "account_identifier"],
-            )
-            if invalid_fields_response:
-                return invalid_fields_response
-
-            entity_obj = find_entity(device_id=request.device_id)
-
-            if not entity_obj:
-                return error_response(
-                    context,
-                    response,
-                    f"Invalid device ID '{request.device_id}'. "
-                    "Please log in again to obtain a valid device ID.",
-                    grpc.StatusCode.UNAUTHENTICATED,
-                )
-
-            account_identifier_hash = generate_hmac(
-                HASHING_KEY, request.account_identifier
-            )
-
-            existing_tokens = fetch_entity_tokens(
-                entity=entity_obj,
-                account_identifier_hash=account_identifier_hash,
-                platform=request.platform,
-            )
-
-            if not existing_tokens:
-                return error_response(
-                    context,
-                    response,
-                    "No token found with account "
-                    f"identifier {request.account_identifier} for {request.platform}",
-                    grpc.StatusCode.NOT_FOUND,
-                )
-
-            existing_tokens[0].account_tokens = encrypt_and_encode(request.token)
-            existing_tokens[0].save()
-            logger.info("Successfully updated token for %s", entity_obj.eid)
-
-            return response(
-                message="Token updated successfully.",
+                message="Entity deleted successfully.",
                 success=True,
             )
 

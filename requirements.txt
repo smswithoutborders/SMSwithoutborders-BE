@@ -1,5 +1,6 @@
 Flask==2.3.2
 Flask-Cors==4.0.1
+grpc-interceptor==0.15.4
 grpcio==1.64.0
 grpcio-testing==1.64.0
 grpcio-tools==1.64.0

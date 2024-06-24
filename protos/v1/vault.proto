@@ -110,10 +110,12 @@ message StoreEntityTokenResponse {
 message GetEntityAccessTokenRequest {
     // Device ID for identifying the requesting device.
     string device_id = 1;
+    // The long-lived token of the authenticated entity.
+    string long_lived_token = 2;
     // The platform associated with the token.
-    string platform = 2;
+    string platform = 3;
     // The identifier of the account associated with the token.
-    string account_identifier = 3;
+    string account_identifier = 4;
 }
 
 // Response message for getting entity access token.
@@ -181,14 +183,52 @@ message UpdateEntityTokenResponse {
     bool success = 2;
 }
 
+// Request message for deleting an entity's token.
+message DeleteEntityTokenRequest {
+    // The long-lived token of the authenticated entity.
+    string long_lived_token = 1;
+    // The platform associated with the token.
+    string platform = 2;
+    // The identifier of the account associated with the token.
+    string account_identifier = 3;
+}
+
+// Response message for deleting an entity's token.
+message DeleteEntityTokenResponse {
+    // A response message.
+    string message = 1;
+    // Indicates whether the operation was successful.
+    bool success = 2;
+}
+
+// Request message for deleting an entity.
+message DeleteEntityRequest {
+    // The long-lived token of the authenticated entity.
+    string long_lived_token = 1;
+}
+
+// Response message for deleting an entity.
+message DeleteEntityResponse {
+    // A response message.
+    string message = 1;
+    // Indicates whether the operation was successful.
+    bool success = 2;
+}
+
 // Service for managing entities.
 service Entity {
     // Creates an entity.
     rpc CreateEntity (CreateEntityRequest) returns (CreateEntityResponse);
     // Authenticates an entity.
     rpc AuthenticateEntity (AuthenticateEntityRequest) returns (AuthenticateEntityResponse);
-    // Lists stored tokens for an entity.
+    // Lists all stored access tokens for an entity.
     rpc ListEntityStoredTokens (ListEntityStoredTokenRequest) returns (ListEntityStoredTokenResponse);
+    // Deletes an entity.
+    rpc DeleteEntity (DeleteEntityRequest) returns (DeleteEntityResponse);
+}
+
+// Service for managing entities internally.
+service EntityInternal {
     // Stores a token for an entity.
     rpc StoreEntityToken (StoreEntityTokenRequest) returns (StoreEntityTokenResponse);
     // Get an entity's access token.
@@ -197,6 +237,8 @@ service Entity {
     rpc DecryptPayload (DecryptPayloadRequest) returns (DecryptPayloadResponse);
     // Encrypt payload.
     rpc EncryptPayload (EncryptPayloadRequest) returns (EncryptPayloadResponse);
-    // Updates a token for an entity.
+    // Updates an entity's access token.
     rpc UpdateEntityToken (UpdateEntityTokenRequest) returns (UpdateEntityTokenResponse);
+    // Deletes an entity's access token.
+    rpc DeleteEntityToken (DeleteEntityTokenRequest) returns (DeleteEntityTokenResponse);
 }

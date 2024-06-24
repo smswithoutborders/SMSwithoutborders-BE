@@ -6,18 +6,22 @@
   - [Version 1](#version-1)
 - [Prerequisites](#prerequisites)
 - [Usage](#usage)
-  - [Create an Entity](#create-an-entity)
-    - [Initiate Creation](#initiate-creation)
-    - [Complete Creation](#complete-creation)
-  - [Authenticate an Entity](#authenticate-an-entity)
-    - [Initiate Authentication](#initiate-authentication)
-    - [Complete Authentication](#complete-authentication)
-  - [List an Entity's Stored Tokens](#list-an-entitys-stored-tokens)
-  - [Store an Entity's Token](#store-an-entitys-token)
-  - [Get Entity Access Token](#get-entity-access-token)
-  - [Decrypt Payload](#decrypt-payload)
-  - [Encrypt Payload](#encrypt-payload)
-  - [Update An Entity Token](#update-an-entitys-token)
+  - [Public Functions](#public-functions)
+    - [Create an Entity](#create-an-entity)
+      - [Initiate Creation](#initiate-creation)
+      - [Complete Creation](#complete-creation)
+    - [Authenticate an Entity](#authenticate-an-entity)
+      - [Initiate Authentication](#initiate-authentication)
+      - [Complete Authentication](#complete-authentication)
+      - [List an Entity's Stored Tokens](#list-an-entitys-stored-tokens)
+    - [Delete An Entity](#delete-an-entity)
+  - [Internal Functions](#internal-functions)
+    - [Store an Entity's Token](#store-an-entitys-token)
+    - [Get Entity Access Token](#get-entity-access-token)
+    - [Decrypt Payload](#decrypt-payload)
+    - [Encrypt Payload](#encrypt-payload)
+    - [Update An Entity Token](#update-an-entitys-token)
+    - [Delete An Entity's Token](#delete-an-entitys-token)
 
 ## Download Protocol Buffer File
 
@@ -64,7 +68,9 @@ python -m grpc_tools.protoc -I protos/v1 --python_out=. --grpc_python_out=. prot
 
 ### Starting the Server
 
-**Quick Start (for Development Only):**
+#### Quick Start (for Development Only):
+
+#### Public Server
 
 ```bash
 HASHING_SALT=/path/to/hashing.key \
@@ -76,11 +82,31 @@ HOST=127.0.0.1 \
 python3 grpc_server.py
 ```
 
+#### Internal Server
+
+```bash
+HASHING_SALT=/path/to/hashing.key \
+SHARED_KEY=/path/to/shared.key \
+KEYSTORE_PATH=/path/to/key_store \
+SQLITE_DATABASE_PATH=/path/to/local.db \
+GRPC_INTERNAL_PORT=6099 \
+HOST=127.0.0.1 \
+python3 grpc_internal_server.py
+```
+
 ## Usage
+
+## Public Functions
+
+These functions are exposed to external clients for interaction with the vault.
+
+---
 
 ### Create an Entity
 
 An entity represents a user or client in the vault.
+
+---
 
 #### Initiate Creation
 
@@ -89,6 +115,8 @@ intend to use. This step ensures the security and authenticity of the entity
 creation process.
 
 ---
+
+##### Request
 
 > `request` **CreateEntityRequest**
 
@@ -102,6 +130,8 @@ creation process.
 | phone_number | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
 
 ---
+
+##### Response
 
 > `response` **CreateEntityResponse**
 
@@ -117,6 +147,8 @@ creation process.
 | message                  | string | A response message from the server.                                                                         |
 
 ---
+
+##### Method
 
 > `method` **CreateEntity**
 
@@ -168,6 +200,8 @@ localhost:6000 vault.v1.Entity/CreateEntity
 
 ---
 
+##### Request
+
 > `request` **CreateEntityRequest**
 
 > [!IMPORTANT]
@@ -186,6 +220,8 @@ localhost:6000 vault.v1.Entity/CreateEntity
 
 ---
 
+##### Response
+
 > `response` **CreateEntityResponse**
 
 > [!IMPORTANT]
@@ -201,6 +237,8 @@ localhost:6000 vault.v1.Entity/CreateEntity
 | long_lived_token         | string | A token for the authenticated session, to be used for subsequent requests. |
 
 ---
+
+##### Method
 
 > `method` **CreateEntity**
 
@@ -270,6 +308,8 @@ of ownership for the phone number.
 
 ---
 
+##### Request
+
 > `request` **AuthenticateEntityRequest**
 
 > [!IMPORTANT]
@@ -283,6 +323,8 @@ of ownership for the phone number.
 | password     | string | A secure password for the entity.                                                                                                     |
 
 ---
+
+##### Response
 
 > `response` **AuthenticateEntityResponse**
 
@@ -298,6 +340,8 @@ of ownership for the phone number.
 | message                  | string | A response message from the server.                                                                         |
 
 ---
+
+##### Method
 
 > `method` **AuthenticateEntity**
 
@@ -350,6 +394,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 
 ---
 
+##### Request
+
 > `request` **AuthenticateEntityRequest**
 
 > [!IMPORTANT]
@@ -366,6 +412,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 
 ---
 
+##### Response
+
 > `response` **AuthenticateEntityResponse**
 
 > [!IMPORTANT]
@@ -381,6 +429,8 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 | long_lived_token         | string | A token for the authenticated session, to be used for subsequent requests. |
 
 ---
+
+##### Method
 
 > `method` **AuthenticateEntity**
 
@@ -441,6 +491,8 @@ This method retrieves the stored tokens for a given entity.
 
 ---
 
+##### Request
+
 > `request` **ListEntityStoredTokensRequest**
 
 > [!IMPORTANT]
@@ -453,6 +505,8 @@ This method retrieves the stored tokens for a given entity.
 | long_lived_token | string | The long-lived token for the authenticated session, used to identify the entity. |
 
 ---
+
+##### Response
 
 > `response` **ListEntityStoredTokensResponse**
 
@@ -467,6 +521,8 @@ This method retrieves the stored tokens for a given entity.
 | message       | string | A response message from the server.                                    |
 
 ---
+
+##### Method
 
 > `method` **ListEntityStoredTokens**
 
@@ -515,11 +571,107 @@ localhost:6000 vault.v1.Entity/ListEntityStoredTokens
 }
 ```
 
+---
+
+### Delete An Entity
+
+This function deletes an entity.
+
+> [!WARNING]
+>
+> Ensure all stored tokens associated with this entity have been revoked before
+> using this function. Failure to do so will result in a `FAILED_PRECONDITION`
+> error.
+
+---
+
+##### Request
+
+> `request` **DeleteEntityRequest**
+
+> [!IMPORTANT]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
+
+| Field            | Type   | Description                                         |
+| ---------------- | ------ | --------------------------------------------------- |
+| long_lived_token | string | The long-lived token for the authenticated session. |
+
+---
+
+##### Response
+
+> `response` **DeleteEntityResponse**
+
+> [!IMPORTANT]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
+
+| Field   | Type   | Description                                |
+| ------- | ------ | ------------------------------------------ |
+| message | string | A response message from the server.        |
+| success | bool   | Indicates if the operation was successful. |
+
+---
+
+##### Method
+
+> `method` **DeleteEntity**
+
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+---
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d '{"long_lived_token": "long_lived_token"}' \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/DeleteEntity
+```
+
+---
+
+**Sample response**
+
+```json
+{
+	"message": "Entity deleted successfully.",
+	"success": true
+}
+```
+
+---
+
+## Internal Functions
+
+These functions handle internal operations and are not directly exposed to
+external clients.
+
+---
+
 ### Store an Entity's Token
 
 This step involves storing tokens securely for the authenticated entity.
 
 ---
+
+##### Request
 
 > `request` **StoreEntityTokenRequest**
 
@@ -543,6 +695,8 @@ Optional fields:
 
 ---
 
+##### Response
+
 > `response` **StoreEntityTokenResponse**
 
 > [!IMPORTANT]
@@ -556,6 +710,8 @@ Optional fields:
 | success | boolean | Indicates if the operation was successful. |
 
 ---
+
+##### Method
 
 > `method` **StoreEntityToken**
 
@@ -608,11 +764,13 @@ localhost:6000 vault.v1.Entity/StoreEntityToken <payload.json
 }
 ```
 
-#### Get Entity Access Token
+### Get Entity Access Token
 
 This function retrieves an entity's access token.
 
 ---
+
+##### Request
 
 > `request` **GetEntityAccessTokenRequest**
 
@@ -629,6 +787,8 @@ This function retrieves an entity's access token.
 
 ---
 
+##### Response
+
 > `response` **GetEntityAccessTokenResponse**
 
 > [!IMPORTANT]
@@ -643,6 +803,8 @@ This function retrieves an entity's access token.
 | token   | string | The retrieved token associated with the entity for the specified platform. |
 
 ---
+
+##### Method
 
 > `method` **GetEntityAccessToken**
 
@@ -685,11 +847,13 @@ localhost:6000 vault.v1.Entity/GetEntityAccessToken
 
 ---
 
-#### Decrypt Payload
+### Decrypt Payload
 
 This function handles decrypting payload content.
 
 ---
+
+##### Request
 
 > `request` **DecryptPayloadRequest**
 
@@ -705,6 +869,8 @@ This function handles decrypting payload content.
 
 ---
 
+##### Response
+
 > `response` **DecryptPayloadResponse**
 
 > [!IMPORTANT]
@@ -719,6 +885,8 @@ This function handles decrypting payload content.
 | payload_plaintext | string | The decrypted payload plaintext.           |
 
 ---
+
+##### Method
 
 > `method` **DecryptPayload**
 
@@ -761,11 +929,13 @@ localhost:6000 vault.v1.Entity/DecryptPayload
 
 ---
 
-#### Encrypt Payload
+### Encrypt Payload
 
 This function handles the encryption of payload content.
 
 ---
+
+##### Request
 
 > `request` **EncryptPayloadRequest**
 
@@ -781,6 +951,8 @@ This function handles the encryption of payload content.
 
 ---
 
+##### Response
+
 > `response` **EncryptPayloadResponse**
 
 > [!IMPORTANT]
@@ -795,6 +967,8 @@ This function handles the encryption of payload content.
 | success            | bool   | Indicates if the operation was successful. |
 
 ---
+
+##### Method
 
 > `method` **EncryptPayload**
 
@@ -837,11 +1011,13 @@ localhost:6000 vault.v1.Entity/EncryptPayload
 
 ---
 
-#### Update An Entity's Token
+### Update An Entity's Token
 
 This function updates tokens associated with an entity.
 
 ---
+
+##### Request
 
 > `request` **UpdateEntityTokenRequest**
 
@@ -859,6 +1035,8 @@ This function updates tokens associated with an entity.
 
 ---
 
+##### Response
+
 > `response` **UpdateEntityTokenResponse**
 
 > [!IMPORTANT]
@@ -872,6 +1050,8 @@ This function updates tokens associated with an entity.
 | success | bool   | Indicates if the operation was successful. |
 
 ---
+
+##### Method
 
 > `method` **UpdateEntityToken**
 
@@ -907,6 +1087,99 @@ localhost:6000 vault.v1.Entity/UpdateEntityToken
 ```json
 {
 	"message": "Token updated successfully.",
+	"success": true
+}
+```
+
+---
+
+### Delete An Entity's Token
+
+This function deletes tokens associated with an entity.
+
+---
+
+##### Request
+
+> `request` **DeleteEntityTokenRequest**
+
+> [!IMPORTANT]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
+
+| Field              | Type   | Description                                                          |
+| ------------------ | ------ | -------------------------------------------------------------------- |
+| long_lived_token   | string | The long-lived token for the authenticated session.                  |
+| platform           | string | The platform from which the token is being updated. (e.g., "gmail"). |
+| account_identifier | string | The identifier of the account associated with the token.             |
+
+---
+
+##### Response
+
+> `response` **DeleteEntityTokenResponse**
+
+> [!IMPORTANT]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
+
+| Field   | Type   | Description                                |
+| ------- | ------ | ------------------------------------------ |
+| message | string | A response message from the server.        |
+| success | bool   | Indicates if the operation was successful. |
+
+---
+
+##### Method
+
+> `method` **DeleteEntityToken**
+
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+---
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d @ \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/DeleteEntityToken <payload.json
+```
+
+---
+
+**Sample payload.json**
+
+```json
+{
+	"long_lived_token": "long_lived_token",
+	"platform": "gmail",
+	"account_identifier": "sample@mail.com"
+}
+```
+
+---
+
+**Sample response**
+
+```json
+{
+	"message": "Token deleted successfully.",
 	"success": true
 }
 ```
