@@ -28,7 +28,7 @@ class LoggingInterceptor(ServerInterceptor):
         Initialize the LoggingInterceptor.
         """
         self.logger = logger
-        self.terminal_width = os.get_terminal_size().columns
+        self.terminal_width = 100
 
     def intercept(self, method, request_or_iterator, context, method_name):
         """
