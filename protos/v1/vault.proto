@@ -223,6 +223,12 @@ service Entity {
     rpc AuthenticateEntity (AuthenticateEntityRequest) returns (AuthenticateEntityResponse);
     // Lists all stored access tokens for an entity.
     rpc ListEntityStoredTokens (ListEntityStoredTokenRequest) returns (ListEntityStoredTokenResponse);
+    // Deletes an entity.
+    rpc DeleteEntity (DeleteEntityRequest) returns (DeleteEntityResponse);
+}
+
+// Service for managing entities internally.
+service EntityInternal {
     // Stores a token for an entity.
     rpc StoreEntityToken (StoreEntityTokenRequest) returns (StoreEntityTokenResponse);
     // Get an entity's access token.
@@ -235,6 +241,4 @@ service Entity {
     rpc UpdateEntityToken (UpdateEntityTokenRequest) returns (UpdateEntityTokenResponse);
     // Deletes an entity's access token.
     rpc DeleteEntityToken (DeleteEntityTokenRequest) returns (DeleteEntityTokenResponse);
-    // Deletes an entity.
-    rpc DeleteEntity (DeleteEntityRequest) returns (DeleteEntityResponse);
 }
