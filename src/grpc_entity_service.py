@@ -23,6 +23,7 @@ from src.utils import (
     is_valid_x25519_public_key,
     decrypt_and_decode,
     load_keypair_object,
+    clear_keystore,
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
@@ -34,7 +35,6 @@ from src.relaysms_payload import (
 )
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
-KEYSTORE_PATH = get_configs("KEYSTORE_PATH")
 SUPPORTED_PLATFORMS = ("gmail",)
 
 logging.basicConfig(
@@ -255,15 +255,12 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             password_hash = generate_hmac(HASHING_KEY, request.password)
             country_code_ciphertext_b64 = encrypt_and_encode(request.country_code)
 
+            clear_keystore(eid)
             entity_publish_keypair, entity_publish_pub_key = (
-                generate_keypair_and_public_key(
-                    os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
-                )
+                generate_keypair_and_public_key(eid, "publish")
             )
             entity_device_id_keypair, entity_device_id_pub_key = (
-                generate_keypair_and_public_key(
-                    os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db")
-                )
+                generate_keypair_and_public_key(eid, "device_id")
             )
 
             device_id_shared_key = entity_device_id_keypair.agree(
@@ -452,15 +449,12 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             eid = entity_obj.eid.hex
 
+            clear_keystore(eid)
             entity_publish_keypair, entity_publish_pub_key = (
-                generate_keypair_and_public_key(
-                    os.path.join(KEYSTORE_PATH, f"{eid}_publish.db")
-                )
+                generate_keypair_and_public_key(eid, "publish.db")
             )
             entity_device_id_keypair, entity_device_id_pub_key = (
-                generate_keypair_and_public_key(
-                    os.path.join(KEYSTORE_PATH, f"{eid}_device_id.db")
-                )
+                generate_keypair_and_public_key(eid, "device_id.db")
             )
 
             device_id_shared_key = entity_device_id_keypair.agree(
@@ -1120,6 +1114,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 return stored_tokens
 
             entity_obj.delete_instance()
+            clear_keystore(entity_obj.eid.hex)
 
             logger.info("Successfully deleted entity %s", entity_obj.eid)
 

@@ -5,6 +5,7 @@ import os
 from concurrent import futures
 
 import grpc
+from grpc_interceptor import ServerInterceptor
 import vault_pb2_grpc
 
 from settings import Configurations
@@ -15,6 +16,39 @@ logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 )
 logger = logging.getLogger("[Vault gRPC Server]")
+
+
+class LoggingInterceptor(ServerInterceptor):
+    """
+    gRPC server interceptor for logging requests.
+    """
+
+    def __init__(self):
+        """
+        Initialize the LoggingInterceptor.
+        """
+        self.logger = logger
+        self.terminal_width = os.get_terminal_size().columns
+
+    def intercept(self, method, request_or_iterator, context, method_name):
+        """
+        Intercept method called for each incoming RPC.
+        """
+        print(f"{'[ REQUEST ]':-<{self.terminal_width}}")
+        self.logger.info("%s - %s", method_name, context.peer())
+        print(f"{'[ OPERATION ]':-<{self.terminal_width}}")
+        response = method(request_or_iterator, context)
+        print(f"{'[ RESPONSE ]':-<{self.terminal_width}}")
+        if context.details():
+            self.logger.error(
+                "%s - %s - %s",
+                str(context.code()).split(".")[1],
+                method_name,
+                context.peer(),
+            )
+        else:
+            self.logger.info("%s - %s - %s", "OK", method_name, context.peer())
+        return response
 
 
 def serve():
@@ -38,7 +72,10 @@ def serve():
     logger.info("Logical CPU cores available: %s", num_cpu_cores)
     logger.info("gRPC server max workers: %s", max_workers)
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=max_workers))
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=max_workers),
+        interceptors=[LoggingInterceptor()],
+    )
     vault_pb2_grpc.add_EntityServicer_to_server(EntityService(), server)
 
     if mode == "production":
