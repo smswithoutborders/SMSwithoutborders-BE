@@ -28,26 +28,23 @@ class LoggingInterceptor(ServerInterceptor):
         Initialize the LoggingInterceptor.
         """
         self.logger = logger
-        self.terminal_width = 100
 
     def intercept(self, method, request_or_iterator, context, method_name):
         """
         Intercept method called for each incoming RPC.
         """
-        print(f"{'[ REQUEST ]':-<{self.terminal_width}}")
-        self.logger.info("%s - %s", method_name, context.peer())
-        print(f"{'[ OPERATION ]':-<{self.terminal_width}}")
         response = method(request_or_iterator, context)
-        print(f"{'[ RESPONSE ]':-<{self.terminal_width}}")
         if context.details():
             self.logger.error(
-                "%s - %s - %s",
+                "[RESPONSE] -- %s - %s - %s",
                 str(context.code()).split(".")[1],
                 method_name,
                 context.peer(),
             )
         else:
-            self.logger.info("%s - %s - %s", "OK", method_name, context.peer())
+            self.logger.info(
+                "[RESPONSE] -- %s - %s - %s", "OK", method_name, context.peer()
+            )
         return response
 
 

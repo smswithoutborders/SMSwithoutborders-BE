@@ -18,6 +18,7 @@ from src.utils import (
     is_valid_x25519_public_key,
     decrypt_and_decode,
     load_keypair_object,
+    get_supported_platforms,
 )
 from src.long_lived_token import verify_llt
 from src.relaysms_payload import (
@@ -26,7 +27,7 @@ from src.relaysms_payload import (
 )
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
-SUPPORTED_PLATFORMS = ("gmail",)
+SUPPORTED_PLATFORMS = get_supported_platforms()
 
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
