@@ -148,3 +148,6 @@ dmypy.json
 
 # Except for vault.proto
 !vault.proto
+
+# Platforms info
+supported_platforms.json

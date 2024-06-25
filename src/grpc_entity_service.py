@@ -28,7 +28,6 @@ from src.device_id import compute_device_id
 
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
-SUPPORTED_PLATFORMS = ("gmail",)
 
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")

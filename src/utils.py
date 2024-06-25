@@ -4,6 +4,7 @@ import os
 import logging
 import uuid
 import base64
+import json
 from functools import wraps
 
 from cryptography.hazmat.primitives.asymmetric import x25519 as x25519_core
@@ -12,6 +13,8 @@ from peewee import DatabaseError
 from smswithoutborders_libsig.keypairs import x25519
 
 from src.crypto import encrypt_aes, decrypt_aes
+
+SUPPORTED_PLATFORM_FILE_PATH = "supported_platforms.json"
 
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -393,3 +396,31 @@ def clear_keystore(eid, keystore_name=None):
             logger.error(
                 "Error removing file %s: %s", file_name.replace(eid, "****"), e
             )
+
+
+def load_platforms_from_file(file_path):
+    """
+    Load platform data from a JSON file.
+
+    Args:
+        file_path (str): The path to the JSON file containing platform data.
+
+    Returns:
+        dict: A dictionary containing platform data.
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            platforms_data = json.load(file)
+        return platforms_data
+    except FileNotFoundError:
+        logger.error("Error: File '%s' not found.", file_path)
+        return {}
+    except json.JSONDecodeError as e:
+        logger.error("Error decoding JSON from '%s': %s", file_path, e)
+        return {}
+
+
+def get_supported_platforms():
+    """Get supported platforms"""
+    platform_details = load_platforms_from_file(SUPPORTED_PLATFORM_FILE_PATH)
+    return tuple(platform_details.keys())
