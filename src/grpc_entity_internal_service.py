@@ -24,6 +24,8 @@ from src.long_lived_token import verify_llt
 from src.relaysms_payload import (
     decode_relay_sms_payload,
     decrypt_payload,
+    encrypt_payload,
+    encode_relay_sms_payload,
 )
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
@@ -357,6 +359,102 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 _type="UNKNOWN",
             )
 
+    def EncryptPayload(self, request, context):
+        """Handles encrypting payload"""
+
+        response = vault_pb2.EncryptPayloadResponse
+
+        def validate_fields():
+            return validate_request_fields(
+                context,
+                request,
+                response,
+                ["device_id", "payload_plaintext"],
+            )
+
+        def encrypt_message(entity_obj):
+            header, content_ciphertext, state, encrypt_error = encrypt_payload(
+                server_state=entity_obj.server_state,
+                client_publish_pub_key=base64.b64decode(
+                    entity_obj.client_publish_pub_key
+                ),
+                content=request.payload_plaintext,
+            )
+
+            if encrypt_error:
+                return error_response(
+                    context,
+                    response,
+                    encrypt_error,
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                    user_msg="Invalid content format.",
+                    _type="UNKNOWN",
+                )
+
+            return (header, content_ciphertext, state), None
+
+        def encode_message(header, content_ciphertext, state):
+            encoded_content, encode_error = encode_relay_sms_payload(
+                header, content_ciphertext
+            )
+
+            if encode_error:
+                return None, error_response(
+                    context,
+                    response,
+                    encode_error,
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                    user_msg="Invalid content format.",
+                    _type="UNKNOWN",
+                )
+
+            entity_obj.server_state = state.serialize()
+            entity_obj.save()
+            logger.info(
+                "Successfully encrypted payload for %s",
+                entity_obj.eid,
+            )
+
+            return response(
+                message="Successfully encrypted payload.",
+                payload_ciphertext=encoded_content,
+                success=True,
+            )
+
+        try:
+            invalid_fields_response = validate_fields()
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            entity_obj = find_entity(device_id=request.device_id)
+
+            if not entity_obj:
+                return error_response(
+                    context,
+                    response,
+                    f"Invalid device ID '{request.device_id}'. "
+                    "Please log in again to obtain a valid device ID.",
+                    grpc.StatusCode.UNAUTHENTICATED,
+                )
+
+            encrypted_response, encrypting_error = encrypt_message(entity_obj)
+            if encrypting_error:
+                return encrypting_error
+
+            header, content_ciphertext, state = encrypted_response
+
+            return encode_message(header, content_ciphertext, state)
+
+        except Exception as e:
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
+            )
+
     def GetEntityAccessToken(self, request, context):
         """Handles getting an entity's access token."""
 
@@ -445,70 +543,6 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 response,
                 str(e),
                 grpc.StatusCode.UNIMPLEMENTED,
-            )
-
-        except Exception as e:
-            return error_response(
-                context,
-                response,
-                e,
-                grpc.StatusCode.INTERNAL,
-                user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
-            )
-
-    def EncryptPayload(self, request, context):
-        """Handles encrypting payload"""
-
-        response = vault_pb2.EncryptPayloadResponse
-
-        try:
-            invalid_fields_response = validate_request_fields(
-                context,
-                request,
-                response,
-                ["device_id", "payload_plaintext"],
-            )
-            if invalid_fields_response:
-                return invalid_fields_response
-
-            entity_obj = find_entity(device_id=request.device_id)
-
-            if not entity_obj:
-                return error_response(
-                    context,
-                    response,
-                    f"Invalid device ID '{request.device_id}'. "
-                    "Please log in again to obtain a valid device ID.",
-                    grpc.StatusCode.UNAUTHENTICATED,
-                )
-
-            # entity_publish_keypair = load_keypair_object(entity_obj.publish_keypair)
-            # publish_shared_key = entity_publish_keypair.agree(
-            #     base64.b64decode(entity_obj.client_publish_pub_key)
-            # )
-
-            # header, content_ciphertext, state = encrypt_payload(
-            #     server_state=entity_obj.server_state,
-            #     publish_shared_key=publish_shared_key,
-            #     keypair=load_keypair_object(entity_obj.publish_keypair),
-            #     content=request.payload_plaintext,
-            #     client_pub_key=base64.b64decode(entity_obj.client_publish_pub_key),
-            #     client_keystore_path=os.path.join(
-            #         KEYSTORE_PATH, f"{entity_obj.eid.hex}_publish.db"
-            #     ),
-            # )
-
-            # b64_encoded_content = encode_relay_sms_payload(header, content_ciphertext)
-
-            # entity_obj.server_state = state.serialize()
-            # entity_obj.save()
-            b64_encoded_content = request.payload_plaintext
-
-            return response(
-                message="Successfully encrypted payload.",
-                payload_ciphertext=b64_encoded_content,
-                success=True,
             )
 
         except Exception as e:
