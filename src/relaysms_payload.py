@@ -58,37 +58,33 @@ def decrypt_payload(
         return None, None, e
 
 
-def encrypt_payload(
-    server_state, publish_shared_key, client_publish_pub_key, content, **kwargs
-):
+def encrypt_payload(server_state, client_publish_pub_key, content):
     """
     Encrypts content into a RelaySMS payload.
 
     Args:
         server_state (bytes): Current state of the server-side ratchet.
-        publish_shared_key (bytes): Publish shared key.
         client_publish_pub_key (bytes): Client's public key for encryption.
         content (str): Plaintext content to encrypt.
-        kwargs (dict): Additional keyword arguments:
-            - client_keystore_path (str): Path to client's keystore.
 
     Returns:
         tuple:
             - header (bytes): Serialized ratchet header.
             - content_ciphertext (bytes): Encrypted content.
             - state (bytes): Updated server state.
+            - error (Exception or None)
     """
-    state = States.deserialize(server_state)
-    server_keystore_path = kwargs.get("server_keystore_path")
+    try:
+        state = States.deserialize(server_state)
 
-    Ratchets.alice_init(
-        state, publish_shared_key, client_publish_pub_key, server_keystore_path
-    )
-    header, content_ciphertext = Ratchets.encrypt(
-        state, content, client_publish_pub_key
-    )
+        header, content_ciphertext = Ratchets.encrypt(
+            state, content.encode("utf-8"), client_publish_pub_key
+        )
 
-    return header.serialize(), content_ciphertext, state
+        return header.serialize(), content_ciphertext, state, None
+    except Exception as e:
+        logger.error("Error encrypting relaysms payload: %s", e, exc_info=True)
+        return None, None, None, e
 
 
 def decode_relay_sms_payload(content):
@@ -133,14 +129,19 @@ def encode_relay_sms_payload(header, content_ciphertext):
         content_ciphertext (bytes): Encrypted content.
 
     Returns:
-        str: Base64-encoded representation of the payload.
+        tuple:
+            - encrypted_payload (str): Base64-encoded representation of the payload.
+            - error (Exception or None)
     """
     try:
-        serialized_header = header.serialize()
-        len_header = len(serialized_header)
-        return base64.b64encode(
-            struct.pack("<i", len_header) + serialized_header + content_ciphertext
-        ).decode("utf-8")
+        len_header = len(header)
+        return (
+            base64.b64encode(
+                struct.pack("<i", len_header) + header + content_ciphertext
+            ).decode("utf-8"),
+            None,
+        )
 
-    except (struct.error, IndexError, base64.binascii.Error) as e:
-        raise ValueError("Invalid payload format") from e
+    except Exception as e:
+        logger.error("Error encoding relaysms payload: %s", e, exc_info=True)
+        return None, e
