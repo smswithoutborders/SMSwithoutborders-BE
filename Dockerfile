@@ -16,7 +16,7 @@ COPY . .
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN pip install -U pip && \
-    pip install --no-cache-dir wheel && \
+    pip install -U setuptools wheel && \
     pip install --no-cache-dir --force-reinstall -r requirements.txt && \
     usermod -u 1000 www-data && \
     usermod -G root www-data

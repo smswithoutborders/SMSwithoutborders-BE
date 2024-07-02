@@ -3,6 +3,7 @@
 import logging
 import os
 from concurrent import futures
+from datetime import datetime
 
 import grpc
 from grpc_interceptor import ServerInterceptor
@@ -28,6 +29,7 @@ class LoggingInterceptor(ServerInterceptor):
         Initialize the LoggingInterceptor.
         """
         self.logger = logger
+        self.server_protocol = "HTTP/2.0"
 
     def intercept(self, method, request_or_iterator, context, method_name):
         """
@@ -36,14 +38,21 @@ class LoggingInterceptor(ServerInterceptor):
         response = method(request_or_iterator, context)
         if context.details():
             self.logger.error(
-                "[RESPONSE] -- %s - %s - %s",
-                str(context.code()).split(".")[1],
-                method_name,
+                '%s - - [%s] "%s %s" %s -',
                 context.peer(),
+                datetime.now().strftime("%B %d, %Y %H:%M:%S"),
+                method_name,
+                self.server_protocol,
+                str(context.code()).split(".")[1],
             )
         else:
-            self.logger.info(
-                "[RESPONSE] -- %s - %s - %s", "OK", method_name, context.peer()
+            self.logger.error(
+                '%s - - [%s] "%s %s" %s -',
+                context.peer(),
+                datetime.now().strftime("%B %d, %Y %H:%M:%S"),
+                method_name,
+                self.server_protocol,
+                "OK",
             )
         return response
 

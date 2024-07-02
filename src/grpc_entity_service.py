@@ -2,8 +2,10 @@
 
 import logging
 import base64
+import re
 
 import grpc
+import phonenumbers
 
 import vault_pb2
 import vault_pb2_grpc
@@ -25,6 +27,7 @@ from src.utils import (
 )
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
+from src.password_validation import validate_password_strength
 
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
@@ -79,6 +82,11 @@ def validate_request_fields(context, request, response, required_fields):
             error response otherwise.
     """
     missing_fields = []
+    invalid_fields = {}
+    x25519_fields = [
+        "client_publish_pub_key",
+        "client_device_id_pub_key",
+    ]
 
     for field in required_fields:
         if isinstance(field, tuple):
@@ -96,11 +104,37 @@ def validate_request_fields(context, request, response, required_fields):
             grpc.StatusCode.INVALID_ARGUMENT,
         )
 
-    x25519_fields = [
-        "client_publish_pub_key",
-        "client_device_id_pub_key",
-    ]
-    invalid_fields = {}
+    if request.phone_number and request.country_code:
+        try:
+            parsed_number = phonenumbers.parse(request.phone_number)
+            if (
+                phonenumbers.region_code_for_country_code(parsed_number.country_code)
+                != request.country_code
+            ):
+                expected_country = phonenumbers.region_code_for_country_code(
+                    parsed_number.country_code
+                )
+                invalid_fields["phone_number"] = (
+                    "Phone number does not match the provided country code "
+                    f"{request.country_code}. Expected country code is {expected_country}"
+                )
+                return error_response(
+                    context,
+                    response,
+                    f"Invalid fields: {invalid_fields}",
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                )
+        except phonenumbers.phonenumberutil.NumberParseException as e:
+            match = re.split(r"\(\d\)\s*(.*)", str(e))
+            invalid_fields["phone_number"] = match[1].strip()
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INVALID_ARGUMENT,
+                user_msg=f"Invalid fields: {invalid_fields}",
+                _type="UNKNOWN",
+            )
 
     for field in set(x25519_fields) & set(required_fields):
         is_valid, error = is_valid_x25519_public_key(getattr(request, field))
@@ -228,16 +262,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
         response = vault_pb2.CreateEntityResponse
 
-        def complete_creation(request):
-            """
-            Complete the creation process.
-
-            Args:
-                request: gRPC request object.
-
-            Returns:
-                vault_pb2.CreateEntityResponse: Create entity response.
-            """
+        def complete_creation():
             success, pow_response = handle_pow_verification(context, request, response)
             if not success:
                 return pow_response
@@ -292,16 +317,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 ).decode("utf-8"),
             )
 
-        def initiate_creation(request):
-            """
-            Initiate the creation process.
-
-            Args:
-                request: gRPC request object.
-
-            Returns:
-                vault_pb2.CreateEntityResponse: Create entity response.
-            """
+        def initiate_creation():
             success, pow_response = handle_pow_initialization(
                 context, request, response
             )
@@ -316,10 +332,35 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 next_attempt_timestamp=expires,
             )
 
-        try:
-            invalid_fields_response = validate_request_fields(
-                context, request, response, ["phone_number"]
+        def validate_fields():
+            invalid_fields = validate_request_fields(
+                context,
+                request,
+                response,
+                [
+                    "phone_number",
+                    "country_code",
+                    "password",
+                    "client_publish_pub_key",
+                    "client_device_id_pub_key",
+                ],
             )
+            if invalid_fields:
+                return invalid_fields
+
+            invalid_password = validate_password_strength(request.password)
+            if invalid_password:
+                return error_response(
+                    context,
+                    response,
+                    invalid_password,
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                )
+
+            return None
+
+        try:
+            invalid_fields_response = validate_fields()
             if invalid_fields_response:
                 return invalid_fields_response
 
@@ -335,21 +376,9 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 )
 
             if request.ownership_proof_response:
-                required_fields = [
-                    "country_code",
-                    "password",
-                    "client_publish_pub_key",
-                    "client_device_id_pub_key",
-                ]
-                invalid_fields_response = validate_request_fields(
-                    context, request, response, required_fields
-                )
-                if invalid_fields_response:
-                    return invalid_fields_response
+                return complete_creation()
 
-                return complete_creation(request)
-
-            return initiate_creation(request)
+            return initiate_creation()
 
         except Exception as e:
             return error_response(
@@ -366,23 +395,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
         response = vault_pb2.AuthenticateEntityResponse
 
-        def initiate_authentication(request, entity_obj):
-            """
-            Initiate the authentication process.
-
-            Args:
-                request: gRPC request object.
-                entity_obj: Entity object.
-
-            Returns:
-                vault_pb2.AuthenticateEntityResponse: Authentication response.
-            """
-            invalid_fields_response = validate_request_fields(
-                context, request, response, ["password"]
-            )
-            if invalid_fields_response:
-                return invalid_fields_response
-
+        def initiate_authentication(entity_obj):
             if not verify_hmac(HASHING_KEY, request.password, entity_obj.password_hash):
                 return error_response(
                     context,
@@ -412,29 +425,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 next_attempt_timestamp=expires,
             )
 
-        def complete_authentication(request, entity_obj):
-            """
-            Complete the authentication process.
-
-            Args:
-                request: gRPC request object.
-                entity_obj: Entity object.
-
-            Returns:
-                vault_pb2.AuthenticateEntityResponse: Authentication response.
-            """
-            invalid_fields_response = validate_request_fields(
-                context,
-                request,
-                response,
-                [
-                    "client_publish_pub_key",
-                    "client_device_id_pub_key",
-                ],
-            )
-            if invalid_fields_response:
-                return invalid_fields_response
-
+        def complete_authentication(entity_obj):
             success, pow_response = handle_pow_verification(context, request, response)
             if not success:
                 return pow_response
@@ -477,10 +468,21 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 ).decode("utf-8"),
             )
 
-        try:
-            invalid_fields_response = validate_request_fields(
-                context, request, response, ["phone_number"]
+        def validate_fields():
+            return validate_request_fields(
+                context,
+                request,
+                response,
+                [
+                    "phone_number",
+                    "password",
+                    "client_publish_pub_key",
+                    "client_device_id_pub_key",
+                ],
             )
+
+        try:
+            invalid_fields_response = validate_fields()
             if invalid_fields_response:
                 return invalid_fields_response
 
@@ -496,9 +498,9 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 )
 
             if request.ownership_proof_response:
-                return complete_authentication(request, entity_obj)
+                return complete_authentication(entity_obj)
 
-            return initiate_authentication(request, entity_obj)
+            return initiate_authentication(entity_obj)
 
         except Exception as e:
             return error_response(
