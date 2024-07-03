@@ -125,9 +125,13 @@ creation process.
 > The table lists only the required fields for this step. Other fields will be
 > ignored.
 
-| Field        | Type   | Description                                                                                                                           |
-| ------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| phone_number | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
+| Field                    | Type   | Description                                                                                                                                |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| phone_number             | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789.      |
+| country_code             | string | The [ISO 3166-1 alpha-2 code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) associated with the phone number. e.g., `CM` for Cameroon. |
+| password                 | string | A secure password for the entity.                                                                                                          |
+| client_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                                                                                   |
+| client_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                                                                                    |
 
 ---
 
@@ -172,9 +176,23 @@ creation process.
 
 ```bash
 grpcurl -plaintext \
-    -d '{"phone_number": "+237123456789"}' \
+    -d @ \
     -proto protos/v1/vault.proto \
-localhost:6000 vault.v1.Entity/CreateEntity
+localhost:6000 vault.v1.Entity/CreateEntity <payload.json
+```
+
+---
+
+**Sample payload.json**
+
+```json
+{
+	"country_code": "CM",
+	"phone_number": "+237123456789",
+	"password": "Password@123",
+	"client_publish_pub_key": "x25519 client publish public key",
+	"client_device_id_pub_key": "x25519 client device_id public key"
+}
 ```
 
 ---
@@ -317,10 +335,12 @@ of ownership for the phone number.
 > The table lists only the required fields for this step. Other fields will be
 > ignored.
 
-| Field        | Type   | Description                                                                                                                           |
-| ------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| phone_number | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
-| password     | string | A secure password for the entity.                                                                                                     |
+| Field                    | Type   | Description                                                                                                                           |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| phone_number             | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
+| password                 | string | A secure password for the entity.                                                                                                     |
+| client_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                                                                              |
+| client_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                                                                               |
 
 ---
 
@@ -365,9 +385,22 @@ of ownership for the phone number.
 
 ```bash
 grpcurl -plaintext \
-    -d '{"phone_number": "+237123456789", "password": "Password@123"}' \
+    -d @ \
     -proto protos/v1/vault.proto \
-localhost:6000 vault.v1.Entity/AuthenticateEntity
+localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
+```
+
+---
+
+**Sample payload.json**
+
+```json
+{
+	"phone_number": "+237123456789",
+	"password": "Password@123",
+	"client_publish_pub_key": "x25519 client publish public key",
+	"client_device_id_pub_key": "x25519 client device_id public key"
+}
 ```
 
 ---
@@ -406,6 +439,7 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity
 | Field                    | Type   | Description                                                                                                                           |
 | ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | phone_number             | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
+| password                 | string | A secure password for the entity.                                                                                                     |
 | ownership_proof_response | string | The proof response from the previous step.                                                                                            |
 | client_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                                                                              |
 | client_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                                                                               |
@@ -466,6 +500,7 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
 ```json
 {
 	"phone_number": "+237123456789",
+	"password": "Password@123",
 	"client_publish_pub_key": "x25519 client publish public key",
 	"client_device_id_pub_key": "x25519 client device_id public key",
 	"ownership_proof_response": "123456"
