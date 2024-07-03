@@ -104,7 +104,9 @@ def validate_request_fields(context, request, response, required_fields):
             grpc.StatusCode.INVALID_ARGUMENT,
         )
 
-    if request.phone_number and request.country_code:
+    if getattr(request, "phone_number", None) and getattr(
+        request, "country_code", None
+    ):
         try:
             parsed_number = phonenumbers.parse(request.phone_number)
             if (
@@ -353,7 +355,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 return error_response(
                     context,
                     response,
-                    invalid_password,
+                    f"Invalid fields: {invalid_password}",
                     grpc.StatusCode.INVALID_ARGUMENT,
                 )
 

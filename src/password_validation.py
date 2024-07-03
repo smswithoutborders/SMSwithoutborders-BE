@@ -26,37 +26,46 @@ def validate_password_strength(password):
     invalid_password = []
 
     if len(password) < 8:
-        invalid_password.append("must be at least 8 characters long")
+        invalid_password.append("Must be at least 8 characters long")
 
     if not any(c.islower() for c in password):
-        invalid_password.append("must include at least one lowercase letter")
+        invalid_password.append("Must include at least one lowercase letter (a-z)")
 
     if not any(c.isupper() for c in password):
-        invalid_password.append("must include at least one uppercase letter")
+        invalid_password.append("Must include at least one uppercase letter (A-Z)")
 
     if not any(c.isdigit() for c in password):
-        invalid_password.append("must include at least one number")
+        invalid_password.append("Must include at least one number (0-9)")
 
     if not any(c in "!@#$%^&*()_+-=" for c in password):
         invalid_password.append(
-            "must include at least one of the following special characters: !@#$%^&*()_+-="
+            "Must include at least one special character from the following set: !@#$%^&*()_+-="
         )
 
-    password_hash = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
-    prefix, suffix = password_hash[:5], password_hash[5:]
-    url = f"https://api.pwnedpasswords.com/range/{prefix}"
+    if not invalid_password:
+        password_hash = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
+        prefix, suffix = password_hash[:5], password_hash[5:]
+        url = f"https://api.pwnedpasswords.com/range/{prefix}"
 
-    response = requests.get(url, timeout=5)
-    if not response.ok:
-        logger.error("Unable to check password against Have I Been Pwned database")
-
-    for line in response.text.splitlines():
-        if line.split(":")[0] == suffix:
-            invalid_password.append(
-                "has previously been compromised in a data breach. Use another password"
+        try:
+            response = requests.get(url, timeout=5)
+            if response.ok:
+                for line in response.text.splitlines():
+                    if line.split(":")[0] == suffix:
+                        invalid_password.append(
+                            "This password has been found in a data breach and should not be used. "
+                            "Please choose a different password."
+                        )
+            else:
+                logger.error(
+                    "Failed to check password against the Have I Been Pwned database"
+                )
+        except requests.RequestException as e:
+            logger.error(
+                "Error checking password against Have I Been Pwned database: %s", e
             )
 
     if invalid_password:
-        return "Password " + ", ".join(invalid_password)
+        return {"password": "; ".join(invalid_password)}
 
     return None
