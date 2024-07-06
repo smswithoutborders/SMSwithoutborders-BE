@@ -14,7 +14,7 @@ from smswithoutborders_libsig.keypairs import x25519
 
 from src.crypto import encrypt_aes, decrypt_aes
 
-SUPPORTED_PLATFORM_FILE_PATH = "supported_platforms.json"
+SUPPORTED_PLATFORM_FILE_PATH = "platforms.json"
 
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -423,4 +423,4 @@ def load_platforms_from_file(file_path):
 def get_supported_platforms():
     """Get supported platforms"""
     platform_details = load_platforms_from_file(SUPPORTED_PLATFORM_FILE_PATH)
-    return tuple(platform_details.keys())
+    return tuple(platform["name"] for platform in platform_details)

@@ -1,5 +1,5 @@
 python=python3
-SUPPORTED_PLATFORMS_URL="https://raw.githubusercontent.com/smswithoutborders/SMSWithoutBorders-Publisher/feature/grpc-api/supported_platforms.json"
+SUPPORTED_PLATFORMS_URL="https://raw.githubusercontent.com/smswithoutborders/SMSWithoutBorders-Publisher/feature/grpc-api/platforms.json"
 
 define log_message
 	@echo "[$(shell date +'%Y-%m-%d %H:%M:%S')] - $1"
@@ -73,13 +73,13 @@ grpc-internal-server-start:
 	@$(python) -u grpc_internal_server.py
 	$(call log_message,INFO - gRPC internal server started successfully.)
 
-update-supported-platforms:
-	$(call log_message,INFO - Starting download of supported platforms JSON file ...)
-	@curl -o supported_platforms.json -L "${SUPPORTED_PLATFORMS_URL}"
-	$(call log_message,INFO - Supported platforms JSON file downloaded successfully.)
+download-platforms:
+	$(call log_message,INFO - Starting download of platforms JSON file ...)
+	@curl -o platforms.json -L "${SUPPORTED_PLATFORMS_URL}"
+	$(call log_message,INFO - Platforms JSON file downloaded successfully.)
 
 rest-server-setup: dummy-user-inject start
 	$(call log_message,INFO - REST server setup completed.)
 
-grpc-server-setup: update-supported-platforms grpc-compile grpc-server-start
+grpc-server-setup: download-platforms grpc-compile grpc-server-start
 	$(call log_message,INFO - gRPC server setup completed.)

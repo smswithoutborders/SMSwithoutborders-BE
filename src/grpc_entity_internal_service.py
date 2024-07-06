@@ -15,7 +15,6 @@ from src.utils import (
     load_key,
     get_configs,
     encrypt_and_encode,
-    is_valid_x25519_public_key,
     decrypt_and_decode,
     load_keypair_object,
     get_supported_platforms,
@@ -95,25 +94,6 @@ def validate_request_fields(context, request, response, required_fields):
             context,
             response,
             f"Missing required fields: {', '.join(missing_fields)}",
-            grpc.StatusCode.INVALID_ARGUMENT,
-        )
-
-    x25519_fields = [
-        "client_publish_pub_key",
-        "client_device_id_pub_key",
-    ]
-    invalid_fields = {}
-
-    for field in set(x25519_fields) & set(required_fields):
-        is_valid, error = is_valid_x25519_public_key(getattr(request, field))
-        if not is_valid:
-            invalid_fields[field] = error
-
-    if invalid_fields:
-        return error_response(
-            context,
-            response,
-            f"Invalid fields: {invalid_fields}",
             grpc.StatusCode.INVALID_ARGUMENT,
         )
 
