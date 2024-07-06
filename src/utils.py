@@ -423,4 +423,4 @@ def load_platforms_from_file(file_path):
 def get_supported_platforms():
     """Get supported platforms"""
     platform_details = load_platforms_from_file(SUPPORTED_PLATFORM_FILE_PATH)
-    return tuple(platform_details.keys())
+    return tuple(platform["name"] for platform in platform_details)
