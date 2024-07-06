@@ -14,7 +14,7 @@ from smswithoutborders_libsig.keypairs import x25519
 
 from src.crypto import encrypt_aes, decrypt_aes
 
-SUPPORTED_PLATFORM_FILE_PATH = "supported_platforms.json"
+SUPPORTED_PLATFORM_FILE_PATH = "platforms.json"
 
 logging.basicConfig(
     level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")

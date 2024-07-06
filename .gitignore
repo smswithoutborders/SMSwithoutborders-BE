@@ -150,4 +150,4 @@ dmypy.json
 !vault.proto
 
 # Platforms info
-supported_platforms.json
+platforms.json
