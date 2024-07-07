@@ -43,7 +43,8 @@ def find_entity(**search_criteria):
     Returns:
         Entity or None: The found entity if exists, else None.
     """
-    try:
-        return Entity.get(**search_criteria)
-    except DoesNotExist:
-        return None
+    with database.connection_context():
+        try:
+            return Entity.get(**search_criteria)
+        except DoesNotExist:
+            return None
