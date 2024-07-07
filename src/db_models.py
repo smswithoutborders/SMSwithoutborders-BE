@@ -39,14 +39,8 @@ class Entity(Model):
         database = database
         table_name = "entities"
         indexes = (
-            (
-                ("phone_number_hash",),
-                True,
-            ),
-            (
-                ("device_id",),
-                True,
-            ),
+            (("phone_number_hash",), True),
+            (("device_id",), True),
         )
 
 
@@ -81,7 +75,10 @@ class Token(Model):
 
         database = database
         table_name = "tokens"
-        indexes = ((("platform", "eid", "account_identifier_hash"), True),)
+        indexes = (
+            (("platform", "eid", "account_identifier_hash"), True),
+            (("account_identifier_hash",), True),
+        )
 
 
 if Configurations.MODE in ("production", "development"):

@@ -3,6 +3,7 @@ Entity's Tokens Controllers
 """
 
 from playhouse.shortcuts import model_to_dict
+from peewee import DoesNotExist
 from src.db_models import Token
 from src.utils import remove_none_values
 
@@ -91,3 +92,21 @@ def fetch_entity_tokens(
         return remove_none_values(results)
 
     return tokens
+
+
+def find_token(**search_criteria):
+    """
+    Find a single token based on search criteria.
+
+    Args:
+        **search_criteria: Additional keyword arguments representing the fields
+            and their values to search for.
+
+    Returns:
+        Token or None: The token object if found, otherwise None.
+    """
+    with database.connection_context():
+        try:
+            return Token.get(**search_criteria)
+        except DoesNotExist:
+            return None

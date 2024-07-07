@@ -9,7 +9,7 @@ import vault_pb2
 import vault_pb2_grpc
 
 from src.entity import find_entity
-from src.tokens import fetch_entity_tokens, create_entity_token
+from src.tokens import fetch_entity_tokens, create_entity_token, find_token
 from src.crypto import generate_hmac
 from src.utils import (
     load_key,
@@ -162,6 +162,33 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
 
         response = vault_pb2.StoreEntityTokenResponse
 
+        def check_existing_token(entity_obj, account_identifier_hash):
+            existing_tokens = fetch_entity_tokens(
+                entity=entity_obj,
+                account_identifier_hash=account_identifier_hash,
+                platform=request.platform,
+            )
+
+            if existing_tokens:
+                return error_response(
+                    context,
+                    response,
+                    "Entity already has a token associated with account "
+                    f"identifier {request.account_identifier} for {request.platform}",
+                    grpc.StatusCode.ALREADY_EXISTS,
+                )
+
+            if find_token(account_identifier_hash=account_identifier_hash):
+                return error_response(
+                    context,
+                    response,
+                    "An entity already has a token associated with the account "
+                    f"identifier '{request.account_identifier}'.",
+                    grpc.StatusCode.ALREADY_EXISTS,
+                )
+
+            return None
+
         try:
             invalid_fields_response = validate_request_fields(
                 context,
@@ -189,20 +216,10 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 HASHING_KEY, request.account_identifier
             )
 
-            existing_tokens = fetch_entity_tokens(
-                entity=entity_obj,
-                account_identifier_hash=account_identifier_hash,
-                platform=request.platform,
-            )
+            existing_token = check_existing_token(entity_obj, account_identifier_hash)
 
-            if existing_tokens:
-                return error_response(
-                    context,
-                    response,
-                    "Entity already has a token associated with account "
-                    f"identifier {request.account_identifier} for {request.platform}",
-                    grpc.StatusCode.ALREADY_EXISTS,
-                )
+            if existing_token:
+                return existing_token
 
             new_token = {
                 "entity": entity_obj,
