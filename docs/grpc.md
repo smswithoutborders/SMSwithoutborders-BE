@@ -13,8 +13,11 @@
     - [Authenticate an Entity](#authenticate-an-entity)
       - [Initiate Authentication](#initiate-authentication)
       - [Complete Authentication](#complete-authentication)
-      - [List an Entity's Stored Tokens](#list-an-entitys-stored-tokens)
+    - [List an Entity's Stored Tokens](#list-an-entitys-stored-tokens)
     - [Delete An Entity](#delete-an-entity)
+    - [Reset an Entity's Password](#reset-an-entitys-password)
+      - [Initiate Reset](#initiate-reset)
+      - [Complete Reset](#complete-reset)
   - [Internal Functions](#internal-functions)
     - [Store an Entity's Token](#store-an-entitys-token)
     - [Get Entity Access Token](#get-entity-access-token)
@@ -187,11 +190,11 @@ localhost:6000 vault.v1.Entity/CreateEntity <payload.json
 
 ```json
 {
-	"country_code": "CM",
-	"phone_number": "+237123456789",
-	"password": "Password@123",
-	"client_publish_pub_key": "x25519 client publish public key",
-	"client_device_id_pub_key": "x25519 client device_id public key"
+  "country_code": "CM",
+  "phone_number": "+237123456789",
+  "password": "Password@123",
+  "client_publish_pub_key": "x25519 client publish public key",
+  "client_device_id_pub_key": "x25519 client device_id public key"
 }
 ```
 
@@ -201,9 +204,9 @@ localhost:6000 vault.v1.Entity/CreateEntity <payload.json
 
 ```json
 {
-	"requiresOwnershipProof": true,
-	"message": "OTP sent successfully. Check your phone for the code.",
-	"nextAttemptTimestamp": 1717323582
+  "requiresOwnershipProof": true,
+  "message": "OTP sent successfully. Check your phone for the code.",
+  "nextAttemptTimestamp": 1717323582
 }
 ```
 
@@ -291,12 +294,12 @@ localhost:6000 vault.v1.Entity/CreateEntity <payload.json
 
 ```json
 {
-	"country_code": "CM",
-	"phone_number": "+237123456789",
-	"password": "Password@123",
-	"client_publish_pub_key": "x25519 client publish public key",
-	"client_device_id_pub_key": "x25519 client device_id public key",
-	"ownership_proof_response": "123456"
+  "country_code": "CM",
+  "phone_number": "+237123456789",
+  "password": "Password@123",
+  "client_publish_pub_key": "x25519 client publish public key",
+  "client_device_id_pub_key": "x25519 client device_id public key",
+  "ownership_proof_response": "123456"
 }
 ```
 
@@ -306,10 +309,10 @@ localhost:6000 vault.v1.Entity/CreateEntity <payload.json
 
 ```json
 {
-	"longLivedToken": "long_lived_token",
-	"serverPublishPubKey": "x25519 server publish public key",
-	"serverDeviceIdPubKey": "x25519 server publish public key",
-	"message": "Entity created successfully"
+  "longLivedToken": "long_lived_token",
+  "serverPublishPubKey": "x25519 server publish public key",
+  "serverDeviceIdPubKey": "x25519 server publish public key",
+  "message": "Entity created successfully"
 }
 ```
 
@@ -396,10 +399,10 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
 
 ```json
 {
-	"phone_number": "+237123456789",
-	"password": "Password@123",
-	"client_publish_pub_key": "x25519 client publish public key",
-	"client_device_id_pub_key": "x25519 client device_id public key"
+  "phone_number": "+237123456789",
+  "password": "Password@123",
+  "client_publish_pub_key": "x25519 client publish public key",
+  "client_device_id_pub_key": "x25519 client device_id public key"
 }
 ```
 
@@ -409,9 +412,9 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
 
 ```json
 {
-	"requiresOwnershipProof": true,
-	"message": "OTP sent successfully. Check your phone for the code.",
-	"nextAttemptTimestamp": 1717323582
+  "requiresOwnershipProof": true,
+  "message": "OTP sent successfully. Check your phone for the code.",
+  "nextAttemptTimestamp": 1717323582
 }
 ```
 
@@ -499,11 +502,11 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
 
 ```json
 {
-	"phone_number": "+237123456789",
-	"password": "Password@123",
-	"client_publish_pub_key": "x25519 client publish public key",
-	"client_device_id_pub_key": "x25519 client device_id public key",
-	"ownership_proof_response": "123456"
+  "phone_number": "+237123456789",
+  "password": "Password@123",
+  "client_publish_pub_key": "x25519 client publish public key",
+  "client_device_id_pub_key": "x25519 client device_id public key",
+  "ownership_proof_response": "123456"
 }
 ```
 
@@ -513,10 +516,10 @@ localhost:6000 vault.v1.Entity/AuthenticateEntity <payload.json
 
 ```json
 {
-	"longLivedToken": "long_lived_token",
-	"serverPublishPubKey": "x25519 server publish public key",
-	"serverDeviceIdPubKey": "x25519 server publish public key",
-	"message": "Entity authenticated successfully!"
+  "longLivedToken": "long_lived_token",
+  "serverPublishPubKey": "x25519 server publish public key",
+  "serverDeviceIdPubKey": "x25519 server publish public key",
+  "message": "Entity authenticated successfully!"
 }
 ```
 
@@ -592,17 +595,17 @@ localhost:6000 vault.v1.Entity/ListEntityStoredTokens
 
 ```json
 {
-	"stored_tokens": [
-		{
-			"account_identifier": "my_x_handle",
-			"platform": "x"
-		},
-		{
-			"account_identifier": "example@gmail.com",
-			"platform": "gmail"
-		}
-	],
-	"message": "Tokens retrieved successfully."
+  "stored_tokens": [
+    {
+      "account_identifier": "my_x_handle",
+      "platform": "x"
+    },
+    {
+      "account_identifier": "example@gmail.com",
+      "platform": "gmail"
+    }
+  ],
+  "message": "Tokens retrieved successfully."
 }
 ```
 
@@ -686,8 +689,215 @@ localhost:6000 vault.v1.Entity/DeleteEntity
 
 ```json
 {
-	"message": "Entity deleted successfully.",
-	"success": true
+  "message": "Entity deleted successfully.",
+  "success": true
+}
+```
+
+---
+
+### Reset an Entity's Password
+
+In case of forgotten passwords, they can be reset with the following steps.
+
+#### Initiate Reset
+
+This step involves verifying the phone number, triggering a proof
+of ownership for the phone number.
+
+---
+
+##### Request
+
+> `request` **ResetPasswordRequest**
+
+> [!IMPORTANT]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
+
+| Field                    | Type   | Description                                                                                                                           |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| phone_number             | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
+| new_password             | string | A new secure password for the entity.                                                                                                 |
+| client_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                                                                              |
+| client_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                                                                               |
+
+---
+
+##### Response
+
+> `response` **ResetPasswordResponse**
+
+> [!IMPORTANT]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
+
+| Field                    | Type   | Description                                                                                                 |
+| ------------------------ | ------ | ----------------------------------------------------------------------------------------------------------- |
+| requires_ownership_proof | bool   | An indicator if proof of ownership is required. `true` if required, `false` otherwise.                      |
+| next_attempt_timestamp   | int32  | The next available time to request another proof of ownership (in Unix seconds) if the first attempt fails. |
+| message                  | string | A response message from the server.                                                                         |
+
+---
+
+##### Method
+
+> `method` **ResetPassword**
+
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+---
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d @ \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/ResetPassword <payload.json
+```
+
+---
+
+**Sample payload.json**
+
+```json
+{
+  "phone_number": "+237123456789",
+  "new_password": "Password@123",
+  "client_publish_pub_key": "x25519 client publish public key",
+  "client_device_id_pub_key": "x25519 client device_id public key"
+}
+```
+
+---
+
+**Sample response**
+
+```json
+{
+  "requiresOwnershipProof": true,
+  "message": "OTP sent successfully. Check your phone for the code.",
+  "nextAttemptTimestamp": 1717323582
+}
+```
+
+---
+
+#### Complete Reset
+
+> [!WARNING]
+>
+> Ensure that you have completed the
+> [Initiate Reset](#initiate-reset) step before executing this
+> step.
+
+---
+
+##### Request
+
+> `request` **ResetPasswordRequest**
+
+> [!IMPORTANT]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
+
+| Field                    | Type   | Description                                                                                                                           |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| phone_number             | string | The phone number associated with the entity. It should be in [E164 format](https://en.wikipedia.org/wiki/E.164). e.g., +237123456789. |
+| new_password             | string | A new secure password for the entity.                                                                                                 |
+| ownership_proof_response | string | The proof response from the previous step.                                                                                            |
+| client_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                                                                              |
+| client_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                                                                               |
+
+---
+
+##### Response
+
+> `response` **ResetPasswordResponse**
+
+> [!IMPORTANT]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
+
+| Field                    | Type   | Description                                                                |
+| ------------------------ | ------ | -------------------------------------------------------------------------- |
+| message                  | string | A response message from the server.                                        |
+| server_publish_pub_key   | string | An `X25519` public key for publishing, `base64 encoded`.                   |
+| server_device_id_pub_key | string | An `X25519` public key for device ID, `base64 encoded`.                    |
+| long_lived_token         | string | A token for the authenticated session, to be used for subsequent requests. |
+
+---
+
+##### Method
+
+> `method` **ResetPassword**
+
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+---
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d @ \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/ResetPassword <payload.json
+```
+
+---
+
+**Sample payload.json**
+
+```json
+{
+  "phone_number": "+237123456789",
+  "new_password": "Password@123",
+  "client_publish_pub_key": "x25519 client publish public key",
+  "client_device_id_pub_key": "x25519 client device_id public key",
+  "ownership_proof_response": "123456"
+}
+```
+
+---
+
+**Sample response**
+
+```json
+{
+  "longLivedToken": "long_lived_token",
+  "serverPublishPubKey": "x25519 server publish public key",
+  "serverDeviceIdPubKey": "x25519 server publish public key",
+  "message": "Password reset successfully!"
 }
 ```
 
@@ -781,10 +991,10 @@ localhost:6000 vault.v1.Entity/StoreEntityToken <payload.json
 
 ```json
 {
-	"long_lived_token": "long_lived_token",
-	"authorization_code": "oauth2_code",
-	"platform": "gmail",
-	"protocol": "oauth2"
+  "long_lived_token": "long_lived_token",
+  "authorization_code": "oauth2_code",
+  "platform": "gmail",
+  "protocol": "oauth2"
 }
 ```
 
@@ -794,8 +1004,8 @@ localhost:6000 vault.v1.Entity/StoreEntityToken <payload.json
 
 ```json
 {
-	"message": "Token stored successfully.",
-	"success": true
+  "message": "Token stored successfully.",
+  "success": true
 }
 ```
 
@@ -874,9 +1084,9 @@ localhost:6000 vault.v1.Entity/GetEntityAccessToken
 
 ```json
 {
-	"message": "Successfully fetched tokens",
-	"success": true,
-	"token": "retrieved_token"
+  "message": "Successfully fetched tokens",
+  "success": true,
+  "token": "retrieved_token"
 }
 ```
 
@@ -956,9 +1166,9 @@ localhost:6000 vault.v1.Entity/DecryptPayload
 
 ```json
 {
-	"message": "Successfully decrypted payload",
-	"success": true,
-	"payload_plaintext": "Decrypted payload content"
+  "message": "Successfully decrypted payload",
+  "success": true,
+  "payload_plaintext": "Decrypted payload content"
 }
 ```
 
@@ -1038,9 +1248,9 @@ localhost:6000 vault.v1.Entity/EncryptPayload
 
 ```json
 {
-	"message": "Successfully encrypted payload.",
-	"payload_ciphertext": "encrypted_payload",
-	"success": true
+  "message": "Successfully encrypted payload.",
+  "payload_ciphertext": "encrypted_payload",
+  "success": true
 }
 ```
 
@@ -1121,8 +1331,8 @@ localhost:6000 vault.v1.Entity/UpdateEntityToken
 
 ```json
 {
-	"message": "Token updated successfully.",
-	"success": true
+  "message": "Token updated successfully.",
+  "success": true
 }
 ```
 
@@ -1202,9 +1412,9 @@ localhost:6000 vault.v1.Entity/DeleteEntityToken <payload.json
 
 ```json
 {
-	"long_lived_token": "long_lived_token",
-	"platform": "gmail",
-	"account_identifier": "sample@mail.com"
+  "long_lived_token": "long_lived_token",
+  "platform": "gmail",
+  "account_identifier": "sample@mail.com"
 }
 ```
 
@@ -1214,7 +1424,7 @@ localhost:6000 vault.v1.Entity/DeleteEntityToken <payload.json
 
 ```json
 {
-	"message": "Token deleted successfully.",
-	"success": true
+  "message": "Token deleted successfully.",
+  "success": true
 }
 ```
