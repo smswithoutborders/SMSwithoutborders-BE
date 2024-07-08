@@ -378,9 +378,7 @@ def clear_keystore(eid, keystore_name=None):
         keystore_name (str, optional): The specific keystore name to delete. If not provided,
             it will delete all related keystore files.
     """
-    file_suffixes = (
-        [keystore_name] if keystore_name else ["publish", "device_id", "ratchet"]
-    )
+    file_suffixes = [keystore_name] if keystore_name else ["publish", "device_id"]
     keystore_path = get_configs("KEYSTORE_PATH")
 
     for suffix in file_suffixes:

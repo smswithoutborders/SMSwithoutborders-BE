@@ -644,3 +644,128 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 user_msg="Oops! Something went wrong. Please try again later.",
                 _type="UNKNOWN",
             )
+
+    def ResetPassword(self, request, context):
+        """Handles resetting an entity's password."""
+
+        response = vault_pb2.ResetPasswordResponse
+
+        def initiate_reset(entity_obj):
+            success, pow_response = handle_pow_initialization(
+                context, request, response
+            )
+            if not success:
+                return pow_response
+
+            message, expires = pow_response
+            entity_obj.device_id = None
+            entity_obj.server_state = None
+            entity_obj.save()
+
+            return response(
+                requires_ownership_proof=True,
+                message=message,
+                next_attempt_timestamp=expires,
+            )
+
+        def complete_reset(entity_obj):
+            success, pow_response = handle_pow_verification(context, request, response)
+            if not success:
+                return pow_response
+
+            eid = entity_obj.eid.hex
+            password_hash = generate_hmac(HASHING_KEY, request.new_password)
+
+            clear_keystore(eid)
+            entity_publish_keypair, entity_publish_pub_key = (
+                generate_keypair_and_public_key(eid, "publish")
+            )
+            entity_device_id_keypair, entity_device_id_pub_key = (
+                generate_keypair_and_public_key(eid, "device_id")
+            )
+
+            device_id_shared_key = entity_device_id_keypair.agree(
+                base64.b64decode(request.client_device_id_pub_key)
+            )
+
+            long_lived_token = generate_llt(eid, device_id_shared_key)
+
+            entity_obj.password_hash = password_hash
+            entity_obj.device_id = compute_device_id(
+                device_id_shared_key,
+                request.phone_number,
+                request.client_device_id_pub_key,
+            )
+            entity_obj.client_publish_pub_key = request.client_publish_pub_key
+            entity_obj.client_device_id_pub_key = request.client_device_id_pub_key
+            entity_obj.publish_keypair = entity_publish_keypair.serialize()
+            entity_obj.device_id_keypair = entity_device_id_keypair.serialize()
+            entity_obj.save()
+
+            return response(
+                long_lived_token=long_lived_token,
+                message="Password reset successfully!",
+                server_publish_pub_key=base64.b64encode(entity_publish_pub_key).decode(
+                    "utf-8"
+                ),
+                server_device_id_pub_key=base64.b64encode(
+                    entity_device_id_pub_key
+                ).decode("utf-8"),
+            )
+
+        def validate_fields():
+            invalid_fields = validate_request_fields(
+                context,
+                request,
+                response,
+                [
+                    "phone_number",
+                    "new_password",
+                    "client_publish_pub_key",
+                    "client_device_id_pub_key",
+                ],
+            )
+            if invalid_fields:
+                return invalid_fields
+
+            invalid_password = validate_password_strength(request.new_password)
+            if invalid_password:
+                return error_response(
+                    context,
+                    response,
+                    f"Invalid fields: {invalid_password}",
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                )
+
+            return None
+
+        try:
+            invalid_fields_response = validate_fields()
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+            entity_obj = find_entity(phone_number_hash=phone_number_hash)
+
+            if not entity_obj:
+                return error_response(
+                    context,
+                    response,
+                    f"Entity with phone number `{request.phone_number}` not found.",
+                    grpc.StatusCode.NOT_FOUND,
+                )
+
+            if request.ownership_proof_response:
+                return complete_reset(entity_obj)
+
+            return initiate_reset(entity_obj)
+
+        except Exception as e:
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
+            )

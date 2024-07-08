@@ -1,5 +1,5 @@
 python=python3
-SUPPORTED_PLATFORMS_URL="https://raw.githubusercontent.com/smswithoutborders/SMSWithoutBorders-Publisher/feature/grpc-api/platforms.json"
+SUPPORTED_PLATFORMS_URL="https://raw.githubusercontent.com/smswithoutborders/SMSWithoutBorders-Publisher/feature/grpc-api/resources/platforms.json"
 
 define log_message
 	@echo "[$(shell date +'%Y-%m-%d %H:%M:%S')] - $1"
