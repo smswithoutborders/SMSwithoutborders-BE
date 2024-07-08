@@ -65,13 +65,13 @@ message AuthenticateEntityResponse {
 }
 
 // Request message for listing entity's stored tokens.
-message ListEntityStoredTokenRequest {
+message ListEntityStoredTokensRequest {
   // The long-lived token of the authenticated entity.
   string long_lived_token = 1;
 }
 
 // Response message for listing entity's stored tokens.
-message ListEntityStoredTokenResponse {
+message ListEntityStoredTokensResponse {
   // The list of stored tokens.
   repeated Token stored_tokens = 1;
   // A response message.
@@ -215,6 +215,36 @@ message DeleteEntityResponse {
   bool success = 2;
 }
 
+// Request message for resetting an entity's password.
+message ResetPasswordRequest {
+  // The phone number of the entity.
+  string phone_number = 1;
+  // The new password of the entity.
+  string new_password = 2;
+  // The client's public key for publishing.
+  string client_publish_pub_key = 3;
+  // The client's public key for device identification.
+  string client_device_id_pub_key = 4;
+  // The ownership proof response from the client.
+  string ownership_proof_response = 5;
+}
+
+// Response message for resetting an entity's password.
+message ResetPasswordResponse {
+  // Indicates if ownership proof is required.
+  bool requires_ownership_proof = 1;
+  // A long-lived token for the authenticated entity.
+  string long_lived_token = 2;
+  // The server's public key for publishing.
+  string server_publish_pub_key = 3;
+  // The server's public key for device identification.
+  string server_device_id_pub_key = 4;
+  // A response message.
+  string message = 5;
+  // The next available time to request another proof of ownership.
+  int32 next_attempt_timestamp = 6;
+}
+
 // Service for managing entities.
 service Entity {
   // Creates an entity.
@@ -222,9 +252,11 @@ service Entity {
   // Authenticates an entity.
   rpc AuthenticateEntity(AuthenticateEntityRequest) returns (AuthenticateEntityResponse);
   // Lists all stored access tokens for an entity.
-  rpc ListEntityStoredTokens(ListEntityStoredTokenRequest) returns (ListEntityStoredTokenResponse);
+  rpc ListEntityStoredTokens(ListEntityStoredTokensRequest) returns (ListEntityStoredTokensResponse);
   // Deletes an entity.
   rpc DeleteEntity(DeleteEntityRequest) returns (DeleteEntityResponse);
+  // Resets an entity's password
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
 }
 
 // Service for managing entities internally.
