@@ -517,7 +517,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
     def ListEntityStoredTokens(self, request, context):
         """Handles listing an entity's stored tokens."""
 
-        response = vault_pb2.ListEntityStoredTokenResponse
+        response = vault_pb2.ListEntityStoredTokensResponse
 
         try:
             invalid_fields_response = validate_request_fields(
@@ -769,3 +769,8 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 user_msg="Oops! Something went wrong. Please try again later.",
                 _type="UNKNOWN",
             )
+
+    def UpdateEntityPassword(self, request, context):
+        """Handles changing an entity's password."""
+
+        response = vault_pb2.UpdateEntityPasswordResponse

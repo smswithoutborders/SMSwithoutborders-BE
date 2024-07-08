@@ -245,6 +245,24 @@ message ResetPasswordResponse {
   int32 next_attempt_timestamp = 6;
 }
 
+// Request message for updating an entity's password.
+message UpdateEntityPasswordRequest {
+  // The long-lived token of the authenticated entity.
+  string long_lived_token = 1;
+  // The old password of the entity.
+  string old_password = 2;
+  // The new password of the entity.
+  string new_password = 3;
+}
+
+// Response message for updating an entity's password.
+message UpdateEntityPasswordResponse {
+  // A response message.
+  string message = 1;
+  // Indicates whether the operation was successful.
+  bool success = 2;
+}
+
 // Service for managing entities.
 service Entity {
   // Creates an entity.
@@ -257,6 +275,8 @@ service Entity {
   rpc DeleteEntity(DeleteEntityRequest) returns (DeleteEntityResponse);
   // Resets an entity's password
   rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+  // Updates an entity's password.
+  rpc UpdateEntityPassword(UpdateEntityPasswordRequest) returns (UpdateEntityPasswordResponse);
 }
 
 // Service for managing entities internally.

@@ -46,7 +46,7 @@ class LoggingInterceptor(ServerInterceptor):
                 str(context.code()).split(".")[1],
             )
         else:
-            self.logger.error(
+            self.logger.info(
                 '%s - - [%s] "%s %s" %s -',
                 context.peer(),
                 datetime.now().strftime("%B %d, %Y %H:%M:%S"),
