@@ -238,6 +238,11 @@ def verify_long_lived_token(request, context, response):
             f"Possible token tampering detected. Entity not found with eid: {eid}"
         )
 
+    if not entity_obj.device_id:
+        return None, create_error_response(
+            f"No device ID found for entity with EID: {eid}"
+        )
+
     entity_device_id_keypair = load_keypair_object(entity_obj.device_id_keypair)
     entity_device_id_shared_key = entity_device_id_keypair.agree(
         base64.b64decode(entity_obj.client_device_id_pub_key),
@@ -774,3 +779,71 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         """Handles changing an entity's password."""
 
         response = vault_pb2.UpdateEntityPasswordResponse
+
+        def validate_fields():
+            invalid_fields = validate_request_fields(
+                context,
+                request,
+                response,
+                [
+                    "long_lived_token",
+                    "current_password",
+                    "new_password",
+                ],
+            )
+            if invalid_fields:
+                return invalid_fields
+
+            invalid_password = validate_password_strength(request.new_password)
+            if invalid_password:
+                return error_response(
+                    context,
+                    response,
+                    f"Invalid fields: {invalid_password}",
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                )
+
+            return None
+
+        try:
+            invalid_fields_response = validate_fields()
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            entity_obj, llt_error_response = verify_long_lived_token(
+                request, context, response
+            )
+            if llt_error_response:
+                return llt_error_response
+
+            if not verify_hmac(
+                HASHING_KEY, request.current_password, entity_obj.password_hash
+            ):
+                return error_response(
+                    context,
+                    response,
+                    "The current password you entered is incorrect. Please try again.",
+                    grpc.StatusCode.UNAUTHENTICATED,
+                )
+
+            new_password_hash = generate_hmac(HASHING_KEY, request.new_password)
+
+            entity_obj.password_hash = new_password_hash
+            entity_obj.device_id = None
+            entity_obj.client_publish_pub_key = None
+            entity_obj.client_device_id_pub_key = None
+            entity_obj.publish_keypair = None
+            entity_obj.device_id_keypair = None
+            entity_obj.save()
+
+            return response(message="Password updated successfully.", success=True)
+
+        except Exception as e:
+            return error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                _type="UNKNOWN",
+            )
