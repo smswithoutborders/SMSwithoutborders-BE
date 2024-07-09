@@ -249,8 +249,8 @@ message ResetPasswordResponse {
 message UpdateEntityPasswordRequest {
   // The long-lived token of the authenticated entity.
   string long_lived_token = 1;
-  // The old password of the entity.
-  string old_password = 2;
+  // The current password of the entity.
+  string current_password = 2;
   // The new password of the entity.
   string new_password = 3;
 }

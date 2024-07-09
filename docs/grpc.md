@@ -18,6 +18,7 @@
     - [Reset an Entity's Password](#reset-an-entitys-password)
       - [Initiate Reset](#initiate-reset)
       - [Complete Reset](#complete-reset)
+    - [Update an entity's Password](#update-an-entitys-password)
   - [Internal Functions](#internal-functions)
     - [Store an Entity's Token](#store-an-entitys-token)
     - [Get Entity Access Token](#get-entity-access-token)
@@ -898,6 +899,99 @@ localhost:6000 vault.v1.Entity/ResetPassword <payload.json
   "serverPublishPubKey": "x25519 server publish public key",
   "serverDeviceIdPubKey": "x25519 server publish public key",
   "message": "Password reset successfully!"
+}
+```
+
+---
+
+### Update an entity's Password
+
+This method updated the password for a given entity.
+
+---
+
+##### Request
+
+> `request` **UpdateEntityPasswordRequest**
+
+> [!IMPORTANT]
+>
+> The table lists only the required fields for this step. Other fields will be
+> ignored.
+
+| Field            | Type   | Description                                                                      |
+| ---------------- | ------ | -------------------------------------------------------------------------------- |
+| long_lived_token | string | The long-lived token for the authenticated session, used to identify the entity. |
+| current_password | string | The current password of the entity.                                              |
+| new_password     | string | The new password of the entity.                                                  |
+
+---
+
+##### Response
+
+> `response` **UpdateEntityPasswordResponse**
+
+> [!IMPORTANT]
+>
+> The table lists only the fields that are populated for this step. Other fields
+> may be empty, omitted, or false.
+
+| Field   | Type   | Description                                |
+| ------- | ------ | ------------------------------------------ |
+| message | string | A response message from the server.        |
+| success | bool   | Indicates if the operation was successful. |
+
+---
+
+##### Method
+
+> `method` **UpdateEntityPassword**
+
+> [!TIP]
+>
+> The examples below use
+> [grpcurl](https://github.com/fullstorydev/grpcurl#grpcurl).
+
+> [!NOTE]
+>
+> Here is what a successful response from the server looks like.
+>
+> The server would return a status code of `0 OK` if the API transaction goes
+> through without any friction. Otherwise, it will return any other code out of
+> the
+> [17 codes supported by gRPC](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+
+---
+
+**Sample request**
+
+```bash
+grpcurl -plaintext \
+    -d @ \
+    -proto protos/v1/vault.proto \
+localhost:6000 vault.v1.Entity/UpdateEntityPassword <payload.json
+```
+
+---
+
+**Sample payload.json**
+
+```json
+{
+  "current_password": "current_password",
+  "long_lived_token": "long_lived_token",
+  "new_password": "new_password."
+}
+```
+
+---
+
+**Sample response**
+
+```json
+{
+  "message": "Password updated successfully.",
+  "success": true
 }
 ```
 
