@@ -906,7 +906,7 @@ localhost:6000 vault.v1.Entity/ResetPassword <payload.json
 
 ### Update an entity's Password
 
-This method updated the password for a given entity.
+This method updates the password for a given entity.
 
 ---
 
