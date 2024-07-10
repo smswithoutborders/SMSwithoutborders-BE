@@ -35,7 +35,7 @@ def generate_llt(eid, key):
         "eid": eid,
         "iss": "https://smswithoutborders.com",
         "iat": get_int_from_datetime(datetime.now()),
-        "exp": get_int_from_datetime(datetime.now() + timedelta(days=180)),
+        "exp": get_int_from_datetime(datetime.now() + timedelta(days=3650)),
     }
 
     signing_key = jwk_from_dict(
