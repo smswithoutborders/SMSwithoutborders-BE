@@ -162,28 +162,22 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
 
         response = vault_pb2.StoreEntityTokenResponse
 
-        def check_existing_token(entity_obj, account_identifier_hash):
-            existing_tokens = fetch_entity_tokens(
-                entity=entity_obj,
+        def check_existing_token(account_identifier_hash):
+            token = find_token(
                 account_identifier_hash=account_identifier_hash,
                 platform=request.platform,
             )
 
-            if existing_tokens:
-                return error_response(
-                    context,
-                    response,
-                    "Entity already has a token associated with account "
-                    f"identifier {request.account_identifier} for {request.platform}",
-                    grpc.StatusCode.ALREADY_EXISTS,
-                )
+            if token:
+                token.account_tokens = encrypt_and_encode(request.token)
+                token.save()
+                logger.info("Token overwritten successfully.")
 
-            if find_token(account_identifier_hash=account_identifier_hash):
                 return error_response(
                     context,
                     response,
-                    "An entity already has a token associated with the account "
-                    f"identifier '{request.account_identifier}'.",
+                    "A token is already associated with the account identifier "
+                    f"'{request.account_identifier}'.",
                     grpc.StatusCode.ALREADY_EXISTS,
                 )
 
@@ -216,7 +210,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 HASHING_KEY, request.account_identifier
             )
 
-            existing_token = check_existing_token(entity_obj, account_identifier_hash)
+            existing_token = check_existing_token(account_identifier_hash)
 
             if existing_token:
                 return existing_token

@@ -75,10 +75,7 @@ class Token(Model):
 
         database = database
         table_name = "tokens"
-        indexes = (
-            (("platform", "eid", "account_identifier_hash"), True),
-            (("account_identifier_hash",), True),
-        )
+        indexes = ((("platform", "account_identifier_hash"), True),)
 
 
 if Configurations.MODE in ("production", "development"):
