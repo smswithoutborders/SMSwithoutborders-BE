@@ -75,7 +75,7 @@ def send_otp(phone_number):
             - The OTP expiry time as an integer timestamp, if applicable; otherwise, None.
     """
     if is_rate_limited(phone_number):
-        return False, "Too many OTP requests. Please try again later.", None
+        return False, "Too many OTP requests. Please wait and try again later.", None
 
     expires = None
 
@@ -104,6 +104,12 @@ def verify_otp(phone_number, otp):
             - A boolean indicating whether the OTP was verified successfully.
             - A message indicating the result of the OTP verification process.
     """
+    if not OTPRateLimit.get_or_none(OTPRateLimit.phone_number == phone_number):
+        return (
+            False,
+            "OTP not initiated. Please request a new OTP before attempting to verify.",
+        )
+
     if MOCK_OTP:
         success, message = mock_verify_otp(phone_number, otp)
     else:
@@ -135,7 +141,7 @@ def twilio_send_otp(phone_number):
         ).verifications.create(to=phone_number, channel="sms")
         if verification.status == "pending":
             logger.info("OTP sent to %s.", phone_number)
-            return True, "OTP sent successfully. Check your phone for the code."
+            return True, "OTP sent successfully. Please check your phone for the code."
 
         logger.error(
             "Failed to send OTP to %s. Twilio status: %s",
@@ -148,7 +154,7 @@ def twilio_send_otp(phone_number):
         )
     except TwilioRestException as e:
         logger.error("Twilio error while sending OTP to %s: %s", phone_number, e)
-        return False, "Failed to send OTP. Please try again later."
+        return (False, "Failed to send OTP. Please try again later.")
 
 
 def twilio_verify_otp(phone_number, otp):
@@ -170,15 +176,31 @@ def twilio_verify_otp(phone_number, otp):
         verification_check = client.verify.v2.services(
             TWILIO_SERVICE_SID
         ).verification_checks.create(to=phone_number, code=otp)
-        if verification_check.status == "approved":
+
+        status = verification_check.status
+
+        if status == "approved":
             logger.info("OTP verified successfully for %s.", phone_number)
             return True, "OTP verified successfully."
 
-        logger.warning("Invalid OTP provided for %s.", phone_number)
-        return False, "Invalid OTP. Please double-check the code and try again."
+        if status == "pending":
+            logger.error("Incorrect OTP provided for %s.", phone_number)
+            return False, "Incorrect OTP. Please double-check the code and try again."
+
+        logger.warning(
+            "Unexpected OTP verification status for %s: %s", phone_number, status
+        )
+        return (False, "Failed to verify OTP. Please try again later.")
     except TwilioRestException as e:
         logger.error("Twilio error while verifying OTP for %s: %s", phone_number, e)
-        return False, "Failed to verify OTP. Please try again later."
+
+        if e.status == 404:
+            return False, "OTP verification expired. Please request a new code."
+
+        logger.warning(
+            "Unexpected OTP verification status for %s: %s", phone_number, e.status
+        )
+        return (False, "Failed to verify OTP. Please try again later.")
 
 
 def mock_send_otp(phone_number):
@@ -194,7 +216,7 @@ def mock_send_otp(phone_number):
             - A string message indicating the result of the OTP sending process.
     """
     logger.info("Mock OTP sent to %s.", phone_number)
-    return True, "OTP sent successfully. Check your phone for the code."
+    return True, "OTP sent successfully. Please check your phone for the code."
 
 
 def mock_verify_otp(phone_number, otp):
@@ -214,8 +236,8 @@ def mock_verify_otp(phone_number, otp):
         logger.info("Mock OTP verified successfully for %s. OTP %s.", phone_number, otp)
         return True, "OTP verified successfully."
 
-    logger.warning("Invalid OTP %s provided for %s.", otp, phone_number)
-    return False, "Invalid OTP. Please double-check the code and try again."
+    logger.warning("Incorrect OTP %s provided for %s.", otp, phone_number)
+    return False, "Incorrect OTP. Please double-check the code and try again."
 
 
 def clean_rate_limit_store(phone_number):
@@ -233,7 +255,7 @@ def clean_rate_limit_store(phone_number):
         OTPRateLimit.attempt_count >= RATE_LIMIT_WINDOWS[-1]["count"],
     ).execute()
 
-    logger.info("Cleaned up rate limit records for %s.", phone_number)
+    logger.info("Cleaned up expired rate limit records for %s.", phone_number)
 
 
 def increment_rate_limit(phone_number):
@@ -273,16 +295,21 @@ def increment_rate_limit(phone_number):
         )
         rate_limit.save()
 
-    logger.info("Incremented rate limit for %s.", phone_number)
+    logger.info(
+        "Incremented rate limit for %s. Current attempt count: %d.",
+        phone_number,
+        rate_limit.attempt_count,
+    )
+
     return rate_limit
 
 
 def clear_rate_limit(phone_number):
     """
-    Clear the rate limit record for the provided phone number.
+    Clear the rate limit counter for the provided phone number.
 
     Args:
-        phone_number (str): The phone number to clear the rate limit record for.
+        phone_number (str): The phone number to clear the rate limit counter for.
     """
     OTPRateLimit.delete().where(OTPRateLimit.phone_number == phone_number).execute()
 
