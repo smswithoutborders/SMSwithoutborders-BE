@@ -323,6 +323,11 @@ localhost:6000 vault.v1.Entity/CreateEntity <payload.json
 
 An entity represents a user or client in the vault.
 
+> [!WARNING]
+>
+> Repeated incorrect password attempts will trigger a dynamic rate limit and
+> return an `UNAVAILABLE` status code for this function.
+
 #### Initiate Authentication
 
 This step involves verifying the phone number and password, triggering a proof
@@ -907,6 +912,11 @@ localhost:6000 vault.v1.Entity/ResetPassword <payload.json
 ### Update an entity's Password
 
 This method updates the password for a given entity.
+
+> [!WARNING]
+>
+> Repeated incorrect password attempts will trigger a dynamic rate limit and
+> return an `UNAVAILABLE` status code for this function.
 
 ---
 
