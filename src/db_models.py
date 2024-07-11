@@ -78,5 +78,20 @@ class Token(Model):
         indexes = ((("platform", "account_identifier_hash"), True),)
 
 
+class PasswordRateLimit(Model):
+    """Model representing Password Rate Limits Table."""
+
+    eid = ForeignKeyField(Entity, backref="password_rate_limit", column_name="eid")
+    attempt_count = IntegerField(default=0)
+    date_expires = DateTimeField(null=True)
+    date_created = DateTimeField(default=datetime.datetime.now)
+
+    class Meta:
+        """Meta class to define database connection."""
+
+        database = database
+        table_name = "password_rate_limit"
+
+
 if Configurations.MODE in ("production", "development"):
-    create_tables([Entity, OTPRateLimit, Token])
+    create_tables([Entity, OTPRateLimit, Token, PasswordRateLimit])
