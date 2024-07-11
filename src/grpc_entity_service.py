@@ -28,6 +28,11 @@ from src.utils import (
 from src.long_lived_token import generate_llt, verify_llt
 from src.device_id import compute_device_id
 from src.password_validation import validate_password_strength
+from src.password_rate_limit import (
+    is_rate_limited,
+    clear_rate_limit,
+    register_password_attempt,
+)
 
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
@@ -403,7 +408,16 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         response = vault_pb2.AuthenticateEntityResponse
 
         def initiate_authentication(entity_obj):
+            if is_rate_limited(entity_obj.eid):
+                return error_response(
+                    context,
+                    response,
+                    "Too many password attempts. Please wait and try again later.",
+                    grpc.StatusCode.UNAVAILABLE,
+                )
+
             if not verify_hmac(HASHING_KEY, request.password, entity_obj.password_hash):
+                register_password_attempt(entity_obj.eid)
                 return error_response(
                     context,
                     response,
@@ -415,6 +429,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     ),
                 )
 
+            clear_rate_limit(entity_obj.eid)
             success, pow_response = handle_pow_initialization(
                 context, request, response
             )
@@ -816,9 +831,18 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if llt_error_response:
                 return llt_error_response
 
+            if is_rate_limited(entity_obj.eid):
+                return error_response(
+                    context,
+                    response,
+                    "Too many password attempts. Please wait and try again later.",
+                    grpc.StatusCode.UNAVAILABLE,
+                )
+
             if not verify_hmac(
                 HASHING_KEY, request.current_password, entity_obj.password_hash
             ):
+                register_password_attempt(entity_obj.eid)
                 return error_response(
                     context,
                     response,
@@ -826,6 +850,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     grpc.StatusCode.UNAUTHENTICATED,
                 )
 
+            clear_rate_limit(entity_obj.eid)
             new_password_hash = generate_hmac(HASHING_KEY, request.new_password)
 
             entity_obj.password_hash = new_password_hash
