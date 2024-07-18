@@ -165,8 +165,9 @@ def handle_pow_verification(context, request, response):
     Returns:
         tuple: Tuple containing success flag and message.
     """
+    cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
     success, message = verify_otp(
-        request.phone_number, request.ownership_proof_response
+        cleaned_phone_number, request.ownership_proof_response
     )
     if not success:
         return success, error_response(
@@ -190,7 +191,8 @@ def handle_pow_initialization(context, request, response):
     Returns:
         tuple: Tuple containing success flag, message, and expiration time.
     """
-    success, message, expires = send_otp(request.phone_number)
+    cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
+    success, message, expires = send_otp(cleaned_phone_number)
     if not success:
         return success, error_response(
             context,
@@ -273,7 +275,8 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if not success:
                 return pow_response
 
-            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+            cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
+            phone_number_hash = generate_hmac(HASHING_KEY, cleaned_phone_number)
             eid = generate_eid(phone_number_hash)
             password_hash = generate_hmac(HASHING_KEY, request.password)
             country_code_ciphertext_b64 = encrypt_and_encode(request.country_code)
@@ -299,7 +302,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 "country_code": country_code_ciphertext_b64,
                 "device_id": compute_device_id(
                     device_id_shared_key,
-                    request.phone_number,
+                    cleaned_phone_number,
                     request.client_device_id_pub_key,
                 ),
                 "client_publish_pub_key": request.client_publish_pub_key,
@@ -413,10 +416,11 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             if not verify_hmac(HASHING_KEY, request.password, entity_obj.password_hash):
                 register_password_attempt(entity_obj.eid)
+                cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
                 return error_response(
                     context,
                     response,
-                    f"Incorrect Password provided for phone number {request.phone_number}",
+                    f"Incorrect Password provided for phone number {cleaned_phone_number}",
                     grpc.StatusCode.UNAUTHENTICATED,
                     user_msg=(
                         "Incorrect credentials. Please double-check "
