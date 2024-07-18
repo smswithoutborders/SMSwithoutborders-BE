@@ -26,20 +26,21 @@ def validate_password_strength(password):
     invalid_password = []
 
     if len(password) < 8:
-        invalid_password.append("Must be at least 8 characters long")
+        return "Password must be at least 8 characters long"
 
     if not any(c.islower() for c in password):
-        invalid_password.append("Must include at least one lowercase letter (a-z)")
+        return "Password must include at least one lowercase letter (a-z)"
 
     if not any(c.isupper() for c in password):
-        invalid_password.append("Must include at least one uppercase letter (A-Z)")
+        return "Password must include at least one uppercase letter (A-Z)"
 
     if not any(c.isdigit() for c in password):
-        invalid_password.append("Must include at least one number (0-9)")
+        return "Password must include at least one number (0-9)"
 
     if not any(c in "!@#$%^&*()_+-=" for c in password):
-        invalid_password.append(
-            "Must include at least one special character from the following set: !@#$%^&*()_+-="
+        return (
+            "Password must include at least one special character from the "
+            "following set: !@#$%^&*()_+-="
         )
 
     if not invalid_password:
@@ -52,7 +53,7 @@ def validate_password_strength(password):
             if response.ok:
                 for line in response.text.splitlines():
                     if line.split(":")[0] == suffix:
-                        invalid_password.append(
+                        return (
                             "This password has been found in a data breach and should not be used. "
                             "Please choose a different password."
                         )
@@ -64,8 +65,5 @@ def validate_password_strength(password):
             logger.error(
                 "Error checking password against Have I Been Pwned database: %s", e
             )
-
-    if invalid_password:
-        return {"password": "; ".join(invalid_password)}
 
     return None

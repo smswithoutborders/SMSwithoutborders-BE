@@ -79,23 +79,23 @@ def validate_request_fields(context, request, response, required_fields):
         None or response: None if no missing fields,
             error response otherwise.
     """
-    missing_fields = []
-
     for field in required_fields:
         if isinstance(field, tuple):
             if not any(getattr(request, f, None) for f in field):
-                missing_fields.append(f"({' or '.join(field)})")
+                return error_response(
+                    context,
+                    response,
+                    f"Missing required field: {' or '.join(field)}",
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                )
         else:
             if not getattr(request, field, None):
-                missing_fields.append(field)
-
-    if missing_fields:
-        return error_response(
-            context,
-            response,
-            f"Missing required fields: {', '.join(missing_fields)}",
-            grpc.StatusCode.INVALID_ARGUMENT,
-        )
+                return error_response(
+                    context,
+                    response,
+                    f"Missing required field: {field}",
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                )
 
     return None
 

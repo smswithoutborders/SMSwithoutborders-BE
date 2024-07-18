@@ -86,8 +86,6 @@ def validate_request_fields(context, request, response, required_fields):
         None or response: None if no missing fields,
             error response otherwise.
     """
-    missing_fields = []
-    invalid_fields = {}
     x25519_fields = [
         "client_publish_pub_key",
         "client_device_id_pub_key",
@@ -96,65 +94,61 @@ def validate_request_fields(context, request, response, required_fields):
     for field in required_fields:
         if isinstance(field, tuple):
             if not any(getattr(request, f, None) for f in field):
-                missing_fields.append(f"({' or '.join(field)})")
+                return error_response(
+                    context,
+                    response,
+                    f"Missing required field: {' or '.join(field)}",
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                )
         else:
             if not getattr(request, field, None):
-                missing_fields.append(field)
-
-    if missing_fields:
-        return error_response(
-            context,
-            response,
-            f"Missing required fields: {', '.join(missing_fields)}",
-            grpc.StatusCode.INVALID_ARGUMENT,
-        )
+                return error_response(
+                    context,
+                    response,
+                    f"Missing required field: {field}",
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                )
 
     if getattr(request, "phone_number", None) and getattr(
         request, "country_code", None
     ):
         try:
             parsed_number = phonenumbers.parse(request.phone_number)
-            if (
-                phonenumbers.region_code_for_country_code(parsed_number.country_code)
-                != request.country_code
-            ):
-                expected_country = phonenumbers.region_code_for_country_code(
-                    parsed_number.country_code
-                )
-                invalid_fields["phone_number"] = (
-                    "Phone number does not match the provided country code "
-                    f"{request.country_code}. Expected country code is {expected_country}"
-                )
-                return error_response(
-                    context,
-                    response,
-                    f"Invalid fields: {invalid_fields}",
-                    grpc.StatusCode.INVALID_ARGUMENT,
-                )
+            expected_country = phonenumbers.region_code_for_country_code(
+                parsed_number.country_code
+            )
+            given_country = request.country_code.upper()
+            if expected_country != given_country:
+                if given_country == "CA" and expected_country == "US":
+                    pass
+                else:
+                    return error_response(
+                        context,
+                        response,
+                        "The phone number does not match the provided country code "
+                        f"{given_country}. Expected country code is {expected_country}.",
+                        grpc.StatusCode.INVALID_ARGUMENT,
+                    )
         except phonenumbers.phonenumberutil.NumberParseException as e:
             match = re.split(r"\(\d\)\s*(.*)", str(e))
-            invalid_fields["phone_number"] = match[1].strip()
             return error_response(
                 context,
                 response,
                 e,
                 grpc.StatusCode.INVALID_ARGUMENT,
-                user_msg=f"Invalid fields: {invalid_fields}",
+                user_msg=f"The phone number is invalid. {match[1].strip()}",
                 _type="UNKNOWN",
             )
 
     for field in set(x25519_fields) & set(required_fields):
         is_valid, error = is_valid_x25519_public_key(getattr(request, field))
         if not is_valid:
-            invalid_fields[field] = error
-
-    if invalid_fields:
-        return error_response(
-            context,
-            response,
-            f"Invalid fields: {invalid_fields}",
-            grpc.StatusCode.INVALID_ARGUMENT,
-        )
+            return error_response(
+                context,
+                response,
+                f"The {field} field has an {error}.",
+                grpc.StatusCode.INVALID_ARGUMENT,
+            )
 
     return None
 
@@ -178,7 +172,7 @@ def handle_pow_verification(context, request, response):
         return success, error_response(
             context,
             response,
-            f"Ownership proof verification failed. Reason: {message}",
+            message,
             grpc.StatusCode.UNAUTHENTICATED,
         )
     return success, message
@@ -201,7 +195,7 @@ def handle_pow_initialization(context, request, response):
         return success, error_response(
             context,
             response,
-            f"Ownership proof initialization failed. Reason: {message}",
+            message,
             grpc.StatusCode.INVALID_ARGUMENT,
         )
     return success, (message, expires)
@@ -360,12 +354,12 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if invalid_fields:
                 return invalid_fields
 
-            invalid_password = validate_password_strength(request.password)
-            if invalid_password:
+            password_error = validate_password_strength(request.password)
+            if password_error:
                 return error_response(
                     context,
                     response,
-                    f"Invalid fields: {invalid_password}",
+                    password_error,
                     grpc.StatusCode.INVALID_ARGUMENT,
                 )
 
@@ -376,14 +370,15 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+            cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
+            phone_number_hash = generate_hmac(HASHING_KEY, cleaned_phone_number)
             entity_obj = find_entity(phone_number_hash=phone_number_hash)
 
             if entity_obj:
                 return error_response(
                     context,
                     response,
-                    f"Entity with phone number `{request.phone_number}` already exists.",
+                    f"Entity with phone number `{cleaned_phone_number}` already exists.",
                     grpc.StatusCode.ALREADY_EXISTS,
                 )
 
@@ -508,14 +503,15 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+            cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
+            phone_number_hash = generate_hmac(HASHING_KEY, cleaned_phone_number)
             entity_obj = find_entity(phone_number_hash=phone_number_hash)
 
             if not entity_obj:
                 return error_response(
                     context,
                     response,
-                    f"Entity with phone number `{request.phone_number}` not found.",
+                    f"Entity with phone number `{cleaned_phone_number}` not found.",
                     grpc.StatusCode.NOT_FOUND,
                 )
 
