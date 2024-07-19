@@ -223,8 +223,7 @@ def verify_long_lived_token(request, context, response):
             error_msg,
             grpc.StatusCode.UNAUTHENTICATED,
             user_msg=(
-                "Your session has expired or the token is invalid. "
-                "Please log in again to generate a new token."
+                "The long lived token is invalid. Please log in again to generate a new token."
             ),
         )
 
