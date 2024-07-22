@@ -243,13 +243,18 @@ def clean_rate_limit_store(phone_number):
     """
     current_time = datetime.datetime.now()
 
-    OTPRateLimit.delete().where(
-        OTPRateLimit.phone_number == phone_number,
-        OTPRateLimit.date_expires < current_time,
-        OTPRateLimit.attempt_count >= RATE_LIMIT_WINDOWS[-1]["count"],
-    ).execute()
+    rows_deleted = (
+        OTPRateLimit.delete()
+        .where(
+            OTPRateLimit.phone_number == phone_number,
+            OTPRateLimit.date_expires < current_time,
+            OTPRateLimit.attempt_count >= RATE_LIMIT_WINDOWS[-1]["count"],
+        )
+        .execute()
+    )
 
-    logger.info("Successfully cleaned up expired rate limit records.")
+    if rows_deleted > 0:
+        logger.info("Successfully cleaned up expired rate limit records.")
 
 
 def increment_rate_limit(phone_number):
@@ -304,5 +309,9 @@ def clear_rate_limit(phone_number):
     Args:
         phone_number (str): The phone number to clear the rate limit counter for.
     """
-    OTPRateLimit.delete().where(OTPRateLimit.phone_number == phone_number).execute()
-    logger.info("Successfully cleared rate limit.")
+    row_deleted = (
+        OTPRateLimit.delete().where(OTPRateLimit.phone_number == phone_number).execute()
+    )
+
+    if row_deleted > 0:
+        logger.info("Successfully cleared rate limit.")
