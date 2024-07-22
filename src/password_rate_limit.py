@@ -110,6 +110,9 @@ def clear_rate_limit(eid):
     Args:
         eid (str): The entity to clear the rate limit counter for.
     """
-    PasswordRateLimit.delete().where(PasswordRateLimit.eid == eid).execute()
+    row_deleted = (
+        PasswordRateLimit.delete().where(PasswordRateLimit.eid == eid).execute()
+    )
 
-    logger.info("Cleared rate limit for %s.", eid)
+    if row_deleted > 0:
+        logger.info("Cleared rate limit for %s.", eid)
