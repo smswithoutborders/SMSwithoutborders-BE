@@ -45,7 +45,7 @@ def generate_llt(eid, key):
     llt = token_obj.encode(payload, signing_key, alg="HS256")
     llt_ciphertext = encrypt_fernet(convert_to_fernet_key(key), f"{eid}:{llt}")
 
-    logger.info("Successfully generated long-lived token for %s", eid)
+    logger.info("Successfully generated long-lived token.")
     return base64.b64encode(llt_ciphertext).decode("utf-8")
 
 
@@ -68,7 +68,7 @@ def verify_llt(llt, key):
             {"kty": "oct", "k": base64.urlsafe_b64encode(key).decode("utf-8")}
         )
         payload = token_obj.decode(llt, signing_key, algorithms=["HS256"])
-        logger.info("Successfully verified long-lived token: %s", llt)
+        logger.info("Successfully verified long-lived token.")
         return payload, None
 
     except Exception as error:

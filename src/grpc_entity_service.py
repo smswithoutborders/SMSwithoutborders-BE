@@ -43,239 +43,280 @@ logging.basicConfig(
 logger = logging.getLogger("[gRPC Entity Service]")
 
 
-def error_response(context, response, sys_msg, status_code, user_msg=None, _type=None):
-    """
-    Create an error response.
-
-    Args:
-        context: gRPC context.
-        response: gRPC response object.
-        sys_msg (str or tuple): System message.
-        status_code: gRPC status code.
-        user_msg (str or tuple): User-friendly message.
-        _type (str): Type of error.
-
-    Returns:
-        An instance of the specified response with the error set.
-    """
-    if not user_msg:
-        user_msg = sys_msg
-
-    if _type == "UNKNOWN":
-        logger.exception(sys_msg, exc_info=True)
-    else:
-        logger.error(sys_msg)
-
-    context.set_details(user_msg)
-    context.set_code(status_code)
-
-    return response()
-
-
-def validate_request_fields(context, request, response, required_fields):
-    """
-    Validates the fields in the gRPC request.
-
-    Args:
-        context: gRPC context.
-        request: gRPC request object.
-        response: gRPC response object.
-        required_fields (list): List of required fields, can include tuples.
-
-    Returns:
-        None or response: None if no missing fields,
-            error response otherwise.
-    """
-    x25519_fields = [
-        "client_publish_pub_key",
-        "client_device_id_pub_key",
-    ]
-
-    for field in required_fields:
-        if isinstance(field, tuple):
-            if not any(getattr(request, f, None) for f in field):
-                return error_response(
-                    context,
-                    response,
-                    f"Missing required field: {' or '.join(field)}",
-                    grpc.StatusCode.INVALID_ARGUMENT,
-                )
-        else:
-            if not getattr(request, field, None):
-                return error_response(
-                    context,
-                    response,
-                    f"Missing required field: {field}",
-                    grpc.StatusCode.INVALID_ARGUMENT,
-                )
-
-    if getattr(request, "phone_number", None) and getattr(
-        request, "country_code", None
-    ):
-        try:
-            parsed_number = phonenumbers.parse(request.phone_number)
-            expected_country = phonenumbers.region_code_for_country_code(
-                parsed_number.country_code
-            )
-            given_country = request.country_code.upper()
-            if expected_country != given_country:
-                if given_country == "CA" and expected_country == "US":
-                    pass
-                else:
-                    return error_response(
-                        context,
-                        response,
-                        "The phone number does not match the provided country code "
-                        f"{given_country}. Expected country code is {expected_country}.",
-                        grpc.StatusCode.INVALID_ARGUMENT,
-                    )
-        except phonenumbers.phonenumberutil.NumberParseException as e:
-            match = re.split(r"\(\d\)\s*(.*)", str(e))
-            return error_response(
-                context,
-                response,
-                e,
-                grpc.StatusCode.INVALID_ARGUMENT,
-                user_msg=f"The phone number is invalid. {match[1].strip()}",
-                _type="UNKNOWN",
-            )
-
-    for field in set(x25519_fields) & set(required_fields):
-        is_valid, error = is_valid_x25519_public_key(getattr(request, field))
-        if not is_valid:
-            return error_response(
-                context,
-                response,
-                f"The {field} field has an {error}.",
-                grpc.StatusCode.INVALID_ARGUMENT,
-            )
-
-    return None
-
-
-def handle_pow_verification(context, request, response):
-    """
-    Handle proof of ownership verification.
-
-    Args:
-        context: gRPC context.
-        request: gRPC request object.
-        response: gRPC response object.
-
-    Returns:
-        tuple: Tuple containing success flag and message.
-    """
-    cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
-    success, message = verify_otp(
-        cleaned_phone_number, request.ownership_proof_response
-    )
-    if not success:
-        return success, error_response(
-            context,
-            response,
-            message,
-            grpc.StatusCode.UNAUTHENTICATED,
-        )
-    return success, message
-
-
-def handle_pow_initialization(context, request, response):
-    """
-    Handle proof of ownership initialization.
-
-    Args:
-        context: gRPC context.
-        request: gRPC request object.
-        response: gRPC response object.
-
-    Returns:
-        tuple: Tuple containing success flag, message, and expiration time.
-    """
-    cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
-    success, message, expires = send_otp(cleaned_phone_number)
-    if not success:
-        return success, error_response(
-            context,
-            response,
-            message,
-            grpc.StatusCode.INVALID_ARGUMENT,
-        )
-    return success, (message, expires)
-
-
-def verify_long_lived_token(request, context, response):
-    """
-    Verifies the long-lived token from the request.
-
-    Args:
-        context: gRPC context.
-        request: gRPC request object.
-        response: gRPC response object.
-
-    Returns:
-        tuple: Tuple containing entity object, and error response.
-    """
-
-    def create_error_response(error_msg):
-        return error_response(
-            context,
-            response,
-            error_msg,
-            grpc.StatusCode.UNAUTHENTICATED,
-            user_msg=(
-                "The long lived token is invalid. Please log in again to generate a new token."
-            ),
-        )
-
-    try:
-        eid, llt = request.long_lived_token.split(":", 1)
-    except ValueError as err:
-        return None, create_error_response(err)
-
-    entity_obj = find_entity(eid=eid)
-    if not entity_obj:
-        return None, create_error_response(
-            f"Possible token tampering detected. Entity not found with eid: {eid}"
-        )
-
-    if not entity_obj.device_id:
-        return None, create_error_response(
-            f"No device ID found for entity with EID: {eid}"
-        )
-
-    entity_device_id_keypair = load_keypair_object(entity_obj.device_id_keypair)
-    entity_device_id_shared_key = entity_device_id_keypair.agree(
-        base64.b64decode(entity_obj.client_device_id_pub_key),
-    )
-
-    llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
-
-    if not llt_payload:
-        return None, create_error_response(llt_error)
-
-    if llt_payload.get("eid") != eid:
-        return None, create_error_response(
-            f"Possible token tampering detected. EID mismatch: {eid}"
-        )
-
-    return entity_obj, None
-
-
 class EntityService(vault_pb2_grpc.EntityServicer):
     """Entity Service Descriptor"""
+
+    def handle_create_grpc_error_response(
+        self, context, response, sys_msg, status_code, **kwargs
+    ):
+        """
+        Handles the creation of a gRPC error response.
+
+        Args:
+            context: gRPC context.
+            response: gRPC response object.
+            sys_msg (str or tuple): System message.
+            status_code: gRPC status code.
+            user_msg (str or tuple): User-friendly message.
+            error_type (str): Type of error.
+
+        Returns:
+            An instance of the specified response with the error set.
+        """
+        user_msg = kwargs.get("user_msg")
+        error_type = kwargs.get("error_type")
+
+        if not user_msg:
+            user_msg = sys_msg
+
+        if error_type == "UNKNOWN":
+            logger.exception(sys_msg, exc_info=True)
+        else:
+            logger.error(sys_msg)
+
+        context.set_details(user_msg)
+        context.set_code(status_code)
+
+        return response()
+
+    def handle_request_field_validation(
+        self, context, request, response, required_fields
+    ):
+        """
+        Validates the fields in the gRPC request.
+
+        Args:
+            context: gRPC context.
+            request: gRPC request object.
+            response: gRPC response object.
+            required_fields (list): List of required fields, can include tuples.
+
+        Returns:
+            None or response: None if no missing fields,
+                error response otherwise.
+        """
+        x25519_fields = {"client_publish_pub_key", "client_device_id_pub_key"}
+
+        def field_missing_error(field_names):
+            return self.handle_create_grpc_error_response(
+                context,
+                response,
+                f"Missing required field: {' or '.join(field_names)}",
+                grpc.StatusCode.INVALID_ARGUMENT,
+            )
+
+        def validate_field(field):
+            if isinstance(field, tuple):
+                if not any(getattr(request, f, None) for f in field):
+                    return field_missing_error(field)
+            else:
+                if not getattr(request, field, None):
+                    return field_missing_error([field])
+            return None
+
+        def validate_phone_number():
+            phone_number = getattr(request, "phone_number", None)
+            country_code = getattr(request, "country_code", None)
+            if phone_number and country_code:
+                try:
+                    parsed_number = phonenumbers.parse(phone_number)
+                    expected_country = phonenumbers.region_code_for_country_code(
+                        parsed_number.country_code
+                    )
+                    given_country = country_code.upper()
+                    if expected_country != given_country:
+                        if not (given_country == "CA" and expected_country == "US"):
+                            return self.handle_create_grpc_error_response(
+                                context,
+                                response,
+                                f"The phone number does not match the provided country code "
+                                f"{given_country}. Expected country code is {expected_country}.",
+                                grpc.StatusCode.INVALID_ARGUMENT,
+                            )
+                except phonenumbers.phonenumberutil.NumberParseException as e:
+                    match = re.split(r"\(\d\)\s*(.*)", str(e))
+                    return self.handle_create_grpc_error_response(
+                        context,
+                        response,
+                        e,
+                        grpc.StatusCode.INVALID_ARGUMENT,
+                        user_msg=f"The phone number is invalid. {match[1].strip()}",
+                        _type="UNKNOWN",
+                    )
+            return None
+
+        def validate_x25519_keys():
+            for field in x25519_fields & set(required_fields):
+                is_valid, error = is_valid_x25519_public_key(getattr(request, field))
+                if not is_valid:
+                    return self.handle_create_grpc_error_response(
+                        context,
+                        response,
+                        f"The {field} field has an {error}.",
+                        grpc.StatusCode.INVALID_ARGUMENT,
+                    )
+            return None
+
+        for field in required_fields:
+            validation_error = validate_field(field)
+            if validation_error:
+                return validation_error
+
+        phone_number_error = validate_phone_number()
+        if phone_number_error:
+            return phone_number_error
+
+        x25519_keys_error = validate_x25519_keys()
+        if x25519_keys_error:
+            return x25519_keys_error
+
+        return None
+
+    def handle_pow_verification(self, context, request, response):
+        """
+        Handle proof of ownership verification.
+
+        Args:
+            context: gRPC context.
+            request: gRPC request object.
+            response: gRPC response object.
+
+        Returns:
+            tuple: Tuple containing success flag and message.
+        """
+        success, message = verify_otp(
+            request.phone_number, request.ownership_proof_response
+        )
+        if not success:
+            return success, self.handle_create_grpc_error_response(
+                context,
+                response,
+                message,
+                grpc.StatusCode.UNAUTHENTICATED,
+            )
+        return success, message
+
+    def handle_pow_initialization(self, context, request, response):
+        """
+        Handle proof of ownership initialization.
+
+        Args:
+            context: gRPC context.
+            request: gRPC request object.
+            response: gRPC response object.
+
+        Returns:
+            tuple:
+                - success flag (bool)
+                - tuple or response:
+                    - message.
+                    - expiration time.
+        """
+        success, message, expires = send_otp(request.phone_number)
+        if not success:
+            return success, self.handle_create_grpc_error_response(
+                context,
+                response,
+                message,
+                grpc.StatusCode.INVALID_ARGUMENT,
+            )
+        return success, (message, expires)
+
+    def handle_long_lived_token_validation(self, request, context, response):
+        """
+        Handles the validation of a long-lived token from the request.
+
+        Args:
+            context: gRPC context.
+            request: gRPC request object.
+            response: gRPC response object.
+
+        Returns:
+            tuple: Tuple containing entity object, and error response.
+        """
+
+        def create_error_response(error_msg):
+            return self.handle_create_grpc_error_response(
+                context,
+                response,
+                error_msg,
+                grpc.StatusCode.UNAUTHENTICATED,
+                user_msg=(
+                    "The long-lived token is invalid. Please log in again to generate a new token."
+                ),
+            )
+
+        def extract_token(long_lived_token):
+            try:
+                eid, llt = long_lived_token.split(":", 1)
+                return eid, llt
+            except ValueError as err:
+                return None, create_error_response(f"Token extraction error: {err}")
+
+        def validate_entity(eid):
+            entity_obj = find_entity(eid=eid)
+            if not entity_obj:
+                return None, create_error_response(
+                    f"Possible token tampering detected. Entity not found with eid: {eid}"
+                )
+            if not entity_obj.device_id:
+                return None, create_error_response(
+                    f"No device ID found for entity with EID: {eid}"
+                )
+            return entity_obj, None
+
+        def validate_long_lived_token(llt, entity_obj):
+            entity_device_id_keypair = load_keypair_object(entity_obj.device_id_keypair)
+            entity_device_id_shared_key = entity_device_id_keypair.agree(
+                base64.b64decode(entity_obj.client_device_id_pub_key),
+            )
+
+            llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
+
+            if not llt_payload:
+                return None, create_error_response(llt_error)
+
+            if llt_payload.get("eid") != entity_obj.eid.hex:
+                return None, create_error_response(
+                    f"Possible token tampering detected. EID mismatch: {entity_obj.eid}"
+                )
+
+            return llt_payload, None
+
+        eid, llt = extract_token(request.long_lived_token)
+        if llt is None:
+            return None, llt
+
+        entity_obj, entity_error = validate_entity(eid)
+        if entity_error:
+            return None, entity_error
+
+        _, token_error = validate_long_lived_token(llt, entity_obj)
+        if token_error:
+            return None, token_error
+
+        return entity_obj, None
+
+    def clean_phone_number(self, phone_number):
+        """Cleans up the phone number by removing spaces."""
+        return re.sub(r"\s+", "", phone_number)
 
     def CreateEntity(self, request, context):
         """Handles the creation of an entity."""
 
         response = vault_pb2.CreateEntityResponse
 
+        if hasattr(request, "phone_number"):
+            request.phone_number = self.clean_phone_number(request.phone_number)
+
         def complete_creation():
-            success, pow_response = handle_pow_verification(context, request, response)
+            success, pow_response = self.handle_pow_verification(
+                context, request, response
+            )
             if not success:
                 return pow_response
 
-            cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
-            phone_number_hash = generate_hmac(HASHING_KEY, cleaned_phone_number)
+            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
             eid = generate_eid(phone_number_hash)
             password_hash = generate_hmac(HASHING_KEY, request.password)
             country_code_ciphertext_b64 = encrypt_and_encode(request.country_code)
@@ -301,7 +342,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 "country_code": country_code_ciphertext_b64,
                 "device_id": compute_device_id(
                     device_id_shared_key,
-                    cleaned_phone_number,
+                    request.phone_number,
                     request.client_device_id_pub_key,
                 ),
                 "client_publish_pub_key": request.client_publish_pub_key,
@@ -326,7 +367,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         def initiate_creation():
-            success, pow_response = handle_pow_initialization(
+            success, pow_response = self.handle_pow_initialization(
                 context, request, response
             )
             if not success:
@@ -341,7 +382,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         def validate_fields():
-            invalid_fields = validate_request_fields(
+            invalid_fields = self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -358,7 +399,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             password_error = validate_password_strength(request.password)
             if password_error:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     password_error,
@@ -372,15 +413,14 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
-            phone_number_hash = generate_hmac(HASHING_KEY, cleaned_phone_number)
+            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
             entity_obj = find_entity(phone_number_hash=phone_number_hash)
 
             if entity_obj:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
-                    f"Entity with phone number `{cleaned_phone_number}` already exists.",
+                    "Entity with this phone number already exists.",
                     grpc.StatusCode.ALREADY_EXISTS,
                 )
 
@@ -390,7 +430,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             return initiate_creation()
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
@@ -404,9 +444,12 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
         response = vault_pb2.AuthenticateEntityResponse
 
+        if hasattr(request, "phone_number"):
+            request.phone_number = self.clean_phone_number(request.phone_number)
+
         def initiate_authentication(entity_obj):
             if is_rate_limited(entity_obj.eid):
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     "Too many password attempts. Please wait and try again later.",
@@ -415,11 +458,10 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             if not verify_hmac(HASHING_KEY, request.password, entity_obj.password_hash):
                 register_password_attempt(entity_obj.eid)
-                cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
-                    f"Incorrect Password provided for phone number {cleaned_phone_number}",
+                    "Incorrect Password provided.",
                     grpc.StatusCode.UNAUTHENTICATED,
                     user_msg=(
                         "Incorrect credentials. Please double-check "
@@ -428,7 +470,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 )
 
             clear_rate_limit(entity_obj.eid)
-            success, pow_response = handle_pow_initialization(
+            success, pow_response = self.handle_pow_initialization(
                 context, request, response
             )
             if not success:
@@ -446,7 +488,9 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         def complete_authentication(entity_obj):
-            success, pow_response = handle_pow_verification(context, request, response)
+            success, pow_response = self.handle_pow_verification(
+                context, request, response
+            )
             if not success:
                 return pow_response
 
@@ -489,7 +533,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         def validate_fields():
-            return validate_request_fields(
+            return self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -506,15 +550,14 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            cleaned_phone_number = re.sub(r"\s+", "", request.phone_number)
-            phone_number_hash = generate_hmac(HASHING_KEY, cleaned_phone_number)
+            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
             entity_obj = find_entity(phone_number_hash=phone_number_hash)
 
             if not entity_obj:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
-                    f"Entity with phone number `{cleaned_phone_number}` not found.",
+                    "Entity with this phone number not found.",
                     grpc.StatusCode.NOT_FOUND,
                 )
 
@@ -524,7 +567,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             return initiate_authentication(entity_obj)
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
@@ -539,13 +582,13 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         response = vault_pb2.ListEntityStoredTokensResponse
 
         try:
-            invalid_fields_response = validate_request_fields(
+            invalid_fields_response = self.handle_request_field_validation(
                 context, request, response, ["long_lived_token"]
             )
             if invalid_fields_response:
                 return invalid_fields_response
 
-            entity_obj, llt_error_response = verify_long_lived_token(
+            entity_obj, llt_error_response = self.handle_long_lived_token_validation(
                 request, context, response
             )
             if llt_error_response:
@@ -562,13 +605,13 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     if field in token:
                         token[field] = decrypt_and_decode(token[field])
 
-            logger.info("Successfully retrieved tokens for %s", entity_obj.eid)
+            logger.info("Successfully retrieved tokens.")
             return response(
                 stored_tokens=tokens, message="Tokens retrieved successfully."
             )
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
@@ -583,7 +626,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         response = vault_pb2.DeleteEntityResponse
 
         def validate_fields():
-            return validate_request_fields(
+            return self.handle_request_field_validation(
                 context, request, response, ["long_lived_token"]
             )
 
@@ -618,7 +661,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                     for token in token_info
                 )
 
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     f"You cannot delete entity because it still has stored tokens. "
@@ -634,7 +677,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            entity_obj, llt_error_response = verify_long_lived_token(
+            entity_obj, llt_error_response = self.handle_long_lived_token_validation(
                 request, context, response
             )
             if llt_error_response:
@@ -655,7 +698,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
@@ -670,7 +713,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         response = vault_pb2.ResetPasswordResponse
 
         def initiate_reset(entity_obj):
-            success, pow_response = handle_pow_initialization(
+            success, pow_response = self.handle_pow_initialization(
                 context, request, response
             )
             if not success:
@@ -688,7 +731,9 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         def complete_reset(entity_obj):
-            success, pow_response = handle_pow_verification(context, request, response)
+            success, pow_response = self.handle_pow_verification(
+                context, request, response
+            )
             if not success:
                 return pow_response
 
@@ -733,7 +778,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             )
 
         def validate_fields():
-            invalid_fields = validate_request_fields(
+            invalid_fields = self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -749,10 +794,10 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             invalid_password = validate_password_strength(request.new_password)
             if invalid_password:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
-                    f"Invalid fields: {invalid_password}",
+                    invalid_password,
                     grpc.StatusCode.INVALID_ARGUMENT,
                 )
 
@@ -767,10 +812,10 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             entity_obj = find_entity(phone_number_hash=phone_number_hash)
 
             if not entity_obj:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
-                    f"Entity with phone number `{request.phone_number}` not found.",
+                    "Entity with this phone number not found.",
                     grpc.StatusCode.NOT_FOUND,
                 )
 
@@ -780,7 +825,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             return initiate_reset(entity_obj)
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
@@ -795,7 +840,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
         response = vault_pb2.UpdateEntityPasswordResponse
 
         def validate_fields():
-            invalid_fields = validate_request_fields(
+            invalid_fields = self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -810,10 +855,10 @@ class EntityService(vault_pb2_grpc.EntityServicer):
 
             invalid_password = validate_password_strength(request.new_password)
             if invalid_password:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
-                    f"Invalid fields: {invalid_password}",
+                    invalid_password,
                     grpc.StatusCode.INVALID_ARGUMENT,
                 )
 
@@ -824,14 +869,14 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            entity_obj, llt_error_response = verify_long_lived_token(
+            entity_obj, llt_error_response = self.handle_long_lived_token_validation(
                 request, context, response
             )
             if llt_error_response:
                 return llt_error_response
 
             if is_rate_limited(entity_obj.eid):
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     "Too many password attempts. Please wait and try again later.",
@@ -842,7 +887,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 HASHING_KEY, request.current_password, entity_obj.password_hash
             ):
                 register_password_attempt(entity_obj.eid)
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     "The current password you entered is incorrect. Please try again.",
@@ -863,7 +908,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             return response(message="Password updated successfully.", success=True)
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
