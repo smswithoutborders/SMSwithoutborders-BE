@@ -1,8 +1,12 @@
-"""Entity Controllers"""
+"""
+Entity Controllers
+"""
 
 from peewee import DoesNotExist
 from src.db_models import Entity
+from base_logger import get_logger
 
+logger = get_logger(__name__)
 database = Entity._meta.database
 
 
@@ -28,6 +32,7 @@ def create_entity(eid, phone_number_hash, password_hash, country_code, **kwargs)
             "country_code": country_code,
             **kwargs,
         }
+        logger.debug("Creating a new entity...")
         entity = Entity.create(**entity_data)
     return entity
 
@@ -43,8 +48,12 @@ def find_entity(**search_criteria):
     Returns:
         Entity or None: The found entity if exists, else None.
     """
+    logger.debug("Finding an entity based on the specified criteria...")
     with database.connection_context():
         try:
-            return Entity.get(**search_criteria)
+            entity = Entity.get(**search_criteria)
+            logger.debug("Entity is found...")
+            return entity
         except DoesNotExist:
+            logger.debug("Entity is not found...")
             return None

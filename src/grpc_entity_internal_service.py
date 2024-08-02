@@ -1,6 +1,5 @@
 """gRPC Entity Internal Service"""
 
-import logging
 import base64
 
 import grpc
@@ -26,14 +25,12 @@ from src.relaysms_payload import (
     encrypt_payload,
     encode_relay_sms_payload,
 )
+from base_logger import get_logger
+
+logger = get_logger("[gRPC Entity Internal Service]")
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 SUPPORTED_PLATFORMS = get_supported_platforms()
-
-logging.basicConfig(
-    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-)
-logger = logging.getLogger("[gRPC Entity Internal Service]")
 
 
 def error_response(context, response, sys_msg, status_code, user_msg=None, _type=None):

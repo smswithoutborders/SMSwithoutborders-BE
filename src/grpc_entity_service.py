@@ -1,6 +1,5 @@
 """gRPC Entity Service"""
 
-import logging
 import base64
 import re
 
@@ -33,14 +32,11 @@ from src.password_rate_limit import (
     clear_rate_limit,
     register_password_attempt,
 )
+from base_logger import get_logger
 
+logger = get_logger("[gRPC Entity Service]")
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
-
-logging.basicConfig(
-    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-)
-logger = logging.getLogger("[gRPC Entity Service]")
 
 
 class EntityService(vault_pb2_grpc.EntityServicer):

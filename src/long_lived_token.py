@@ -2,7 +2,6 @@
 Module for generating and verifying Long-Lived Tokens (LLTs).
 """
 
-import logging
 from datetime import datetime, timedelta
 import base64
 
@@ -11,11 +10,9 @@ from jwt.utils import get_int_from_datetime
 
 from src.crypto import encrypt_fernet
 from src.utils import convert_to_fernet_key
+from base_logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def generate_llt(eid, key):
@@ -29,6 +26,7 @@ def generate_llt(eid, key):
     Returns:
         str: Base64 encoded and encrypted LLT.
     """
+    logger.debug("Generating payload for the long-lived token...")
     token_obj = JWT()
 
     payload = {
@@ -38,14 +36,17 @@ def generate_llt(eid, key):
         "exp": get_int_from_datetime(datetime.now() + timedelta(days=3650)),
     }
 
+    logger.debug("Creating signing key...")
     signing_key = jwk_from_dict(
         {"kty": "oct", "k": base64.urlsafe_b64encode(key).decode("utf-8")}
     )
 
+    logger.debug("Encoding the long-lived token...")
     llt = token_obj.encode(payload, signing_key, alg="HS256")
+
+    logger.debug("Encrypting the long-lived token...")
     llt_ciphertext = encrypt_fernet(convert_to_fernet_key(key), f"{eid}:{llt}")
 
-    logger.info("Successfully generated long-lived token.")
     return base64.b64encode(llt_ciphertext).decode("utf-8")
 
 
@@ -63,12 +64,12 @@ def verify_llt(llt, key):
             - str or None: Error message if LLT is invalid or expired, None if LLT is valid.
     """
     try:
+        logger.debug("Decoding the long-lived token...")
         token_obj = JWT()
         signing_key = jwk_from_dict(
             {"kty": "oct", "k": base64.urlsafe_b64encode(key).decode("utf-8")}
         )
         payload = token_obj.decode(llt, signing_key, algorithms=["HS256"])
-        logger.info("Successfully verified long-lived token.")
         return payload, None
 
     except Exception as error:

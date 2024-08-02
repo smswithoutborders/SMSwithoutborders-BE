@@ -1,18 +1,15 @@
 """Password Rate Limit Module."""
 
 import datetime
-import logging
 from src.db_models import PasswordRateLimit
+from base_logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-)
-logger = logging.getLogger("[Password Rate Limit]")
+logger = get_logger("[Password Rate Limit]")
 
 RATE_LIMIT_WINDOWS = [
-    {"duration": 3, "count": 3},  # 3 attempts in 2 minutes
-    {"duration": 5, "count": 5},  # 5 attempts in 15 minutes
-    {"duration": 15, "count": 7},  # 7 attempts in 60 minutes
+    {"duration": 2, "count": 3},  # 3 attempts in 2 minutes
+    {"duration": 15, "count": 5},  # 5 attempts in 15 minutes
+    {"duration": 60, "count": 7},  # 7 attempts in 60 minutes
     {"duration": 1440, "count": 9},  # 9 attempts in 24 hours
 ]
 
@@ -29,6 +26,7 @@ def is_rate_limited(eid):
     Returns:
         bool: True if the entity is rate limited, False otherwise.
     """
+    logger.debug("Checking rate limit for entity...")
     current_time = datetime.datetime.now()
     rate_limit = PasswordRateLimit.get_or_none(PasswordRateLimit.eid == eid)
 
@@ -39,8 +37,7 @@ def is_rate_limited(eid):
             if rate_limit.date_expires >= current_time:
                 index = ATTEMPT_COUNTS.index(rate_limit.attempt_count)
                 logger.info(
-                    "Rate limit exceeded for entity %s in %s-minute window.",
-                    eid,
+                    "Rate limit exceeded for entity in %s-minute window.",
                     RATE_LIMIT_WINDOWS[index]["duration"],
                 )
                 return True
@@ -55,6 +52,7 @@ def register_password_attempt(eid):
     Args:
         eid (str): The entity to register the attempt for.
     """
+    logger.debug("Registering password attempt for entity...")
     current_time = datetime.datetime.now()
 
     rate_limit, created = PasswordRateLimit.get_or_create(
@@ -74,8 +72,7 @@ def register_password_attempt(eid):
         rate_limit.save()
 
     logger.info(
-        "Registered password attempt for %s. Current attempt count: %d.",
-        eid,
+        "Registered password attempt for entity. Current attempt count: %d.",
         rate_limit.attempt_count,
     )
 
@@ -87,6 +84,7 @@ def clean_rate_limit_store(eid):
     Args:
         eid (str): The entity to clean up rate limit records for.
     """
+    logger.debug("Cleaning up expired rate limit records for entity...")
     current_time = datetime.datetime.now()
 
     rows_deleted = (
@@ -100,7 +98,7 @@ def clean_rate_limit_store(eid):
     )
 
     if rows_deleted > 0:
-        logger.info("Cleaned up expired rate limit records for %s.", eid)
+        logger.info("Cleaned up expired rate limit records for entity.")
 
 
 def clear_rate_limit(eid):
@@ -110,9 +108,10 @@ def clear_rate_limit(eid):
     Args:
         eid (str): The entity to clear the rate limit counter for.
     """
-    row_deleted = (
+    logger.debug("Clearing rate limit for entity...")
+    rows_deleted = (
         PasswordRateLimit.delete().where(PasswordRateLimit.eid == eid).execute()
     )
 
-    if row_deleted > 0:
-        logger.info("Cleared rate limit for %s.", eid)
+    if rows_deleted > 0:
+        logger.info("Cleared rate limit for entity.")
