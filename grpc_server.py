@@ -1,6 +1,5 @@
 """Vault gRPC server"""
 
-import logging
 import os
 from concurrent import futures
 from datetime import datetime
@@ -12,11 +11,9 @@ import vault_pb2_grpc
 from settings import Configurations
 from src.utils import get_configs
 from src.grpc_entity_service import EntityService
+from base_logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-)
-logger = logging.getLogger("[Vault gRPC Server]")
+logger = get_logger("[Vault gRPC Server]")
 
 
 class LoggingInterceptor(ServerInterceptor):

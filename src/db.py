@@ -1,18 +1,14 @@
 """Module for connecting to a database."""
 
-import logging
 from peewee import Database, DatabaseError, MySQLDatabase, SqliteDatabase
 from playhouse.shortcuts import ReconnectMixin
 from src.utils import ensure_database_exists, get_configs
-from settings import Configurations
+from base_logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 DATABASE_CONFIGS = {
-    "mode": Configurations.MODE,
+    "mode": get_configs("MODE", default_value="development"),
     "mysql": {
         "database": get_configs("MYSQL_DATABASE"),
         "host": get_configs("MYSQL_HOST"),
@@ -42,6 +38,7 @@ def is_mysql_config_complete() -> bool:
     Returns:
         bool: True if all MySQL configurations are complete, False otherwise.
     """
+    logger.debug("Checking if MySQL configuration is complete...")
     mysql_config = DATABASE_CONFIGS["mysql"]
     required_keys = ["database", "host", "password", "user"]
     return all(mysql_config.get(key) for key in required_keys)
@@ -64,8 +61,10 @@ def connect() -> Database:
         Database: The connected database object.
     """
     mode = DATABASE_CONFIGS["mode"]
+    logger.debug("Database connection mode: %s", mode)
 
     if mode == "testing":
+        logger.debug("Mode is 'testing'. No database connection will be made.")
         return None
 
     if mode == "development":
@@ -95,6 +94,11 @@ def connect_to_mysql() -> ReconnectMySQLDatabase:
     Raises:
         DatabaseError: If failed to connect to the database.
     """
+    logger.debug(
+        "Attempting to connect to MySQL database '%s' at '%s'...",
+        DATABASE_CONFIGS["mysql"]["database"],
+        DATABASE_CONFIGS["mysql"]["host"],
+    )
     try:
         db = ReconnectMySQLDatabase(
             DATABASE_CONFIGS["mysql"]["database"],
@@ -103,11 +107,6 @@ def connect_to_mysql() -> ReconnectMySQLDatabase:
             host=DATABASE_CONFIGS["mysql"]["host"],
         )
         db.connect()
-        logger.info(
-            "Connected to MySQL database '%s' at '%s' successfully.",
-            DATABASE_CONFIGS["mysql"]["database"],
-            DATABASE_CONFIGS["mysql"]["host"],
-        )
         return db
     except DatabaseError as error:
         logger.error(
@@ -129,11 +128,11 @@ def connect_to_sqlite() -> SqliteDatabase:
     Raises:
         DatabaseError: If failed to connect to the database.
     """
+    db_path = DATABASE_CONFIGS["sqlite"]["database_path"]
+    logger.debug("Attempting to connect to SQLite database at '%s'...", db_path)
     try:
-        db_path = DATABASE_CONFIGS["sqlite"]["database_path"]
         db = SqliteDatabase(db_path)
         db.connect()
-        logger.info("Connected to SQLite database at '%s' successfully.", db_path)
         return db
     except DatabaseError as error:
         logger.error("Failed to connect to SQLite database at '%s': %s", db_path, error)

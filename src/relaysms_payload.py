@@ -6,11 +6,9 @@ import logging
 import base64
 import struct
 from smswithoutborders_libsig.ratchets import Ratchets, States, HEADERS
+from base_logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def decrypt_payload(
@@ -41,17 +39,18 @@ def decrypt_payload(
     try:
         if not server_state:
             state = States()
+            logger.debug("Initializing ratchet...")
             Ratchets.bob_init(state, publish_shared_key, publish_keypair)
-            logger.info("Ratchet initialized successfully.")
         else:
+            logger.debug("Deserializing state...")
             state = States.deserialize(server_state)
 
+        logger.debug("Deserializing header...")
         header = HEADERS.deserialize(ratchet_header)
-        logger.info("Header deserialized successfully.")
-
-        plaintext = Ratchets.decrypt(state, header, encrypted_content, publish_pub_key)
-        logger.info("Content decrypted successfully.")
-
+        logger.debug("Decrypting content...")
+        plaintext = Ratchets.decrypt(
+            state=state, header=header, ciphertext=encrypted_content, AD=publish_pub_key
+        )
         return plaintext, state, None
     except Exception as e:
         logger.error("Error decrypting relaysms payload: %s", e, exc_info=True)
@@ -75,12 +74,12 @@ def encrypt_payload(server_state, client_publish_pub_key, content):
             - error (Exception or None)
     """
     try:
+        logger.debug("Deserializing state...")
         state = States.deserialize(server_state)
-
+        logger.debug("Encrypting content...")
         header, content_ciphertext = Ratchets.encrypt(
-            state, content.encode("utf-8"), client_publish_pub_key
+            state=state, data=content.encode("utf-8"), AD=client_publish_pub_key
         )
-
         return header.serialize(), content_ciphertext, state, None
     except Exception as e:
         logger.error("Error encrypting relaysms payload: %s", e, exc_info=True)
@@ -101,20 +100,12 @@ def decode_relay_sms_payload(content):
             - error (Exception or None)
     """
     try:
+        logger.debug("Unpacking payload....")
         payload = base64.b64decode(content)
-
-        # Unpack the length of the header (first 4 bytes)
         len_header = struct.unpack("<i", payload[:4])[0]
-
-        # Extract the header (next len_header bytes)
         header = payload[4 : 4 + len_header]
-
-        # Extract the remaining payload as the encrypted content
         encrypted_content = payload[4 + len_header :]
-        logger.info("Header and encrypted content extracted.")
-
         return header, encrypted_content, None
-
     except Exception as e:
         logger.error("Error decoding relaysms payload: %s", e, exc_info=True)
         return None, None, e
@@ -134,6 +125,7 @@ def encode_relay_sms_payload(header, content_ciphertext):
             - error (Exception or None)
     """
     try:
+        logger.debug("Packing payload...")
         len_header = len(header)
         return (
             base64.b64encode(
@@ -141,7 +133,6 @@ def encode_relay_sms_payload(header, content_ciphertext):
             ).decode("utf-8"),
             None,
         )
-
     except Exception as e:
         logger.error("Error encoding relaysms payload: %s", e, exc_info=True)
         return None, e

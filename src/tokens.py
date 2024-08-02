@@ -6,7 +6,9 @@ from playhouse.shortcuts import model_to_dict
 from peewee import DoesNotExist
 from src.db_models import Token
 from src.utils import remove_none_values
+from base_logger import get_logger
 
+logger = get_logger(__name__)
 database = Token._meta.database
 
 
@@ -41,6 +43,7 @@ def create_entity_token(
             "account_tokens": account_tokens,
             **kwargs,
         }
+        logger.debug("Creating a new token...")
         token = Token.create(**token_data)
     return token
 
@@ -66,6 +69,7 @@ def fetch_entity_tokens(
         list[dict] or list[Token]: A list of token objects or a list of dictionaries
             containing token data if return_json is True.
     """
+    logger.debug("Fetching tokens for the specified entity...")
     results = []
 
     with database.atomic():
@@ -78,12 +82,15 @@ def fetch_entity_tokens(
                 if value is not None
             ]
             query = query.where(*conditions)
+            logger.debug("Applying search criteria to the query...")
 
         if fields:
             select = (getattr(Token, key) for key in fields)
             query = query.select(*select)
+            logger.debug("Applying field selection to the query...")
 
         tokens = list(query.execute())
+        logger.debug("Executing token fetch query...")
 
     if return_json:
         for token in tokens:
@@ -105,8 +112,12 @@ def find_token(**search_criteria):
     Returns:
         Token or None: The token object if found, otherwise None.
     """
+    logger.debug("Finding a token based on the specified criteria...")
     with database.connection_context():
         try:
-            return Token.get(**search_criteria)
+            token = Token.get(**search_criteria)
+            logger.debug("Token is found...")
+            return token
         except DoesNotExist:
+            logger.debug("Token is not found...")
             return None

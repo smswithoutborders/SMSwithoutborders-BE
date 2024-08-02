@@ -3,11 +3,11 @@ Module for validating password strength and checking if passwords
 have been compromised using the Have I Been Pwned API.
 """
 
-import logging
 import hashlib
 import requests
+from base_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def validate_password_strength(password):

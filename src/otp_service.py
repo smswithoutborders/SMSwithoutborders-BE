@@ -1,16 +1,13 @@
 """OTP Service Module."""
 
 import datetime
-import logging
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from src.db_models import OTPRateLimit
 from src.utils import get_configs
+from base_logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-)
-logger = logging.getLogger("[OTP Service]")
+logger = get_logger("[OTP Service]")
 
 TWILIO_ACCOUNT_SID = get_configs("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = get_configs("TWILIO_AUTH_TOKEN")
@@ -37,6 +34,7 @@ def is_rate_limited(phone_number):
     Returns:
         bool: True if the phone number is rate limited, False otherwise.
     """
+    logger.debug("Checking rate limit for phone number...")
     current_time = datetime.datetime.now()
     rate_limit = OTPRateLimit.get_or_none(OTPRateLimit.phone_number == phone_number)
 
@@ -73,6 +71,7 @@ def send_otp(phone_number):
             - A message indicating the result of the OTP sending process.
             - The OTP expiry time as an integer timestamp, if applicable; otherwise, None.
     """
+    logger.debug("Sending OTP to phone number...")
     if is_rate_limited(phone_number):
         return False, "Too many OTP requests. Please wait and try again later.", None
 
@@ -103,6 +102,7 @@ def verify_otp(phone_number, otp):
             - A boolean indicating whether the OTP was verified successfully.
             - A message indicating the result of the OTP verification process.
     """
+    logger.debug("Verifying OTP for phone number...")
     if not OTPRateLimit.get_or_none(OTPRateLimit.phone_number == phone_number):
         return (
             False,
@@ -209,7 +209,7 @@ def mock_send_otp(phone_number):
             - A boolean indicating whether the OTP was sent successfully.
             - A string message indicating the result of the OTP sending process.
     """
-    logger.info("Mock OTP sent to %s.", phone_number)
+    logger.info("Mock OTP sent to phone number.")
     return True, "OTP sent successfully. Please check your phone for the code."
 
 
@@ -227,10 +227,10 @@ def mock_verify_otp(phone_number, otp):
             - A string message indicating the result of the OTP verification process.
     """
     if otp == "123456":
-        logger.info("Mock OTP verified successfully for %s. OTP %s.", phone_number, otp)
+        logger.info("Mock OTP verified successfully.")
         return True, "OTP verified successfully."
 
-    logger.warning("Incorrect OTP %s provided for %s.", otp, phone_number)
+    logger.warning("Incorrect OTP provided.")
     return False, "Incorrect OTP. Please double-check the code and try again."
 
 
@@ -241,6 +241,7 @@ def clean_rate_limit_store(phone_number):
     Args:
         phone_number (str): The phone number to clean up rate limit records for.
     """
+    logger.debug("Cleaning up expired rate limit records for phone number...")
     current_time = datetime.datetime.now()
 
     rows_deleted = (
@@ -267,6 +268,7 @@ def increment_rate_limit(phone_number):
     Returns:
         OTPRateLimit: The updated or created OTP rate limit record.
     """
+    logger.debug("Incrementing rate limit for phone number...")
     current_time = datetime.datetime.now()
 
     rate_limit, created = OTPRateLimit.get_or_create(
@@ -295,8 +297,9 @@ def increment_rate_limit(phone_number):
         rate_limit.save()
 
     logger.info(
-        "Incremented rate limit. Current attempt count: %d.",
+        "Rate limit incremented for phone number. Attempts: %d, Expires at: %s",
         rate_limit.attempt_count,
+        rate_limit.date_expires,
     )
 
     return rate_limit
@@ -309,9 +312,7 @@ def clear_rate_limit(phone_number):
     Args:
         phone_number (str): The phone number to clear the rate limit counter for.
     """
-    row_deleted = (
-        OTPRateLimit.delete().where(OTPRateLimit.phone_number == phone_number).execute()
-    )
+    logger.debug("Clearing rate limit for phone number...")
+    OTPRateLimit.delete().where(OTPRateLimit.phone_number == phone_number).execute()
 
-    if row_deleted > 0:
-        logger.info("Successfully cleared rate limit.")
+    logger.info("Rate limit cleared for phone number.")

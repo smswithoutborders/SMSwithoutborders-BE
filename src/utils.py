@@ -1,7 +1,6 @@
 """Utitlies Module."""
 
 import os
-import logging
 import uuid
 import base64
 import json
@@ -13,13 +12,11 @@ from peewee import DatabaseError
 from smswithoutborders_libsig.keypairs import x25519
 
 from src.crypto import encrypt_aes, decrypt_aes
+from base_logger import get_logger
 
 SUPPORTED_PLATFORM_FILE_PATH = "platforms.json"
 
-logging.basicConfig(
-    level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def load_key(filepath, key_length):
