@@ -52,9 +52,7 @@ def error_response(context, response, sys_msg, status_code, user_msg=None, _type
         user_msg = sys_msg
 
     if _type == "UNKNOWN":
-        logger.exception(sys_msg, exc_info=True)
-    else:
-        logger.error(sys_msg)
+        logger.exception(sys_msg)
 
     context.set_details(user_msg)
     context.set_code(status_code)
