@@ -9,7 +9,7 @@ from base_logger import get_logger
 logger = get_logger(__name__)
 
 
-def compute_device_id(secret_key: bytes, phone_number: str, public_key: bytes) -> str:
+def compute_device_id(secret_key: bytes, phone_number: str, public_key: bytes) -> bytes:
     """
     Compute a device ID using HMAC and SHA-256.
 
@@ -19,7 +19,7 @@ def compute_device_id(secret_key: bytes, phone_number: str, public_key: bytes) -
         public_key (bytes): The public key to be included in the HMAC input.
 
     Returns:
-        str: The hexadecimal representation of the HMAC digest.
+        bytes: The bytes representation of the HMAC digest.
     """
     try:
         logger.debug("Starting computation of device ID...")

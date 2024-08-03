@@ -142,44 +142,34 @@ authenticated device to be able to publish messages with RelaySMS.
 
 #### 1. Generating Device ID:
 
-- **Hashing**: An `HMAC` with `SHA-256` hash algorithm is used to hash a
-  combination of the entity `phone number` and the entity `device id public key`
-  used for the `X25519` handshake between the client and the vault
-  `(phone_number + public_key)`. The `device_id` shared secret key obtained from
-  the `X25519` handshake between the client and the vault is then used as the
-  `HMAC` key for hashing the combination. The hexadecimal representation of the
-  hash then becomes the computed device id.
+- **Hashing**: An `HMAC` with the `SHA-256` hash algorithm is used to hash a combination of the entity's `phone number` ([E.164 format](https://en.wikipedia.org/wiki/E.164), e.g., +237123456789) and the entity's `device ID public key` (in bytes) used for the `X25519` handshake between the client and the vault. The `device_id` shared secret key obtained from the `X25519` handshake between the client and the vault is then used as the `HMAC` key for hashing the combination `(phone_number + public_key_bytes)`. The resulting bytes of the hash then become the computed device ID.
 
 > [!NOTE]
 >
-> It is recommended not to store the computed device ID. Instead, it should be
-> computed on-demand on the authorized device. This prevents unauthorized access
-> to the device id, even if the client device is compromised.
+> It is recommended not to store the computed device ID. Instead, it should be computed on-demand on the authorized device. This prevents unauthorized access to the device ID, even if the client device is compromised.
 
 ### Code Example (Python)
 
 ```python
-
 import hmac
 import hashlib
 
-
-def compute_device_id(secret_key, phone_number, public_key) -> str:
+def compute_device_id(secret_key: bytes, phone_number: str, public_key: bytes) -> bytes:
     """
     Compute a device ID using HMAC and SHA-256.
 
     Args:
-        secret_key (str): The secret key used for HMAC.
+        secret_key (bytes): The secret key used for HMAC.
         phone_number (str): The phone number to be included in the HMAC input.
-        public_key (str): The public key to be included in the HMAC input.
+        public_key (bytes): The public key to be included in the HMAC input.
 
     Returns:
-        str: The hexadecimal representation of the HMAC digest.
+        bytes: The bytes representation of the HMAC digest.
     """
     # Combine phone number and public key
-    combined_input = phone_number + public_key
+    combined_input = phone_number.encode("utf-8") + public_key
     # Compute HMAC with SHA-256
-    hmac_object = hmac.new(secret_key.encode(), combined_input.encode(), hashlib.sha256)
-    # Return hexadecimal representation of HMAC digest
-    return hmac_object.hexdigest()
+    hmac_object = hmac.new(secret_key, combined_input, hashlib.sha256)
+    # Return bytes representation of HMAC digest
+    return hmac_object.digest()
 ```
