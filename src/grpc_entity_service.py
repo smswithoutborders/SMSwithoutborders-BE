@@ -66,9 +66,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             user_msg = sys_msg
 
         if error_type == "UNKNOWN":
-            logger.exception(sys_msg, exc_info=True)
-        else:
-            logger.error(sys_msg)
+            logger.exception(sys_msg)
 
         context.set_details(user_msg)
         context.set_code(status_code)
@@ -339,7 +337,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 "device_id": compute_device_id(
                     device_id_shared_key,
                     request.phone_number,
-                    request.client_device_id_pub_key,
+                    base64.b64decode(request.client_device_id_pub_key),
                 ),
                 "client_publish_pub_key": request.client_publish_pub_key,
                 "client_device_id_pub_key": request.client_device_id_pub_key,
@@ -509,7 +507,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             entity_obj.device_id = compute_device_id(
                 device_id_shared_key,
                 request.phone_number,
-                request.client_device_id_pub_key,
+                base64.b64decode(request.client_device_id_pub_key),
             )
             entity_obj.client_publish_pub_key = request.client_publish_pub_key
             entity_obj.client_device_id_pub_key = request.client_device_id_pub_key
@@ -754,7 +752,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
             entity_obj.device_id = compute_device_id(
                 device_id_shared_key,
                 request.phone_number,
-                request.client_device_id_pub_key,
+                base64.b64decode(request.client_device_id_pub_key),
             )
             entity_obj.client_publish_pub_key = request.client_publish_pub_key
             entity_obj.client_device_id_pub_key = request.client_device_id_pub_key
