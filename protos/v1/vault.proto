@@ -116,6 +116,8 @@ message GetEntityAccessTokenRequest {
   string platform = 3;
   // The identifier of the account associated with the token.
   string account_identifier = 4;
+  // The phone number of the entity.
+  string phone_number = 5;
 }
 
 // Response message for getting entity access token.
@@ -134,6 +136,8 @@ message DecryptPayloadRequest {
   string device_id = 1;
   // Encrypted payload that needs to be decrypted.
   string payload_ciphertext = 2;
+  // The phone number of the entity.
+  string phone_number = 3;
 }
 
 message DecryptPayloadResponse {
@@ -173,6 +177,8 @@ message UpdateEntityTokenRequest {
   string platform = 3;
   // The identifier of the account associated with the token.
   string account_identifier = 4;
+  // The phone number of the entity.
+  string phone_number = 5;
 }
 
 // Response message for updating an entity's token.

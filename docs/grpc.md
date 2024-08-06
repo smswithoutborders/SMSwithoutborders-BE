@@ -1128,11 +1128,11 @@ This function retrieves an entity's access token.
 > The table lists only the required fields for this step. Other fields will be
 > ignored.
 
-| Field              | Type   | Description                                                         |
-| ------------------ | ------ | ------------------------------------------------------------------- |
-| device_id          | string | The unique identifier of the device used by the entity.             |
-| platform           | string | The platform from which the token is being issued. (e.g., "gmail"). |
-| account_identifier | string | The identifier of the account associated with the token.            |
+| Field                                         | Type   | Description                                                                                         |
+| --------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------- |
+| device_id or phone_number or long_lived_token | string | The unique identifier of the device or the phone number or the long lived token used by the entity. |
+| platform                                      | string | The platform from which the token is being issued. (e.g., "gmail").                                 |
+| account_identifier                            | string | The identifier of the account associated with the token.                                            |
 
 ---
 
@@ -1211,10 +1211,10 @@ This function handles decrypting payload content.
 > The table lists only the required fields for this step. Other fields will be
 > ignored.
 
-| Field              | Type   | Description                                                  |
-| ------------------ | ------ | ------------------------------------------------------------ |
-| device_id          | string | The unique identifier of the device used by the entity.      |
-| payload_ciphertext | string | The encrypted payload ciphertext that needs to be decrypted. |
+| Field                     | Type   | Description                                                                 |
+| ------------------------- | ------ | --------------------------------------------------------------------------- |
+| device_id or phone_number | string | The unique identifier of the device or the phone number used by the entity. |
+| payload_ciphertext        | string | The encrypted payload ciphertext that needs to be decrypted.                |
 
 ---
 
@@ -1375,12 +1375,12 @@ This function updates tokens associated with an entity.
 > The table lists only the required fields for this step. Other fields will be
 > ignored.
 
-| Field              | Type   | Description                                                          |
-| ------------------ | ------ | -------------------------------------------------------------------- |
-| device_id          | string | The unique identifier of the device used by the entity.              |
-| token              | string | The new token to be updated for the entity.                          |
-| platform           | string | The platform from which the token is being updated. (e.g., "gmail"). |
-| account_identifier | string | The identifier of the account associated with the token.             |
+| Field                     | Type   | Description                                                                 |
+| ------------------------- | ------ | --------------------------------------------------------------------------- |
+| device_id or phone_number | string | The unique identifier of the device or the phone number used by the entity. |
+| token                     | string | The new token to be updated for the entity.                                 |
+| platform                  | string | The platform from which the token is being updated. (e.g., "gmail").        |
+| account_identifier        | string | The identifier of the account associated with the token.                    |
 
 ---
 
