@@ -253,7 +253,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 context,
                 request,
                 response,
-                ["device_id", "payload_ciphertext"],
+                [("device_id", "phone_number"), "payload_ciphertext"],
             )
 
         def decode_message():
@@ -316,16 +316,27 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            entity_obj = find_entity(device_id=request.device_id)
-
-            if not entity_obj:
-                return error_response(
-                    context,
-                    response,
-                    f"Invalid device ID '{request.device_id}'. "
-                    "Please log in again to obtain a valid device ID.",
-                    grpc.StatusCode.UNAUTHENTICATED,
-                )
+            if request.phone_number:
+                phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+                entity_obj = find_entity(phone_number_hash=phone_number_hash)
+                if not entity_obj:
+                    return error_response(
+                        context,
+                        response,
+                        f"Entity associated with phone number '{request.phone_number}' not found. "
+                        "Please check your phone number and try again.",
+                        grpc.StatusCode.UNAUTHENTICATED,
+                    )
+            else:
+                entity_obj = find_entity(device_id=request.device_id)
+                if not entity_obj:
+                    return error_response(
+                        context,
+                        response,
+                        f"Entity associated with device ID '{request.device_id}' not found. "
+                        "Please log in again to obtain a valid device ID.",
+                        grpc.StatusCode.UNAUTHENTICATED,
+                    )
 
             decoded_response, decoding_error = decode_message()
             if decoding_error:
@@ -451,7 +462,11 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 context,
                 request,
                 response,
-                [("device_id", "long_lived_token"), "platform", "account_identifier"],
+                [
+                    ("device_id", "long_lived_token", "phone_number"),
+                    "platform",
+                    "account_identifier",
+                ],
             )
 
         def fetch_tokens(entity_obj, account_identifier_hash):
@@ -498,14 +513,25 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 )
                 if llt_error_response:
                     return llt_error_response
-            elif request.device_id:
-                entity_obj = find_entity(device_id=request.device_id)
 
+            elif request.phone_number:
+                phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+                entity_obj = find_entity(phone_number_hash=phone_number_hash)
                 if not entity_obj:
                     return error_response(
                         context,
                         response,
-                        f"Invalid device ID '{request.device_id}'. "
+                        f"Entity associated with phone number '{request.phone_number}' not found. "
+                        "Please check your phone number and try again.",
+                        grpc.StatusCode.UNAUTHENTICATED,
+                    )
+            else:
+                entity_obj = find_entity(device_id=request.device_id)
+                if not entity_obj:
+                    return error_response(
+                        context,
+                        response,
+                        f"Entity associated with device ID '{request.device_id}' not found. "
                         "Please log in again to obtain a valid device ID.",
                         grpc.StatusCode.UNAUTHENTICATED,
                     )
@@ -551,21 +577,37 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 context,
                 request,
                 response,
-                ["device_id", "token", "platform", "account_identifier"],
+                [
+                    ("device_id", "phone_number"),
+                    "token",
+                    "platform",
+                    "account_identifier",
+                ],
             )
             if invalid_fields_response:
                 return invalid_fields_response
 
-            entity_obj = find_entity(device_id=request.device_id)
-
-            if not entity_obj:
-                return error_response(
-                    context,
-                    response,
-                    f"Invalid device ID '{request.device_id}'. "
-                    "Please log in again to obtain a valid device ID.",
-                    grpc.StatusCode.UNAUTHENTICATED,
-                )
+            if request.phone_number:
+                phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+                entity_obj = find_entity(phone_number_hash=phone_number_hash)
+                if not entity_obj:
+                    return error_response(
+                        context,
+                        response,
+                        f"Entity associated with phone number '{request.phone_number}' not found. "
+                        "Please check your phone number and try again.",
+                        grpc.StatusCode.UNAUTHENTICATED,
+                    )
+            else:
+                entity_obj = find_entity(device_id=request.device_id)
+                if not entity_obj:
+                    return error_response(
+                        context,
+                        response,
+                        f"Entity associated with device ID '{request.device_id}' not found. "
+                        "Please log in again to obtain a valid device ID.",
+                        grpc.StatusCode.UNAUTHENTICATED,
+                    )
 
             account_identifier_hash = generate_hmac(
                 HASHING_KEY, request.account_identifier
