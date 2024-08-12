@@ -135,7 +135,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                         e,
                         grpc.StatusCode.INVALID_ARGUMENT,
                         user_msg=f"The phone number is invalid. {match[1].strip()}",
-                        _type="UNKNOWN",
+                        error_type="UNKNOWN",
                     )
             return None
 
@@ -430,7 +430,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def AuthenticateEntity(self, request, context):
@@ -567,7 +567,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def ListEntityStoredTokens(self, request, context):
@@ -611,7 +611,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def DeleteEntity(self, request, context):
@@ -698,7 +698,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def ResetPassword(self, request, context):
@@ -825,7 +825,7 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def UpdateEntityPassword(self, request, context):
@@ -908,5 +908,5 @@ class EntityService(vault_pb2_grpc.EntityServicer):
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
