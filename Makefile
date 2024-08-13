@@ -78,8 +78,14 @@ download-platforms:
 	@curl -o platforms.json -L "${SUPPORTED_PLATFORMS_URL}"
 	$(call log_message,INFO - Platforms JSON file downloaded successfully.)
 
+create-dummy-user:
+	$(call log_message,INFO - Creating dummy user ...)
+	@$(python) -m scripts.cli create -n +237123456789
+	@echo ""
+	$(call log_message,INFO - Dummy user created successfully.)
+
 rest-server-setup: dummy-user-inject start
 	$(call log_message,INFO - REST server setup completed.)
 
-grpc-server-setup: download-platforms grpc-compile grpc-server-start
+grpc-server-setup: create-dummy-user download-platforms grpc-compile grpc-server-start
 	$(call log_message,INFO - gRPC server setup completed.)
