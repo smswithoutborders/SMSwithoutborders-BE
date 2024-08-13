@@ -14,6 +14,9 @@ TWILIO_AUTH_TOKEN = get_configs("TWILIO_AUTH_TOKEN")
 TWILIO_SERVICE_SID = get_configs("TWILIO_SERVICE_SID")
 MOCK_OTP = get_configs("MOCK_OTP")
 MOCK_OTP = MOCK_OTP.lower() == "true" if MOCK_OTP is not None else False
+DUMMY_PHONENUMBERS = get_configs(
+    "DUMMY_PHONENUMBER", default_value="+237123456789"
+).split(",")
 
 RATE_LIMIT_WINDOWS = [
     {"duration": 2, "count": 1},  # 2 minute window
@@ -79,6 +82,8 @@ def send_otp(phone_number):
 
     if MOCK_OTP:
         success, message = mock_send_otp(phone_number)
+    elif phone_number in DUMMY_PHONENUMBERS:
+        success, message = mock_send_otp(phone_number)
     else:
         success, message = twilio_send_otp(phone_number)
 
@@ -110,6 +115,8 @@ def verify_otp(phone_number, otp):
         )
 
     if MOCK_OTP:
+        success, message = mock_verify_otp(phone_number, otp)
+    elif phone_number in DUMMY_PHONENUMBERS:
         success, message = mock_verify_otp(phone_number, otp)
     else:
         success, message = twilio_verify_otp(phone_number, otp)
