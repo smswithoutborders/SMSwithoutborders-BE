@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 
 
-def get_logger(name: str) -> logging.Logger:
+def get_logger(name: str = None) -> logging.Logger:
     """
     Returns a configured logger instance with the specified name.
 
