@@ -81,9 +81,9 @@ def send_otp(phone_number):
     expires = None
 
     if MOCK_OTP:
-        success, message = mock_send_otp(phone_number)
+        success, message = mock_send_otp()
     elif phone_number in DUMMY_PHONENUMBERS:
-        success, message = mock_send_otp(phone_number)
+        success, message = mock_send_otp()
     else:
         success, message = twilio_send_otp(phone_number)
 
@@ -115,9 +115,9 @@ def verify_otp(phone_number, otp):
         )
 
     if MOCK_OTP:
-        success, message = mock_verify_otp(phone_number, otp)
+        success, message = mock_verify_otp(otp)
     elif phone_number in DUMMY_PHONENUMBERS:
-        success, message = mock_verify_otp(phone_number, otp)
+        success, message = mock_verify_otp(otp)
     else:
         success, message = twilio_verify_otp(phone_number, otp)
 
@@ -197,6 +197,9 @@ def twilio_verify_otp(phone_number, otp):
     except TwilioRestException as e:
         logger.error("Twilio error while verifying OTP: %s", e)
 
+        if e.status == 400:
+            return False, "Incorrect OTP. Please double-check the code and try again."
+
         if e.status == 404:
             return False, "OTP verification expired. Please request a new code."
 
@@ -204,12 +207,9 @@ def twilio_verify_otp(phone_number, otp):
         return (False, "Failed to verify OTP. Please try again later.")
 
 
-def mock_send_otp(phone_number):
+def mock_send_otp():
     """
     Mock function to send OTP to a phone number.
-
-    Args:
-        phone_number (str): The phone number to which OTP will be sent.
 
     Returns:
         tuple: A tuple containing two elements:
@@ -220,12 +220,11 @@ def mock_send_otp(phone_number):
     return True, "OTP sent successfully. Please check your phone for the code."
 
 
-def mock_verify_otp(phone_number, otp):
+def mock_verify_otp(otp):
     """
     Mock function to verify OTP for a phone number.
 
     Args:
-        phone_number (str): The phone number for which OTP is being verified.
         otp (str): The OTP code to verify.
 
     Returns:
