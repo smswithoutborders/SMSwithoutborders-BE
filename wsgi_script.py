@@ -54,7 +54,7 @@ class LoggingMiddleware:
             server_protocol = environ.get("SERVER_PROTOCOL", "-")
             log_msg = (
                 f'- - {remote_addr} - - [{timestamp}] "{request_method} {path_info} '
-                f'{server_protocol}" {status} -\n'
+                f'{server_protocol}" {status} -'
             )
             logger.info(log_msg)
             return start_response(status, headers, *args)
