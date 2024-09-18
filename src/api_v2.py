@@ -62,279 +62,279 @@ def after_request(response):
     return response
 
 
-@v2.route("/signup", methods=["POST", "PUT"])
-def signup():
-    """ """
-    try:
-        method = request.method
+# @v2.route("/signup", methods=["POST", "PUT"])
+# def signup():
+#     """ """
+#     try:
+#         method = request.method
 
-        User = User_Model()
-        Session = Session_Model()
-        data = Data()
-        cookie = Cookie()
+#         User = User_Model()
+#         Session = Session_Model()
+#         data = Data()
+#         cookie = Cookie()
 
-        if method.lower() == "post":
-            if not "phone_number" in request.json or not request.json["phone_number"]:
-                logger.error("no phone_number")
-                raise BadRequest()
-            elif not "country_code" in request.json or not request.json["country_code"]:
-                logger.error("no country_code")
-                raise BadRequest()
-            elif not "password" in request.json or not request.json["password"]:
-                logger.error("no password")
-                raise BadRequest()
+#         if method.lower() == "post":
+#             if not "phone_number" in request.json or not request.json["phone_number"]:
+#                 logger.error("no phone_number")
+#                 raise BadRequest()
+#             elif not "country_code" in request.json or not request.json["country_code"]:
+#                 logger.error("no country_code")
+#                 raise BadRequest()
+#             elif not "password" in request.json or not request.json["password"]:
+#                 logger.error("no password")
+#                 raise BadRequest()
 
-            user_agent = request.headers.get("User-Agent")
+#             user_agent = request.headers.get("User-Agent")
 
-            phone_number = request.json["phone_number"]
-            name = request.json["name"]
-            country_code = request.json["country_code"]
-            password = request.json["password"]
+#             phone_number = request.json["phone_number"]
+#             name = request.json["name"]
+#             country_code = request.json["country_code"]
+#             password = request.json["password"]
 
-            check_password_policy(password=password)
+#             check_password_policy(password=password)
 
-            user_id = User.create(
-                phone_number=phone_number,
-                name=name,
-                country_code=country_code,
-                password=password,
-            )
+#             user_id = User.create(
+#                 phone_number=phone_number,
+#                 name=name,
+#                 country_code=country_code,
+#                 password=password,
+#             )
 
-            res = jsonify({"uid": user_id})
+#             res = jsonify({"uid": user_id})
 
-            session = Session.create(
-                unique_identifier=data.hash(country_code + phone_number),
-                user_agent=user_agent,
-                type="signup",
-            )
+#             session = Session.create(
+#                 unique_identifier=data.hash(country_code + phone_number),
+#                 user_agent=user_agent,
+#                 type="signup",
+#             )
 
-            cookie_data = json.dumps(
-                {
-                    "sid": session["sid"],
-                    "cookie": session["data"],
-                    "type": session["type"],
-                }
-            )
-            e_cookie = cookie.encrypt(cookie_data)
+#             cookie_data = json.dumps(
+#                 {
+#                     "sid": session["sid"],
+#                     "cookie": session["data"],
+#                     "type": session["type"],
+#                 }
+#             )
+#             e_cookie = cookie.encrypt(cookie_data)
 
-            session_data = json.loads(session["data"])
+#             session_data = json.loads(session["data"])
 
-            res.set_cookie(
-                cookie_name,
-                e_cookie,
-                max_age=timedelta(milliseconds=session_data["maxAge"]),
-                secure=session_data["secure"],
-                httponly=session_data["httpOnly"],
-                samesite=session_data["sameSite"],
-            )
+#             res.set_cookie(
+#                 cookie_name,
+#                 e_cookie,
+#                 max_age=timedelta(milliseconds=session_data["maxAge"]),
+#                 secure=session_data["secure"],
+#                 httponly=session_data["httpOnly"],
+#                 samesite=session_data["sameSite"],
+#             )
 
-        elif method.lower() == "put":
-            if not request.cookies.get(cookie_name):
-                logger.error("no cookie")
-                raise Unauthorized()
-            elif not request.headers.get("User-Agent"):
-                logger.error("no user agent")
-                raise BadRequest()
+#         elif method.lower() == "put":
+#             if not request.cookies.get(cookie_name):
+#                 logger.error("no cookie")
+#                 raise Unauthorized()
+#             elif not request.headers.get("User-Agent"):
+#                 logger.error("no user agent")
+#                 raise BadRequest()
 
-            e_cookie = request.cookies.get(cookie_name)
-            d_cookie = cookie.decrypt(e_cookie)
-            json_cookie = json.loads(d_cookie)
+#             e_cookie = request.cookies.get(cookie_name)
+#             d_cookie = cookie.decrypt(e_cookie)
+#             json_cookie = json.loads(d_cookie)
 
-            sid = json_cookie["sid"]
-            uid = json_cookie["uid"]
-            unique_identifier = json_cookie["unique_identifier"]
-            user_cookie = json_cookie["cookie"]
-            type = json_cookie["type"]
-            status = json_cookie["status"]
-            user_agent = request.headers.get("User-Agent")
+#             sid = json_cookie["sid"]
+#             uid = json_cookie["uid"]
+#             unique_identifier = json_cookie["unique_identifier"]
+#             user_cookie = json_cookie["cookie"]
+#             type = json_cookie["type"]
+#             status = json_cookie["status"]
+#             user_agent = request.headers.get("User-Agent")
 
-            Session.find(
-                sid=sid,
-                unique_identifier=unique_identifier,
-                user_agent=user_agent,
-                cookie=user_cookie,
-                type=type,
-                status=status,
-            )
+#             Session.find(
+#                 sid=sid,
+#                 unique_identifier=unique_identifier,
+#                 user_agent=user_agent,
+#                 cookie=user_cookie,
+#                 type=type,
+#                 status=status,
+#             )
 
-            User.update(user_id=uid, status="verified")
+#             User.update(user_id=uid, status="verified")
 
-            Session.update(
-                sid=sid,
-                unique_identifier=unique_identifier,
-                status="verified",
-                type=type,
-            )
+#             Session.update(
+#                 sid=sid,
+#                 unique_identifier=unique_identifier,
+#                 status="verified",
+#                 type=type,
+#             )
 
-            res = Response()
+#             res = Response()
 
-        return res, 200
+#         return res, 200
 
-    except BadRequest as err:
-        return str(err), 400
+#     except BadRequest as err:
+#         return str(err), 400
 
-    except Unauthorized as err:
-        return str(err), 401
+#     except Unauthorized as err:
+#         return str(err), 401
 
-    except Conflict as err:
-        return str(err), 409
+#     except Conflict as err:
+#         return str(err), 409
 
-    except InternalServerError as err:
-        logger.exception(err)
-        return "internal server error", 500
+#     except InternalServerError as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
-    except Exception as err:
-        logger.exception(err)
-        return "internal server error", 500
-
-
-@v2.route("/recovery", methods=["POST"])
-def recovery():
-    """ """
-    try:
-        User = User_Model()
-        Session = Session_Model()
-        data = Data()
-        cookie = Cookie()
-
-        if not "phone_number" in request.json or not request.json["phone_number"]:
-            logger.error("no phone_number")
-            raise BadRequest()
-
-        user_agent = request.headers.get("User-Agent")
-
-        phone_number = request.json["phone_number"]
-
-        user = User.find(phone_number=phone_number)
-
-        res = jsonify({"uid": user["userId"]})
-
-        session = Session.create(
-            unique_identifier=data.hash(phone_number),
-            user_agent=user_agent,
-            type="recovery",
-        )
-
-        cookie_data = json.dumps(
-            {"sid": session["sid"], "cookie": session["data"], "type": session["type"]}
-        )
-        e_cookie = cookie.encrypt(cookie_data)
-
-        session_data = json.loads(session["data"])
-
-        res.set_cookie(
-            cookie_name,
-            e_cookie,
-            max_age=timedelta(milliseconds=session_data["maxAge"]),
-            secure=session_data["secure"],
-            httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"],
-        )
-
-        return res, 200
-
-    except BadRequest as err:
-        return str(err), 400
-
-    except Unauthorized as err:
-        return str(err), 401
-
-    except Conflict as err:
-        return str(err), 409
-
-    except InternalServerError as err:
-        logger.exception(err)
-        return "internal server error", 500
-
-    except Exception as err:
-        logger.exception(err)
-        return "internal server error", 500
+#     except Exception as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
 
-@v2.route("/users/<string:user_id>/recovery", methods=["PUT"])
-async def recovery_check(user_id):
-    """ """
-    try:
-        originUrl = request.headers.get("Origin")
-        Grant = Grant_Model()
-        data = Data()
+# @v2.route("/recovery", methods=["POST"])
+# def recovery():
+#     """ """
+#     try:
+#         User = User_Model()
+#         Session = Session_Model()
+#         data = Data()
+#         cookie = Cookie()
 
-        User = User_Model()
-        Session = Session_Model()
-        cookie = Cookie()
+#         if not "phone_number" in request.json or not request.json["phone_number"]:
+#             logger.error("no phone_number")
+#             raise BadRequest()
 
-        if not request.cookies.get(cookie_name):
-            logger.error("no cookie")
-            raise Unauthorized()
-        elif not request.headers.get("User-Agent"):
-            logger.error("no user agent")
-            raise BadRequest()
+#         user_agent = request.headers.get("User-Agent")
 
-        e_cookie = request.cookies.get(cookie_name)
-        d_cookie = cookie.decrypt(e_cookie)
-        json_cookie = json.loads(d_cookie)
+#         phone_number = request.json["phone_number"]
 
-        sid = json_cookie["sid"]
-        unique_identifier = json_cookie["unique_identifier"]
-        user_cookie = json_cookie["cookie"]
-        type = json_cookie["type"]
-        status = json_cookie["status"]
-        user_agent = request.headers.get("User-Agent")
+#         user = User.find(phone_number=phone_number)
 
-        new_password = request.json["new_password"]
+#         res = jsonify({"uid": user["userId"]})
 
-        check_password_policy(password=new_password)
+#         session = Session.create(
+#             unique_identifier=data.hash(phone_number),
+#             user_agent=user_agent,
+#             type="recovery",
+#         )
 
-        Session.find(
-            sid=sid,
-            unique_identifier=unique_identifier,
-            user_agent=user_agent,
-            cookie=user_cookie,
-            type=type,
-            status=status,
-        )
+#         cookie_data = json.dumps(
+#             {"sid": session["sid"], "cookie": session["data"], "type": session["type"]}
+#         )
+#         e_cookie = cookie.encrypt(cookie_data)
 
-        wallets = Grant.find_all(user_id=user_id)
+#         session_data = json.loads(session["data"])
 
-        for wallet in wallets:
-            grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
-            d_grant = Grant.decrypt(grant=grant)
+#         res.set_cookie(
+#             cookie_name,
+#             e_cookie,
+#             max_age=timedelta(milliseconds=session_data["maxAge"]),
+#             secure=session_data["secure"],
+#             httponly=session_data["httpOnly"],
+#             samesite=session_data["sameSite"],
+#         )
 
-            Grant.purge(
-                originUrl=originUrl,
-                identifier="",
-                platform_name=wallet["platformId"],
-                token=d_grant["token"],
-            )
+#         return res, 200
 
-            Grant.delete(grant=grant)
+#     except BadRequest as err:
+#         return str(err), 400
 
-        User.update(user_id=user_id, password=data.hash(new_password))
+#     except Unauthorized as err:
+#         return str(err), 401
 
-        Session.update(
-            sid=sid, unique_identifier=unique_identifier, status="updated", type=type
-        )
+#     except Conflict as err:
+#         return str(err), 409
 
-        res = Response()
+#     except InternalServerError as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
-        return res, 200
+#     except Exception as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
-    except BadRequest as err:
-        return str(err), 400
 
-    except Unauthorized as err:
-        return str(err), 401
+# @v2.route("/users/<string:user_id>/recovery", methods=["PUT"])
+# async def recovery_check(user_id):
+#     """ """
+#     try:
+#         originUrl = request.headers.get("Origin")
+#         Grant = Grant_Model()
+#         data = Data()
 
-    except Conflict as err:
-        return str(err), 409
+#         User = User_Model()
+#         Session = Session_Model()
+#         cookie = Cookie()
 
-    except InternalServerError as err:
-        logger.exception(err)
-        return "internal server error", 500
+#         if not request.cookies.get(cookie_name):
+#             logger.error("no cookie")
+#             raise Unauthorized()
+#         elif not request.headers.get("User-Agent"):
+#             logger.error("no user agent")
+#             raise BadRequest()
 
-    except Exception as err:
-        logger.exception(err)
-        return "internal server error", 500
+#         e_cookie = request.cookies.get(cookie_name)
+#         d_cookie = cookie.decrypt(e_cookie)
+#         json_cookie = json.loads(d_cookie)
+
+#         sid = json_cookie["sid"]
+#         unique_identifier = json_cookie["unique_identifier"]
+#         user_cookie = json_cookie["cookie"]
+#         type = json_cookie["type"]
+#         status = json_cookie["status"]
+#         user_agent = request.headers.get("User-Agent")
+
+#         new_password = request.json["new_password"]
+
+#         check_password_policy(password=new_password)
+
+#         Session.find(
+#             sid=sid,
+#             unique_identifier=unique_identifier,
+#             user_agent=user_agent,
+#             cookie=user_cookie,
+#             type=type,
+#             status=status,
+#         )
+
+#         wallets = Grant.find_all(user_id=user_id)
+
+#         for wallet in wallets:
+#             grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
+#             d_grant = Grant.decrypt(grant=grant)
+
+#             Grant.purge(
+#                 originUrl=originUrl,
+#                 identifier="",
+#                 platform_name=wallet["platformId"],
+#                 token=d_grant["token"],
+#             )
+
+#             Grant.delete(grant=grant)
+
+#         User.update(user_id=user_id, password=data.hash(new_password))
+
+#         Session.update(
+#             sid=sid, unique_identifier=unique_identifier, status="updated", type=type
+#         )
+
+#         res = Response()
+
+#         return res, 200
+
+#     except BadRequest as err:
+#         return str(err), 400
+
+#     except Unauthorized as err:
+#         return str(err), 401
+
+#     except Conflict as err:
+#         return str(err), 409
+
+#     except InternalServerError as err:
+#         logger.exception(err)
+#         return "internal server error", 500
+
+#     except Exception as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
 
 @v2.route("/login", methods=["POST"])
@@ -527,113 +527,113 @@ def OTP(user_id):
         return "internal server error", 500
 
 
-@v2.route("/OTP", methods=["PUT"])
-def OTP_check():
-    """ """
-    try:
-        if not request.cookies.get(cookie_name):
-            logger.error("no cookie")
-            raise Unauthorized()
-        elif not request.headers.get("User-Agent"):
-            logger.error("no user agent")
-            raise BadRequest()
-        elif not "code" in request.json or not request.json["code"]:
-            logger.error("no code")
-            raise BadRequest()
+# @v2.route("/OTP", methods=["PUT"])
+# def OTP_check():
+#     """ """
+#     try:
+#         if not request.cookies.get(cookie_name):
+#             logger.error("no cookie")
+#             raise Unauthorized()
+#         elif not request.headers.get("User-Agent"):
+#             logger.error("no user agent")
+#             raise BadRequest()
+#         elif not "code" in request.json or not request.json["code"]:
+#             logger.error("no code")
+#             raise BadRequest()
 
-        Session = Session_Model()
-        data = Data()
-        cookie = Cookie()
+#         Session = Session_Model()
+#         data = Data()
+#         cookie = Cookie()
 
-        e_cookie = request.cookies.get(cookie_name)
-        d_cookie = cookie.decrypt(e_cookie)
-        json_cookie = json.loads(d_cookie)
+#         e_cookie = request.cookies.get(cookie_name)
+#         d_cookie = cookie.decrypt(e_cookie)
+#         json_cookie = json.loads(d_cookie)
 
-        sid = json_cookie["sid"]
-        uid = json_cookie["uid"]
-        user_cookie = json_cookie["cookie"]
-        type = json_cookie["type"]
-        phone_number = json_cookie["phone_number"]
-        cid = json_cookie["cid"]
-        user_agent = request.headers.get("User-Agent")
+#         sid = json_cookie["sid"]
+#         uid = json_cookie["uid"]
+#         user_cookie = json_cookie["cookie"]
+#         type = json_cookie["type"]
+#         phone_number = json_cookie["phone_number"]
+#         cid = json_cookie["cid"]
+#         user_agent = request.headers.get("User-Agent")
 
-        code = request.json["code"]
+#         code = request.json["code"]
 
-        phone_number_hash = data.hash(phone_number)
+#         phone_number_hash = data.hash(phone_number)
 
-        Session.find(
-            sid=sid,
-            unique_identifier=phone_number_hash,
-            user_agent=user_agent,
-            cookie=user_cookie,
-            type=type,
-        )
+#         Session.find(
+#             sid=sid,
+#             unique_identifier=phone_number_hash,
+#             user_agent=user_agent,
+#             cookie=user_cookie,
+#             type=type,
+#         )
 
-        otp = OTP_Model(phone_number=phone_number)
+#         otp = OTP_Model(phone_number=phone_number)
 
-        otp_res = otp.verification_check(code=code)
+#         otp_res = otp.verification_check(code=code)
 
-        if otp_res.status == "approved":
-            if enable_otp_counter:
-                otp.delete_count(counter_id=cid)
+#         if otp_res.status == "approved":
+#             if enable_otp_counter:
+#                 otp.delete_count(counter_id=cid)
 
-            res = Response()
-        elif otp_res.status == "pending":
-            logger.error("Invalid OTP code. OTP_check status = %s" % otp_res.status)
-            raise Forbidden()
-        else:
-            logger.error("OTP_check FAILED with status '%s'" % otp_res.status)
-            raise InternalServerError(otp_res)
+#             res = Response()
+#         elif otp_res.status == "pending":
+#             logger.error("Invalid OTP code. OTP_check status = %s" % otp_res.status)
+#             raise Forbidden()
+#         else:
+#             logger.error("OTP_check FAILED with status '%s'" % otp_res.status)
+#             raise InternalServerError(otp_res)
 
-        session = Session.update(
-            sid=sid, unique_identifier=phone_number_hash, status="success", type=type
-        )
+#         session = Session.update(
+#             sid=sid, unique_identifier=phone_number_hash, status="success", type=type
+#         )
 
-        cookie_data = json.dumps(
-            {
-                "sid": session["sid"],
-                "unique_identifier": session["uid"],
-                "uid": uid,
-                "cookie": session["data"],
-                "status": "success",
-                "type": type,
-            }
-        )
+#         cookie_data = json.dumps(
+#             {
+#                 "sid": session["sid"],
+#                 "unique_identifier": session["uid"],
+#                 "uid": uid,
+#                 "cookie": session["data"],
+#                 "status": "success",
+#                 "type": type,
+#             }
+#         )
 
-        e_cookie = cookie.encrypt(cookie_data)
+#         e_cookie = cookie.encrypt(cookie_data)
 
-        session_data = json.loads(session["data"])
+#         session_data = json.loads(session["data"])
 
-        res.set_cookie(
-            cookie_name,
-            e_cookie,
-            max_age=timedelta(milliseconds=session_data["maxAge"]),
-            secure=session_data["secure"],
-            httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"],
-        )
+#         res.set_cookie(
+#             cookie_name,
+#             e_cookie,
+#             max_age=timedelta(milliseconds=session_data["maxAge"]),
+#             secure=session_data["secure"],
+#             httponly=session_data["httpOnly"],
+#             samesite=session_data["sameSite"],
+#         )
 
-        return res, 200
+#         return res, 200
 
-    except BadRequest as err:
-        return str(err), 400
+#     except BadRequest as err:
+#         return str(err), 400
 
-    except Unauthorized as err:
-        return str(err), 401
+#     except Unauthorized as err:
+#         return str(err), 401
 
-    except Conflict as err:
-        return str(err), 409
+#     except Conflict as err:
+#         return str(err), 409
 
-    except Forbidden as err:
-        return str(err), 403
+#     except Forbidden as err:
+#         return str(err), 403
 
-    except InternalServerError as err:
-        logger.exception(err)
-        return "internal server error", 500
+#     except InternalServerError as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
-    except Exception as err:
-        logger.exception(err)
-        return "internal server error", 500
+#     except Exception as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
 
 @v2.route(
@@ -948,178 +948,178 @@ def dashboard(user_id):
         return "internal server error", 500
 
 
-@v2.route("/users/<string:user_id>/password", methods=["POST"])
-async def update_password(user_id):
-    """ """
-    try:
-        if not request.cookies.get(cookie_name):
-            logger.error("no cookie")
-            raise Unauthorized()
-        elif not request.headers.get("User-Agent"):
-            logger.error("no user agent")
-            raise BadRequest()
-        elif not "password" in request.json or not request.json["password"]:
-            logger.error("no password")
-            raise BadRequest()
-        elif not "new_password" in request.json or not request.json["new_password"]:
-            logger.error("no new_password")
-            raise BadRequest()
+# @v2.route("/users/<string:user_id>/password", methods=["POST"])
+# async def update_password(user_id):
+#     """ """
+#     try:
+#         if not request.cookies.get(cookie_name):
+#             logger.error("no cookie")
+#             raise Unauthorized()
+#         elif not request.headers.get("User-Agent"):
+#             logger.error("no user agent")
+#             raise BadRequest()
+#         elif not "password" in request.json or not request.json["password"]:
+#             logger.error("no password")
+#             raise BadRequest()
+#         elif not "new_password" in request.json or not request.json["new_password"]:
+#             logger.error("no new_password")
+#             raise BadRequest()
 
-        originUrl = request.headers.get("Origin")
-        Grant = Grant_Model()
-        Session = Session_Model()
-        User = User_Model()
-        data = Data()
-        cookie = Cookie()
+#         originUrl = request.headers.get("Origin")
+#         Grant = Grant_Model()
+#         Session = Session_Model()
+#         User = User_Model()
+#         data = Data()
+#         cookie = Cookie()
 
-        e_cookie = request.cookies.get(cookie_name)
-        d_cookie = cookie.decrypt(e_cookie)
-        json_cookie = json.loads(d_cookie)
+#         e_cookie = request.cookies.get(cookie_name)
+#         d_cookie = cookie.decrypt(e_cookie)
+#         json_cookie = json.loads(d_cookie)
 
-        sid = json_cookie["sid"]
-        user_cookie = json_cookie["cookie"]
-        user_agent = request.headers.get("User-Agent")
+#         sid = json_cookie["sid"]
+#         user_cookie = json_cookie["cookie"]
+#         user_agent = request.headers.get("User-Agent")
 
-        password = request.json["password"]
-        new_password = request.json["new_password"]
+#         password = request.json["password"]
+#         new_password = request.json["new_password"]
 
-        check_password_policy(password=new_password)
+#         check_password_policy(password=new_password)
 
-        Session.find(
-            sid=sid,
-            unique_identifier=user_id,
-            user_agent=user_agent,
-            cookie=user_cookie,
-        )
+#         Session.find(
+#             sid=sid,
+#             unique_identifier=user_id,
+#             user_agent=user_agent,
+#             cookie=user_cookie,
+#         )
 
-        try:
-            user = User.verify(user_id=user_id, password=password)
-        except Unauthorized:
-            raise Forbidden()
+#         try:
+#             user = User.verify(user_id=user_id, password=password)
+#         except Unauthorized:
+#             raise Forbidden()
 
-        wallets = Grant.find_all(user_id=user["id"])
+#         wallets = Grant.find_all(user_id=user["id"])
 
-        for wallet in wallets:
-            grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
-            d_grant = Grant.decrypt(grant=grant)
+#         for wallet in wallets:
+#             grant = Grant.find(user_id=user_id, platform_id=wallet["platformId"])
+#             d_grant = Grant.decrypt(grant=grant)
 
-            Grant.purge(
-                originUrl=originUrl,
-                identifier="",
-                platform_name=wallet["platformId"],
-                token=d_grant["token"],
-            )
+#             Grant.purge(
+#                 originUrl=originUrl,
+#                 identifier="",
+#                 platform_name=wallet["platformId"],
+#                 token=d_grant["token"],
+#             )
 
-            Grant.delete(grant=grant)
+#             Grant.delete(grant=grant)
 
-        User.update(user_id=user["id"], password=data.hash(new_password))
+#         User.update(user_id=user["id"], password=data.hash(new_password))
 
-        res = Response()
+#         res = Response()
 
-        session = Session.update(sid=sid, unique_identifier=user_id)
+#         session = Session.update(sid=sid, unique_identifier=user_id)
 
-        cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
+#         cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
 
-        e_cookie = cookie.encrypt(cookie_data)
+#         e_cookie = cookie.encrypt(cookie_data)
 
-        session_data = json.loads(session["data"])
+#         session_data = json.loads(session["data"])
 
-        res.set_cookie(
-            cookie_name,
-            e_cookie,
-            max_age=timedelta(milliseconds=session_data["maxAge"]),
-            secure=session_data["secure"],
-            httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"],
-        )
+#         res.set_cookie(
+#             cookie_name,
+#             e_cookie,
+#             max_age=timedelta(milliseconds=session_data["maxAge"]),
+#             secure=session_data["secure"],
+#             httponly=session_data["httpOnly"],
+#             samesite=session_data["sameSite"],
+#         )
 
-        return res, 200
+#         return res, 200
 
-    except BadRequest as err:
-        return str(err), 400
+#     except BadRequest as err:
+#         return str(err), 400
 
-    except TooManyRequests as err:
-        return str(err), 429
+#     except TooManyRequests as err:
+#         return str(err), 429
 
-    except Unauthorized as err:
-        return str(err), 401
+#     except Unauthorized as err:
+#         return str(err), 401
 
-    except Forbidden as err:
-        return str(err), 403
+#     except Forbidden as err:
+#         return str(err), 403
 
-    except Conflict as err:
-        return str(err), 409
+#     except Conflict as err:
+#         return str(err), 409
 
-    except InternalServerError as err:
-        logger.exception(err)
-        return "internal server error", 500
+#     except InternalServerError as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
-    except Exception as err:
-        logger.exception(err)
-        return "internal server error", 500
+#     except Exception as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
 
-@v2.route("/users/<string:user_id>/verify", methods=["POST"])
-def verify_user_id(user_id):
-    """ """
-    try:
-        if not "password" in request.json or not request.json["password"]:
-            logger.error("no password")
-            raise BadRequest()
-        elif not request.headers.get("User-Agent"):
-            logger.error("no user agent")
-            raise BadRequest()
+# @v2.route("/users/<string:user_id>/verify", methods=["POST"])
+# def verify_user_id(user_id):
+#     """ """
+#     try:
+#         if not "password" in request.json or not request.json["password"]:
+#             logger.error("no password")
+#             raise BadRequest()
+#         elif not request.headers.get("User-Agent"):
+#             logger.error("no user agent")
+#             raise BadRequest()
 
-        Session = Session_Model()
-        User = User_Model()
-        cookie = Cookie()
+#         Session = Session_Model()
+#         User = User_Model()
+#         cookie = Cookie()
 
-        user_agent = request.headers.get("User-Agent")
+#         user_agent = request.headers.get("User-Agent")
 
-        password = request.json["password"]
+#         password = request.json["password"]
 
-        user = User.verify(user_id=user_id, password=password)
+#         user = User.verify(user_id=user_id, password=password)
 
-        res = Response()
+#         res = Response()
 
-        session = Session.create(unique_identifier=user["id"], user_agent=user_agent)
+#         session = Session.create(unique_identifier=user["id"], user_agent=user_agent)
 
-        cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
+#         cookie_data = json.dumps({"sid": session["sid"], "cookie": session["data"]})
 
-        e_cookie = cookie.encrypt(cookie_data)
+#         e_cookie = cookie.encrypt(cookie_data)
 
-        session_data = json.loads(session["data"])
+#         session_data = json.loads(session["data"])
 
-        res.set_cookie(
-            cookie_name,
-            e_cookie,
-            max_age=timedelta(milliseconds=session_data["maxAge"]),
-            secure=session_data["secure"],
-            httponly=session_data["httpOnly"],
-            samesite=session_data["sameSite"],
-        )
+#         res.set_cookie(
+#             cookie_name,
+#             e_cookie,
+#             max_age=timedelta(milliseconds=session_data["maxAge"]),
+#             secure=session_data["secure"],
+#             httponly=session_data["httpOnly"],
+#             samesite=session_data["sameSite"],
+#         )
 
-        return res, 200
+#         return res, 200
 
-    except BadRequest as err:
-        return str(err), 400
+#     except BadRequest as err:
+#         return str(err), 400
 
-    except TooManyRequests as err:
-        return str(err), 429
+#     except TooManyRequests as err:
+#         return str(err), 429
 
-    except Unauthorized as err:
-        return str(err), 401
+#     except Unauthorized as err:
+#         return str(err), 401
 
-    except Conflict as err:
-        return str(err), 409
+#     except Conflict as err:
+#         return str(err), 409
 
-    except InternalServerError as err:
-        logger.exception(err)
-        return "internal server error", 500
+#     except InternalServerError as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
-    except Exception as err:
-        logger.exception(err)
-        return "internal server error", 500
+#     except Exception as err:
+#         logger.exception(err)
+#         return "internal server error", 500
 
 
 @v2.route("/users/<string:user_id>/logout", methods=["POST"])
