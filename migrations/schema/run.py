@@ -1,5 +1,7 @@
 """
-Database migration tool using peewee ORM.
+════════════════════════════════════════════════════════════════════════
+            Database Migration Tool Using Peewee ORM
+════════════════════════════════════════════════════════════════════════
 
 Applies schema changes defined in JSON spec file.
 """
@@ -7,7 +9,6 @@ Applies schema changes defined in JSON spec file.
 import os
 import json
 import argparse
-import logging
 from typing import List, Dict
 
 import peewee
@@ -15,16 +16,8 @@ from playhouse.migrate import MySQLMigrator, migrate
 
 from src.db import connect
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger("[SCHEMA MIGRATOR]")
-
 MIGRATION_DIR = os.path.join("migrations", "schema")
 ALLOWED_FIELDS = ("CharField",)
-PENDING = "⏳"
 SUCCESS = "✅"
 FAILED = "❌"
 
@@ -74,9 +67,11 @@ def migrate_operations(operations: List[Dict]):
     """
     migrations_done, migrations_failed = 0, 0
 
+    print("\nMigration Operations:")
+    print("══════════════════════════════════════════════════════════════════════")
+
     for operation in operations:
-        logger.info("Performing operation: %s", operation)
-        print(f"Performing operation: {operation} {PENDING}", end="\r")
+        print(f"\nPerforming operation: {operation}")
 
         try:
             action = operation.pop("action")
@@ -92,10 +87,12 @@ def migrate_operations(operations: List[Dict]):
             print(f"{SUCCESS} Operation successful: {operation}")
         except Exception as e:
             migrations_failed += 1
-            print(f"{FAILED} Operation failed: {operation}\nError: {e}")
+            print(f"{FAILED} Operation failed: {operation}\n   Error: {e}")
 
-    logger.info("%s Completed migrations: %d", SUCCESS, migrations_done)
-    logger.info("%s Failed migrations: %d", FAILED, migrations_failed)
+    print("\nMigration Summary:")
+    print("══════════════════════════════════════════════════════════════════════")
+    print(f"{SUCCESS} Completed migrations: {migrations_done}")
+    print(f"{FAILED} Failed migrations: {migrations_failed}")
 
 
 def check_and_migrate_schema(current_schema_version: str):
@@ -108,16 +105,15 @@ def check_and_migrate_schema(current_schema_version: str):
     latest_schema_version = get_latest_schema_version()
 
     if latest_schema_version and current_schema_version != latest_schema_version:
-        logger.info(
-            "Migration required. Migrating from version %s to version %s",
-            current_schema_version,
-            latest_schema_version,
+        print(
+            f"\nMigration Required: Migrating from version "
+            f"{current_schema_version} to version {latest_schema_version}"
         )
         spec = load_spec(latest_schema_version)
         migrate_operations(spec)
-        logger.info("Migration to version %s completed.", latest_schema_version)
+        print(f"{SUCCESS} Migration to version {latest_schema_version} completed.")
     else:
-        logger.info("Database schema is up to date.")
+        print(f"{SUCCESS} Database schema is up to date.")
 
 
 def get_latest_schema_version() -> str:
@@ -128,7 +124,7 @@ def get_latest_schema_version() -> str:
         str: Latest schema version, or None if no migrations found.
     """
     if not os.path.isdir(MIGRATION_DIR):
-        logger.warning("Migration directory not found: %s", MIGRATION_DIR)
+        print(f"Warning: Migration directory not found: {MIGRATION_DIR}")
         return None
 
     migration_files = sorted(
@@ -180,12 +176,15 @@ def run():
     parser.add_argument("spec_version", help="Schema version to apply (e.g., 'v1.0').")
     args = parser.parse_args()
 
+    print("\nDatabase Schema Migration Tool")
+    print("══════════════════════════════════════════════════════════════════════")
+
     match args.command:
         case "migrate":
             spec = load_spec(args.spec_version)
             migrate_operations(spec)
         case "rollback":
-            logger.info("Rollback feature is not implemented yet.")
+            print(f"{FAILED} Rollback feature is not implemented yet.")
 
 
 if __name__ == "__main__":
