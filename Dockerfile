@@ -1,14 +1,15 @@
-FROM python:3.12-slim AS base
+FROM python:3.12.3-slim AS base
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
-    apache2 apache2-dev \
+    apache2 \
+    apache2-dev \
     python3-dev \
     default-libmysqlclient-dev \
     supervisor \
     libsqlcipher-dev \
-    libsqlite3-dev && \
+    libsqlite3-dev \
     git && \
     rm -rf /var/lib/apt/lists/*
 
