@@ -9,6 +9,7 @@ RUN apt-get update && \
     supervisor \
     libsqlcipher-dev \
     libsqlite3-dev && \
+    git && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /vault
