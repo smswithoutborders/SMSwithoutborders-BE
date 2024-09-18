@@ -13,7 +13,7 @@ from src.utils import get_configs
 from src.grpc_entity_internal_service import EntityInternalService
 from base_logger import get_logger
 
-logger = get_logger("[Vault gRPC Internal Server]")
+logger = get_logger("vault.grpc.internal.server")
 
 
 class LoggingInterceptor(ServerInterceptor):

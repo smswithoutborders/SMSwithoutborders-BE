@@ -27,7 +27,7 @@ from src.relaysms_payload import (
 )
 from base_logger import get_logger
 
-logger = get_logger("[gRPC Entity Internal Service]")
+logger = get_logger(__name__)
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 SUPPORTED_PLATFORMS = get_supported_platforms()
@@ -157,8 +157,9 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
 
         response = vault_pb2.StoreEntityTokenResponse
 
-        def check_existing_token(account_identifier_hash):
+        def check_existing_token(eid, account_identifier_hash):
             token = find_token(
+                eid=eid,
                 account_identifier_hash=account_identifier_hash,
                 platform=request.platform,
             )
@@ -204,7 +205,9 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             account_identifier = request.account_identifier.replace("\n", "")
             account_identifier_hash = generate_hmac(HASHING_KEY, account_identifier)
 
-            existing_token = check_existing_token(account_identifier_hash)
+            existing_token = check_existing_token(
+                entity_obj.eid, account_identifier_hash
+            )
 
             if existing_token:
                 return existing_token

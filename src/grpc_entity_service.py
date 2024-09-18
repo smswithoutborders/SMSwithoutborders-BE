@@ -34,7 +34,7 @@ from src.password_rate_limit import (
 )
 from base_logger import get_logger
 
-logger = get_logger("[gRPC Entity Service]")
+logger = get_logger(__name__)
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 
