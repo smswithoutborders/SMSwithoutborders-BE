@@ -75,7 +75,7 @@ class Token(Model):
 
         database = database
         table_name = "tokens"
-        indexes = ((("platform", "account_identifier_hash"), True),)
+        indexes = ((("platform", "account_identifier_hash", "eid"), True),)
 
 
 class PasswordRateLimit(Model):

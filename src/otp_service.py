@@ -7,7 +7,7 @@ from src.db_models import OTPRateLimit
 from src.utils import get_configs
 from base_logger import get_logger
 
-logger = get_logger("[OTP Service]")
+logger = get_logger(__name__)
 
 TWILIO_ACCOUNT_SID = get_configs("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = get_configs("TWILIO_AUTH_TOKEN")

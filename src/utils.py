@@ -384,9 +384,9 @@ def clear_keystore(eid, keystore_name=None):
         try:
             if os.path.isfile(file_path):
                 os.remove(file_path)
-                logger.info("Successfully removed: %s", file_name.replace(eid, "****"))
+                logger.debug("Successfully removed: %s", file_name.replace(eid, "****"))
             else:
-                logger.warning("File not found: %s", file_name.replace(eid, "****"))
+                logger.debug("File not found: %s", file_name.replace(eid, "****"))
         except Exception as e:
             logger.error(
                 "Error removing file %s: %s", file_name.replace(eid, "****"), e
