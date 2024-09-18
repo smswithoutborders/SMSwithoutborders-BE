@@ -4,7 +4,7 @@ import datetime
 from src.db_models import PasswordRateLimit
 from base_logger import get_logger
 
-logger = get_logger("[Password Rate Limit]")
+logger = get_logger(__name__)
 
 RATE_LIMIT_WINDOWS = [
     {"duration": 2, "count": 3},  # 3 attempts in 2 minutes

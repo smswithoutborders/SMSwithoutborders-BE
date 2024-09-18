@@ -33,124 +33,150 @@ HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 SUPPORTED_PLATFORMS = get_supported_platforms()
 
 
-def error_response(context, response, sys_msg, status_code, user_msg=None, _type=None):
-    """
-    Create an error response.
-
-    Args:
-        context: gRPC context.
-        response: gRPC response object.
-        sys_msg (str or tuple): System message.
-        status_code: gRPC status code.
-        user_msg (str or tuple): User-friendly message.
-        _type (str): Type of error.
-
-    Returns:
-        An instance of the specified response with the error set.
-    """
-    if not user_msg:
-        user_msg = sys_msg
-
-    if _type == "UNKNOWN":
-        logger.exception(sys_msg)
-
-    context.set_details(user_msg)
-    context.set_code(status_code)
-
-    return response()
-
-
-def validate_request_fields(context, request, response, required_fields):
-    """
-    Validates the fields in the gRPC request.
-
-    Args:
-        context: gRPC context.
-        request: gRPC request object.
-        response: gRPC response object.
-        required_fields (list): List of required fields, can include tuples.
-
-    Returns:
-        None or response: None if no missing fields,
-            error response otherwise.
-    """
-    for field in required_fields:
-        if isinstance(field, tuple):
-            if not any(getattr(request, f, None) for f in field):
-                return error_response(
-                    context,
-                    response,
-                    f"Missing required field: {' or '.join(field)}",
-                    grpc.StatusCode.INVALID_ARGUMENT,
-                )
-        else:
-            if not getattr(request, field, None):
-                return error_response(
-                    context,
-                    response,
-                    f"Missing required field: {field}",
-                    grpc.StatusCode.INVALID_ARGUMENT,
-                )
-
-    return None
-
-
-def verify_long_lived_token(request, context, response):
-    """
-    Verifies the long-lived token from the request.
-
-    Args:
-        context: gRPC context.
-        request: gRPC request object.
-        response: gRPC response object.
-
-    Returns:
-        tuple: Tuple containing entity object, and error response.
-    """
-
-    def create_error_response(error_msg):
-        return error_response(
-            context,
-            response,
-            error_msg,
-            grpc.StatusCode.UNAUTHENTICATED,
-            user_msg=(
-                "Your session has expired or the token is invalid. "
-                "Please log in again to generate a new token."
-            ),
-        )
-
-    try:
-        eid, llt = request.long_lived_token.split(":", 1)
-    except ValueError as err:
-        return None, create_error_response(err)
-
-    entity_obj = find_entity(eid=eid)
-    if not entity_obj:
-        return None, create_error_response(
-            f"Possible token tampering detected. Entity not found with eid: {eid}"
-        )
-
-    entity_device_id_keypair = load_keypair_object(entity_obj.device_id_keypair)
-    entity_device_id_shared_key = entity_device_id_keypair.agree(
-        base64.b64decode(entity_obj.client_device_id_pub_key),
-    )
-
-    llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
-
-    if not llt_payload:
-        return None, create_error_response(llt_error)
-
-    if llt_payload.get("eid") != eid:
-        return None, create_error_response(
-            f"Possible token tampering detected. EID mismatch: {eid}"
-        )
-
-    return entity_obj, None
-
-
 class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
     """Entity Internal Service Descriptor"""
+
+    def handle_create_grpc_error_response(
+        self, context, response, sys_msg, status_code, **kwargs
+    ):
+        """
+        Handles the creation of a gRPC error response.
+
+        Args:
+            context: gRPC context.
+            response: gRPC response object.
+            sys_msg (str or tuple): System message.
+            status_code: gRPC status code.
+            user_msg (str or tuple): User-friendly message.
+            error_type (str): Type of error.
+
+        Returns:
+            An instance of the specified response with the error set.
+        """
+        user_msg = kwargs.get("user_msg")
+        error_type = kwargs.get("error_type")
+
+        if not user_msg:
+            user_msg = sys_msg
+
+        if error_type == "UNKNOWN":
+            logger.exception(sys_msg)
+
+        context.set_details(user_msg)
+        context.set_code(status_code)
+
+        return response()
+
+    def handle_request_field_validation(
+        self, context, request, response, required_fields
+    ):
+        """
+        Validates the fields in the gRPC request.
+
+        Args:
+            context: gRPC context.
+            request: gRPC request object.
+            response: gRPC response object.
+            required_fields (list): List of required fields, can include tuples.
+
+        Returns:
+            None or response: None if no missing fields,
+                error response otherwise.
+        """
+        for field in required_fields:
+            if isinstance(field, tuple):
+                if not any(getattr(request, f, None) for f in field):
+                    return self.handle_create_grpc_error_response(
+                        context,
+                        response,
+                        f"Missing required field: {' or '.join(field)}",
+                        grpc.StatusCode.INVALID_ARGUMENT,
+                    )
+            else:
+                if not getattr(request, field, None):
+                    return self.handle_create_grpc_error_response(
+                        context,
+                        response,
+                        f"Missing required field: {field}",
+                        grpc.StatusCode.INVALID_ARGUMENT,
+                    )
+
+        return None
+
+    def handle_long_lived_token_validation(self, request, context, response):
+        """
+        Handles the validation of a long-lived token from the request.
+
+        Args:
+            context: gRPC context.
+            request: gRPC request object.
+            response: gRPC response object.
+
+        Returns:
+            tuple: Tuple containing entity object, and error response.
+        """
+
+        def create_error_response(error_msg):
+            return self.handle_create_grpc_error_response(
+                context,
+                response,
+                error_msg,
+                grpc.StatusCode.UNAUTHENTICATED,
+                user_msg=(
+                    "The long-lived token is invalid. Please log in again to generate a new token."
+                ),
+            )
+
+        def extract_token(long_lived_token):
+            try:
+                eid, llt = long_lived_token.split(":", 1)
+                return eid, llt
+            except ValueError as err:
+                return None, create_error_response(f"Token extraction error: {err}")
+
+        def validate_entity(eid):
+            entity_obj = find_entity(eid=eid)
+            if not entity_obj:
+                return None, create_error_response(
+                    f"Possible token tampering detected. Entity not found with eid: {eid}"
+                )
+            if not entity_obj.device_id:
+                return None, create_error_response(
+                    f"No device ID found for entity with EID: {eid}"
+                )
+            return entity_obj, None
+
+        def validate_long_lived_token(llt, entity_obj):
+            entity_device_id_keypair = load_keypair_object(entity_obj.device_id_keypair)
+            entity_device_id_shared_key = entity_device_id_keypair.agree(
+                base64.b64decode(entity_obj.client_device_id_pub_key),
+            )
+
+            llt_payload, llt_error = verify_llt(llt, entity_device_id_shared_key)
+
+            if not llt_payload:
+                return None, create_error_response(llt_error)
+
+            if llt_payload.get("eid") != entity_obj.eid.hex:
+                return None, create_error_response(
+                    f"Possible token tampering detected. EID mismatch: {entity_obj.eid}"
+                )
+
+            return llt_payload, None
+
+        eid, llt = extract_token(request.long_lived_token)
+        if llt is None:
+            return None, llt
+
+        entity_obj, entity_error = validate_entity(eid)
+        if entity_error:
+            return None, entity_error
+
+        _, token_error = validate_long_lived_token(llt, entity_obj)
+        if token_error:
+            return None, token_error
+
+        return entity_obj, None
 
     def StoreEntityToken(self, request, context):
         """Handles storing tokens for an entity"""
@@ -169,7 +195,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 token.save()
                 logger.info("Token overwritten successfully.")
 
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     "A token is already associated with the account identifier "
@@ -180,7 +206,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             return None
 
         try:
-            invalid_fields_response = validate_request_fields(
+            invalid_fields_response = self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -189,7 +215,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            entity_obj, llt_error_response = verify_long_lived_token(
+            entity_obj, llt_error_response = self.handle_long_lived_token_validation(
                 request, context, response
             )
             if llt_error_response:
@@ -228,7 +254,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
         except NotImplementedError as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 str(e),
@@ -236,13 +262,13 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def DecryptPayload(self, request, context):
@@ -251,7 +277,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
         response = vault_pb2.DecryptPayloadResponse
 
         def validate_fields():
-            return validate_request_fields(
+            return self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -264,13 +290,13 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
             if decode_error:
-                return None, error_response(
+                return None, self.handle_create_grpc_error_response(
                     context,
                     response,
                     decode_error,
                     grpc.StatusCode.INVALID_ARGUMENT,
                     user_msg="Invalid content format.",
-                    _type="UNKNOWN",
+                    error_type="UNKNOWN",
                 )
 
             return (header, content_ciphertext), None
@@ -291,13 +317,13 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
             if decrypt_error:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     decrypt_error,
                     grpc.StatusCode.INVALID_ARGUMENT,
                     user_msg="Invalid content format.",
-                    _type="UNKNOWN",
+                    error_type="UNKNOWN",
                 )
 
             entity_obj.server_state = state.serialize()
@@ -321,7 +347,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             if request.device_id:
                 entity_obj = find_entity(device_id=request.device_id)
                 if not entity_obj:
-                    return error_response(
+                    return self.handle_create_grpc_error_response(
                         context,
                         response,
                         f"Entity associated with device ID '{request.device_id}' not found. "
@@ -332,7 +358,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
                 entity_obj = find_entity(phone_number_hash=phone_number_hash)
                 if not entity_obj:
-                    return error_response(
+                    return self.handle_create_grpc_error_response(
                         context,
                         response,
                         f"Entity associated with phone number '{request.phone_number}' not found. "
@@ -349,13 +375,13 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             return decrypt_message(entity_obj, header, content_ciphertext)
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def EncryptPayload(self, request, context):
@@ -364,7 +390,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
         response = vault_pb2.EncryptPayloadResponse
 
         def validate_fields():
-            return validate_request_fields(
+            return self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -381,13 +407,13 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
             if encrypt_error:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     encrypt_error,
                     grpc.StatusCode.INVALID_ARGUMENT,
                     user_msg="Invalid content format.",
-                    _type="UNKNOWN",
+                    error_type="UNKNOWN",
                 )
 
             return (header, content_ciphertext, state), None
@@ -398,13 +424,13 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
             if encode_error:
-                return None, error_response(
+                return None, self.handle_create_grpc_error_response(
                     context,
                     response,
                     encode_error,
                     grpc.StatusCode.INVALID_ARGUMENT,
                     user_msg="Invalid content format.",
-                    _type="UNKNOWN",
+                    error_type="UNKNOWN",
                 )
 
             entity_obj.server_state = state.serialize()
@@ -428,7 +454,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             entity_obj = find_entity(device_id=request.device_id)
 
             if not entity_obj:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     f"Invalid device ID '{request.device_id}'. "
@@ -445,13 +471,13 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             return encode_message(header, content_ciphertext, state)
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def GetEntityAccessToken(self, request, context):
@@ -460,7 +486,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
         response = vault_pb2.GetEntityAccessTokenResponse
 
         def validate_fields():
-            return validate_request_fields(
+            return self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -490,7 +516,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
             if not tokens:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     "No token found with account "
@@ -510,8 +536,8 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 return invalid_fields_response
 
             if request.long_lived_token:
-                entity_obj, llt_error_response = verify_long_lived_token(
-                    request, context, response
+                entity_obj, llt_error_response = (
+                    self.handle_long_lived_token_validation(request, context, response)
                 )
                 if llt_error_response:
                     return llt_error_response
@@ -519,7 +545,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             elif request.device_id:
                 entity_obj = find_entity(device_id=request.device_id)
                 if not entity_obj:
-                    return error_response(
+                    return self.handle_create_grpc_error_response(
                         context,
                         response,
                         f"Entity associated with device ID '{request.device_id}' not found. "
@@ -530,7 +556,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
                 entity_obj = find_entity(phone_number_hash=phone_number_hash)
                 if not entity_obj:
-                    return error_response(
+                    return self.handle_create_grpc_error_response(
                         context,
                         response,
                         f"Entity associated with phone number '{request.phone_number}' not found. "
@@ -551,7 +577,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             return fetch_tokens(entity_obj, account_identifier_hash)
 
         except NotImplementedError as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 str(e),
@@ -559,13 +585,13 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def UpdateEntityToken(self, request, context):
@@ -574,7 +600,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
         response = vault_pb2.UpdateEntityTokenResponse
 
         try:
-            invalid_fields_response = validate_request_fields(
+            invalid_fields_response = self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -591,7 +617,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             if request.device_id:
                 entity_obj = find_entity(device_id=request.device_id)
                 if not entity_obj:
-                    return error_response(
+                    return self.handle_create_grpc_error_response(
                         context,
                         response,
                         f"Entity associated with device ID '{request.device_id}' not found. "
@@ -602,7 +628,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
                 entity_obj = find_entity(phone_number_hash=phone_number_hash)
                 if not entity_obj:
-                    return error_response(
+                    return self.handle_create_grpc_error_response(
                         context,
                         response,
                         f"Entity associated with phone number '{request.phone_number}' not found. "
@@ -620,7 +646,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
             if not existing_tokens:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     "No token found with account "
@@ -638,13 +664,13 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
 
     def DeleteEntityToken(self, request, context):
@@ -653,7 +679,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
         response = vault_pb2.DeleteEntityTokenResponse
 
         try:
-            invalid_fields_response = validate_request_fields(
+            invalid_fields_response = self.handle_request_field_validation(
                 context,
                 request,
                 response,
@@ -662,7 +688,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             if invalid_fields_response:
                 return invalid_fields_response
 
-            entity_obj, llt_error_response = verify_long_lived_token(
+            entity_obj, llt_error_response = self.handle_long_lived_token_validation(
                 request, context, response
             )
             if llt_error_response:
@@ -685,7 +711,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
             if not existing_tokens:
-                return error_response(
+                return self.handle_create_grpc_error_response(
                     context,
                     response,
                     "No token found with account "
@@ -703,7 +729,7 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
         except NotImplementedError as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 str(e),
@@ -711,11 +737,11 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             )
 
         except Exception as e:
-            return error_response(
+            return self.handle_create_grpc_error_response(
                 context,
                 response,
                 e,
                 grpc.StatusCode.INTERNAL,
                 user_msg="Oops! Something went wrong. Please try again later.",
-                _type="UNKNOWN",
+                error_type="UNKNOWN",
             )
