@@ -10,7 +10,8 @@ RUN apt-get update && \
     supervisor \
     libsqlcipher-dev \
     libsqlite3-dev \
-    git && \
+    git \
+    curl && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /vault
@@ -18,8 +19,7 @@ WORKDIR /vault
 COPY . .
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-RUN pip install -U pip && \
-    pip install -U setuptools wheel && \
+RUN pip install -U --quiet --no-cache-dir setuptools && \
     pip install --quiet --no-cache-dir --force-reinstall -r requirements.txt && \
     usermod -u 1000 www-data && \
     usermod -G root www-data
