@@ -20,6 +20,8 @@ def DatabaseExists(user: str, password: str, database: str, host: str) -> None:
                 host=host,
                 database=database,
                 auth_plugin="mysql_native_password",
+                charset="utf8mb4",
+                collation="utf8mb4_unicode_ci",
             )
         ) as connection:
             test_db_query = "SELECT 1+1"
@@ -46,6 +48,8 @@ def CreateDatabase(user: str, password: str, database: str, host: str) -> None:
                 password=password,
                 host=host,
                 auth_plugin="mysql_native_password",
+                charset="utf8mb4",
+                collation="utf8mb4_unicode_ci",
             )
         ) as connection:
             create_db_query = "CREATE DATABASE IF NOT EXISTS %s;" % database
@@ -66,6 +70,8 @@ def CreateCredentialsTable(user: str, password: str, database: str, host: str) -
             database=database,
             host=host,
             auth_plugin="mysql_native_password",
+            charset="utf8mb4",
+            collation="utf8mb4_unicode_ci",
         )
     ) as connection:
         create_table_query = """CREATE TABLE IF NOT EXISTS `credentials` (`id` int NOT NULL AUTO_INCREMENT, `shared_key` text NOT NULL, `hashing_salt` text NOT NULL, `createdAt` datetime DEFAULT NULL, PRIMARY KEY (`id`)) ;"""
@@ -85,6 +91,8 @@ def SetKeys(user: str, password: str, database: str, host: str, key: str, salt: 
             database=database,
             host=host,
             auth_plugin="mysql_native_password",
+            charset="utf8mb4",
+            collation="utf8mb4_unicode_ci",
         )
     ) as connection:
         set_keys_query = """INSERT INTO credentials(id, shared_key, hashing_salt, createdAt) VALUES(%s, %s, %s, %s) ON DUPLICATE KEY UPDATE shared_key=%s, hashing_salt=%s, createdAt=%s;"""
@@ -105,6 +113,8 @@ def GetKeys(user: str, password: str, database: str, host: str) -> None:
             database=database,
             host=host,
             auth_plugin="mysql_native_password",
+            charset="utf8mb4",
+            collation="utf8mb4_unicode_ci",
         )
     ) as connection:
         get_keys_query = """SELECT shared_key, hashing_salt FROM credentials WHERE id = %s;"""
