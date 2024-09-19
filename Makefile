@@ -13,7 +13,6 @@ start:
 			--user www-data \
 			--group www-data \
 			--port '${PORT}' \
-			--host '${SSL_SERVER_NAME}' \
 			--ssl-certificate-file '${SSL_CERTIFICATE}' \
 			--ssl-certificate-key-file '${SSL_KEY}' \
 			--ssl-certificate-chain-file '${SSL_PEM}' \
