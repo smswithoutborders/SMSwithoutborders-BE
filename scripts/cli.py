@@ -13,7 +13,7 @@ from src.utils import (
 )
 from base_logger import get_logger
 
-logger = get_logger("[Vault CLI]")
+logger = get_logger("vault.cli")
 
 HASHING_KEY = load_key(get_configs("HASHING_SALT"), 32)
 DUMMY_PHONENUMBERS = get_configs(
