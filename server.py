@@ -7,6 +7,7 @@ import json
 from utils.SSL import isSSL
 
 from settings import Configurations
+
 ssl_cert = Configurations.SSL_CERTIFICATE
 ssl_port = Configurations.SSL_PORT
 ssl_key = Configurations.SSL_KEY
@@ -20,6 +21,7 @@ from flask import send_from_directory
 from flask_cors import CORS
 
 from src.api_v2 import v2
+from src.api_v3 import v3_blueprint
 
 from SwobThirdPartyPlatforms import base_dir
 
@@ -32,12 +34,15 @@ CORS(
 )
 
 app.register_blueprint(v2, url_prefix="/v2")
+app.register_blueprint(v3_blueprint)
 
-@app.route('/public/<path:path>')
+
+@app.route("/public/<path:path>")
 def send_report(path):
     platform_name = path.split("-")[0]
     logo_path = os.path.join(base_dir, platform_name)
     return send_from_directory(logo_path, path)
+
 
 checkSSL = isSSL(path_crt_file=ssl_cert, path_key_file=ssl_key, path_pem_file=ssl_pem)
 

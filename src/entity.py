@@ -57,3 +57,62 @@ def find_entity(**search_criteria):
         except DoesNotExist:
             logger.debug("Entity is not found...")
             return None
+
+
+def fetch_all_entities(
+    filters=None, date_range=None, truncate_by=None, return_json=False
+):
+    """
+    Fetch all entities with optional filters, date range, and date truncation.
+
+    Args:
+        filters (dict, optional): A dictionary where the keys are field names
+            and the values are the conditions/criteria to filter the entities by.
+            Defaults to None.
+        date_range (tuple, optional): A tuple containing (start_date, end_date) to
+            filter the 'date_created' field by. Dates should be datetime objects.
+        truncate_by (str, optional): Specify if the 'date_created' should be
+            truncated by 'day' or 'month'. If provided, date filtering will apply
+            to truncated dates.
+        return_json (bool, optional): If True, return the results as a list of dicts.
+            If False (default), return the results as a list of token objects.
+
+    Returns:
+        list: A list of all entities matching the filter criteria.
+    """
+    filters = filters or {}
+    logger.debug(
+        "Fetching all entities with filters: %s, date_range: %s, truncate_by: %s",
+        filters,
+        date_range,
+        truncate_by,
+    )
+
+    with database.connection_context():
+        query = Entity.select()
+        conditions = []
+
+        for field, value in filters.items():
+            conditions.append(getattr(Entity, field) == value)
+
+        if date_range:
+            start_date, end_date = date_range
+            if truncate_by == "day":
+                conditions.append(
+                    Entity.date_created.truncate("day").between(start_date, end_date)
+                )
+            elif truncate_by == "month":
+                conditions.append(
+                    Entity.date_created.truncate("month").between(start_date, end_date)
+                )
+            else:
+                conditions.append(Entity.date_created.between(start_date, end_date))
+
+        if conditions:
+            query = query.where(*conditions)
+
+        total_records = query.count()
+
+        entities = list(query.dicts()) if return_json else list(query.execute())
+        logger.debug("Found %s entities", total_records)
+        return entities
