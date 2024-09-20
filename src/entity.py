@@ -75,7 +75,7 @@ def fetch_all_entities(
             truncated by 'day' or 'month'. If provided, date filtering will apply
             to truncated dates.
         return_json (bool, optional): If True, return the results as a list of dicts.
-            If False (default), return the results as a list of token objects.
+            If False (default), return the results as a list of model instances.
 
     Returns:
         list: A list of all entities matching the filter criteria.
@@ -111,8 +111,10 @@ def fetch_all_entities(
         if conditions:
             query = query.where(*conditions)
 
+        query = query.order_by(Entity.date_created.asc())
+
         total_records = query.count()
+        logger.debug("Found %d entities", total_records)
 
         entities = list(query.dicts()) if return_json else list(query.execute())
-        logger.debug("Found %s entities", total_records)
         return entities
