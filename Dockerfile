@@ -11,7 +11,8 @@ RUN apt-get update && \
     libsqlcipher-dev \
     libsqlite3-dev \
     git \
-    curl && \
+    curl \
+    pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /vault
