@@ -2,7 +2,6 @@
 Module for handling encryption, decryption, encoding, and decoding of RelaySMS payloads.
 """
 
-import logging
 import base64
 import struct
 from smswithoutborders_libsig.ratchets import Ratchets, States, HEADERS
@@ -53,7 +52,6 @@ def decrypt_payload(
         )
         return plaintext, state, None
     except Exception as e:
-        logger.error("Error decrypting relaysms payload: %s", e, exc_info=True)
         return None, None, e
 
 
@@ -82,7 +80,6 @@ def encrypt_payload(server_state, client_publish_pub_key, content):
         )
         return header.serialize(), content_ciphertext, state, None
     except Exception as e:
-        logger.error("Error encrypting relaysms payload: %s", e, exc_info=True)
         return None, None, None, e
 
 
@@ -107,7 +104,6 @@ def decode_relay_sms_payload(content):
         encrypted_content = payload[4 + len_header :]
         return header, encrypted_content, None
     except Exception as e:
-        logger.error("Error decoding relaysms payload: %s", e, exc_info=True)
         return None, None, e
 
 
@@ -134,5 +130,4 @@ def encode_relay_sms_payload(header, content_ciphertext):
             None,
         )
     except Exception as e:
-        logger.error("Error encoding relaysms payload: %s", e, exc_info=True)
         return None, e
