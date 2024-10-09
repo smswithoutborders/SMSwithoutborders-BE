@@ -1,9 +1,11 @@
 """OTP Service Module."""
 
 import datetime
+import random
+
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
-from src.db_models import OTPRateLimit
+from src.db_models import OTPRateLimit, OTP
 from src.utils import get_configs
 from base_logger import get_logger
 
@@ -322,3 +324,96 @@ def clear_rate_limit(phone_number):
     OTPRateLimit.delete().where(OTPRateLimit.phone_number == phone_number).execute()
 
     logger.info("Rate limit cleared for phone number.")
+
+
+def generate_otp(length=6):
+    """
+    Generate a random OTP of specified length.
+
+    Args:
+        length (int): The length of the OTP to generate.
+
+    Returns:
+        str: The generated OTP.
+    """
+    return str(random.randint(10 ** (length - 1), 10**length - 1))
+
+
+def create_inapp_otp(phone_number, exp_time=30):
+    """
+    Create or update an OTP for the given phone number.
+
+    Args:
+        phone_number (str): The phone number for which the OTP will be generated.
+        exp_time (int): The expiration time in minutes for the OTP. Defaults to 30 minutes.
+
+    Returns:
+        tuple:
+            - str: A message describing the result of the OTP generation attempt.
+            - tuple:
+                - str: The OTP code.
+                - int: The expiration time as a Unix timestamp (seconds since epoch).
+    """
+    otp_entry, created = OTP.get_or_create(
+        phone_number=phone_number,
+        is_verified=False,
+        defaults={
+            "otp_code": generate_otp(),
+            "date_expires": datetime.datetime.now()
+            + datetime.timedelta(minutes=exp_time),
+            "attempt_count": 0,
+        },
+    )
+
+    if not created and not otp_entry.is_expired():
+        expiration_time = int(otp_entry.date_expires.timestamp())
+        return (
+            "An active OTP already exists. Returning current OTP.",
+            (otp_entry.otp_code, expiration_time),
+        )
+
+    if not created:
+        otp_entry.otp_code = generate_otp()
+        otp_entry.date_expires = datetime.datetime.now() + datetime.timedelta(
+            minutes=exp_time
+        )
+        otp_entry.attempt_count = 0
+        otp_entry.is_verified = False
+        otp_entry.save()
+
+    expiration_time = int(otp_entry.date_expires.timestamp())
+    return "OTP created successfully.", (otp_entry.otp_code, expiration_time)
+
+
+def verify_inapp_otp(phone_number, otp_code):
+    """
+    Verify the OTP for a given phone number.
+
+    Args:
+        phone_number (str): The phone number for which the OTP was generated.
+        otp_code (str): The OTP code entered for verification.
+
+    Returns:
+        tuple:
+            - bool: Indicates whether the OTP verification was successful.
+            - str: A message describing the result of the OTP verification attempt.
+    """
+    otp_entry = OTP.get_or_none(
+        OTP.phone_number == phone_number,
+        ~(OTP.is_verified),
+    )
+
+    if not otp_entry:
+        return False, "No OTP record found for this phone number."
+
+    if otp_entry.is_expired():
+        return False, "The OTP has expired. Please request a new one."
+
+    if otp_entry.otp_code != otp_code:
+        otp_entry.increment_attempt_count()
+        return False, "Incorrect OTP. Please try again."
+
+    otp_entry.is_verified = True
+    otp_entry.save()
+
+    return True, "OTP verified successfully!"

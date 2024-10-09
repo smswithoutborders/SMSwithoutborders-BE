@@ -10,6 +10,7 @@ from peewee import (
     UUIDField,
     ForeignKeyField,
     BlobField,
+    BooleanField,
 )
 from src.db import connect
 from src.utils import create_tables
@@ -93,5 +94,40 @@ class PasswordRateLimit(Model):
         table_name = "password_rate_limit"
 
 
+class OTP(Model):
+    """Model representing OTP Table."""
+
+    phone_number = CharField()
+    otp_code = CharField(max_length=10)
+    attempt_count = IntegerField(default=0)
+    date_expires = DateTimeField()
+    is_verified = BooleanField(default=False)
+    date_created = DateTimeField(default=datetime.datetime.now)
+
+    class Meta:
+        """Meta class to define database connection."""
+
+        database = database
+        table_name = "otp"
+        indexes = (
+            (("phone_number",), False),
+            (("date_expires",), False),
+        )
+
+    def is_expired(self):
+        """Check if the OTP is expired."""
+        return datetime.datetime.now() > self.date_expires
+
+    def reset_attempt_count(self):
+        """Reset the attempt count for the OTP."""
+        self.attempt_count = 0
+        self.save()
+
+    def increment_attempt_count(self):
+        """Increment the attempt count for the OTP."""
+        self.attempt_count += 1
+        self.save()
+
+
 if Configurations.MODE in ("production", "development"):
-    create_tables([Entity, OTPRateLimit, Token, PasswordRateLimit])
+    create_tables([Entity, OTPRateLimit, Token, PasswordRateLimit, OTP])
