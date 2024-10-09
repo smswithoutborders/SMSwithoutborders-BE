@@ -2,6 +2,7 @@
 
 import base64
 import re
+import traceback
 
 import grpc
 import phonenumbers
@@ -43,32 +44,41 @@ class EntityService(vault_pb2_grpc.EntityServicer):
     """Entity Service Descriptor"""
 
     def handle_create_grpc_error_response(
-        self, context, response, sys_msg, status_code, **kwargs
+        self, context, response, error, status_code, **kwargs
     ):
         """
         Handles the creation of a gRPC error response.
 
         Args:
-            context: gRPC context.
-            response: gRPC response object.
-            sys_msg (str or tuple): System message.
-            status_code: gRPC status code.
-            user_msg (str or tuple): User-friendly message.
-            error_type (str): Type of error.
+            context (grpc.ServicerContext): The gRPC context object.
+            response (callable): The gRPC response object.
+            error (Exception or str): The exception instance or error message.
+            status_code (grpc.StatusCode): The gRPC status code to be set for the response
+                (e.g., grpc.StatusCode.INTERNAL).
+            user_msg (str, optional): A user-friendly error message to be returned to the client.
+                If not provided, the `error` message will be used.
+            error_type (str, optional): A string identifying the type of error.
+                When set to "UNKNOWN", it triggers the logging of a full exception traceback
+                for debugging purposes.
+            error_prefix (str, optional): An optional prefix to prepend to the error message
+                for additional context (e.g., indicating the specific operation or subsystem
+                that caused the error).
 
         Returns:
             An instance of the specified response with the error set.
         """
         user_msg = kwargs.get("user_msg")
         error_type = kwargs.get("error_type")
+        error_prefix = kwargs.get("error_prefix")
 
         if not user_msg:
-            user_msg = sys_msg
+            user_msg = str(error)
 
         if error_type == "UNKNOWN":
-            logger.exception(sys_msg)
+            traceback.print_exception(type(error), error, error.__traceback__)
 
-        context.set_details(user_msg)
+        error_message = f"{error_prefix}: {user_msg}" if error_prefix else user_msg
+        context.set_details(error_message)
         context.set_code(status_code)
 
         return response()
