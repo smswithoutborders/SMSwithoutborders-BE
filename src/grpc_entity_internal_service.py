@@ -932,3 +932,49 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 user_msg="Oops! Something went wrong. Please try again later.",
                 error_type="UNKNOWN",
             )
+
+    def AuthenticateBridgeEntity(self, request, context):
+        """Handles authenticating a bridge entity."""
+
+        response = vault_pb2.AuthenticateBridgeEntityResponse
+
+        try:
+            invalid_fields_response = self.handle_request_field_validation(
+                context,
+                request,
+                response,
+                ["phone_number"],
+            )
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+            entity_obj = find_entity(phone_number_hash=phone_number_hash)
+
+            if not entity_obj:
+                return self.handle_create_grpc_error_response(
+                    context,
+                    response,
+                    "Bridge Entity with this phone number not found.",
+                    grpc.StatusCode.NOT_FOUND,
+                )
+
+            if not entity_obj.is_bridge_enabled:
+                return self.handle_create_grpc_error_response(
+                    context,
+                    response,
+                    "Bridges are not enabled for Entity with this phone number.",
+                    grpc.StatusCode.UNAUTHENTICATED,
+                )
+
+            return response(success=True, message="Authentication successful.")
+
+        except Exception as e:
+            return self.handle_create_grpc_error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                error_type="UNKNOWN",
+            )
