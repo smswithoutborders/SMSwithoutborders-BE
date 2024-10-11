@@ -1,16 +1,19 @@
 """gRPC Entity Internal Service"""
 
 import base64
+import re
 import traceback
 
 import grpc
+import phonenumbers
 
 import vault_pb2
 import vault_pb2_grpc
 
-from src.entity import find_entity
+from src.entity import create_entity, find_entity
 from src.tokens import fetch_entity_tokens, create_entity_token, find_token
 from src.crypto import generate_hmac
+from src.otp_service import send_otp, verify_otp, create_inapp_otp
 from src.utils import (
     load_key,
     get_configs,
@@ -18,6 +21,10 @@ from src.utils import (
     decrypt_and_decode,
     load_keypair_object,
     get_supported_platforms,
+    is_valid_x25519_public_key,
+    generate_eid,
+    clear_keystore,
+    generate_keypair_and_public_key,
 )
 from src.long_lived_token import verify_llt
 from src.relaysms_payload import (
@@ -93,6 +100,8 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             None or response: None if no missing fields,
                 error response otherwise.
         """
+        x25519_fields = {"client_publish_pub_key", "client_device_id_pub_key"}
+
         for field in required_fields:
             if isinstance(field, tuple):
                 if not any(getattr(request, f, None) for f in field):
@@ -110,6 +119,57 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                         f"Missing required field: {field}",
                         grpc.StatusCode.INVALID_ARGUMENT,
                     )
+
+        def validate_phone_number():
+            phone_number = getattr(request, "phone_number", None)
+            country_code = getattr(request, "country_code", None)
+            if phone_number and country_code:
+                try:
+                    parsed_number = phonenumbers.parse(phone_number)
+                    expected_country = phonenumbers.region_code_for_country_code(
+                        parsed_number.country_code
+                    )
+                    given_country = country_code.upper()
+                    if expected_country != given_country:
+                        if not (given_country == "CA" and expected_country == "US"):
+                            return self.handle_create_grpc_error_response(
+                                context,
+                                response,
+                                f"The phone number does not match the provided country code "
+                                f"{given_country}. Expected country code is {expected_country}.",
+                                grpc.StatusCode.INVALID_ARGUMENT,
+                            )
+                except phonenumbers.phonenumberutil.NumberParseException as e:
+                    match = re.split(r"\(\d\)\s*(.*)", str(e))
+                    return self.handle_create_grpc_error_response(
+                        context,
+                        response,
+                        e,
+                        grpc.StatusCode.INVALID_ARGUMENT,
+                        user_msg=f"The phone number is invalid. {match[1].strip()}",
+                        error_type="UNKNOWN",
+                    )
+            return None
+
+        def validate_x25519_keys():
+            for field in x25519_fields & set(required_fields):
+                is_valid, error = is_valid_x25519_public_key(getattr(request, field))
+                if not is_valid:
+                    return self.handle_create_grpc_error_response(
+                        context,
+                        response,
+                        f"The {field} field has an {error}.",
+                        grpc.StatusCode.INVALID_ARGUMENT,
+                    )
+            return None
+
+        phone_number_error = validate_phone_number()
+        if phone_number_error:
+            return phone_number_error
+
+        x25519_keys_error = validate_x25519_keys()
+        if x25519_keys_error:
+            return x25519_keys_error
 
         return None
 
@@ -745,6 +805,123 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
                 str(e),
                 grpc.StatusCode.UNIMPLEMENTED,
             )
+
+        except Exception as e:
+            return self.handle_create_grpc_error_response(
+                context,
+                response,
+                e,
+                grpc.StatusCode.INTERNAL,
+                user_msg="Oops! Something went wrong. Please try again later.",
+                error_type="UNKNOWN",
+            )
+
+    def CreateBridgeEntity(self, request, context):
+        """Handles the creation of a bridge entity."""
+
+        response = vault_pb2.CreateBridgeEntityResponse
+
+        def complete_creation(entity_obj):
+            success, message = verify_otp(
+                request.phone_number,
+                request.ownership_proof_response,
+                use_twilio=False,
+            )
+            if not success:
+                return self.handle_create_grpc_error_response(
+                    context,
+                    response,
+                    message,
+                    grpc.StatusCode.UNAUTHENTICATED,
+                )
+
+            entity_obj.is_bridge_enabled = True
+            entity_obj.save()
+
+            return response(message="Bridge Entity Created Successfully", success=True)
+
+        def initiate_creation(phone_number_hash, eid, entity_obj=None):
+            invalid_fields_response = self.handle_request_field_validation(
+                context,
+                request,
+                response,
+                ["country_code", "client_publish_pub_key"],
+            )
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            country_code_ciphertext_b64 = encrypt_and_encode(request.country_code)
+
+            clear_keystore(eid)
+            entity_publish_keypair, entity_publish_pub_key = (
+                generate_keypair_and_public_key(eid, "publish")
+            )
+
+            if entity_obj:
+                entity_obj.client_publish_pub_key = request.client_publish_pub_key
+                entity_obj.publish_keypair = entity_publish_keypair.serialize()
+                entity_obj.save()
+            else:
+                fields = {
+                    "eid": eid,
+                    "phone_number_hash": phone_number_hash,
+                    "password_hash": None,
+                    "country_code": country_code_ciphertext_b64,
+                    "client_publish_pub_key": request.client_publish_pub_key,
+                    "publish_keypair": entity_publish_keypair.serialize(),
+                    "is_bridge_enabled": False,
+                }
+
+                create_entity(**fields)
+
+            _, otp_result = create_inapp_otp(phone_number=request.phone_number)
+            otp_code, otp_exp_time = otp_result
+
+            message_body = (
+                "Your RelaySMS Auth Phrase is: "
+                f'{base64.b64encode(entity_publish_pub_key).decode("utf-8")}:'
+                f"{otp_code}:{otp_exp_time}"
+            )
+
+            success, message, _ = send_otp(request.phone_number, message_body)
+
+            if not success:
+                return self.handle_create_grpc_error_response(
+                    context,
+                    response,
+                    message,
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                )
+
+            return response(success=True, message=message)
+
+        try:
+            invalid_fields_response = self.handle_request_field_validation(
+                context,
+                request,
+                response,
+                ["country_code", "phone_number"],
+            )
+            if invalid_fields_response:
+                return invalid_fields_response
+
+            phone_number_hash = generate_hmac(HASHING_KEY, request.phone_number)
+            entity_obj = find_entity(phone_number_hash=phone_number_hash)
+
+            if entity_obj and entity_obj.is_bridge_enabled:
+                return self.handle_create_grpc_error_response(
+                    context,
+                    response,
+                    "Bridge Entity with this phone number already exists.",
+                    grpc.StatusCode.ALREADY_EXISTS,
+                )
+
+            eid = generate_eid(phone_number_hash)
+
+            if request.ownership_proof_response:
+                return complete_creation(entity_obj)
+
+            return initiate_creation(phone_number_hash, eid, entity_obj)
 
         except Exception as e:
             return self.handle_create_grpc_error_response(

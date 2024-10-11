@@ -24,7 +24,7 @@ class Entity(Model):
 
     eid = UUIDField(primary_key=True)
     phone_number_hash = CharField()
-    password_hash = CharField()
+    password_hash = CharField(null=True)
     country_code = CharField()
     device_id = CharField(null=True)
     client_publish_pub_key = TextField(null=True)
@@ -32,6 +32,7 @@ class Entity(Model):
     publish_keypair = BlobField(null=True)
     device_id_keypair = BlobField(null=True)
     server_state = BlobField(null=True)
+    is_bridge_enabled = BooleanField(default=True)
     date_created = DateTimeField(default=datetime.datetime.now)
 
     class Meta:

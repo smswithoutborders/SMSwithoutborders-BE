@@ -14,6 +14,7 @@ logger = get_logger(__name__)
 TWILIO_ACCOUNT_SID = get_configs("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = get_configs("TWILIO_AUTH_TOKEN")
 TWILIO_SERVICE_SID = get_configs("TWILIO_SERVICE_SID")
+TWILIO_MESSAGING_SERVICE_SID = get_configs("TWILIO_MESSAGING_SERVICE_SID")
 MOCK_OTP = get_configs("MOCK_OTP")
 MOCK_OTP = MOCK_OTP.lower() == "true" if MOCK_OTP is not None else False
 DUMMY_PHONENUMBERS = get_configs(
@@ -63,18 +64,20 @@ def is_rate_limited(phone_number):
     return False
 
 
-def send_otp(phone_number):
+def send_otp(phone_number, message_body=None):
     """
-    Send an OTP to the provided phone number.
+    Sends a One-Time Password (OTP) to the specified phone number.
 
     Args:
-        phone_number (str): The phone number to send the OTP to.
+        phone_number (str): The recipient's phone number in E.164 format (e.g., "+1234567890").
+        message_body (str, optional): A custom message body for the OTP.
 
     Returns:
-        tuple: A tuple containing the following elements:
-            - A boolean indicating whether the OTP was sent successfully.
-            - A message indicating the result of the OTP sending process.
-            - The OTP expiry time as an integer timestamp, if applicable; otherwise, None.
+        tuple:
+            - bool: True if the OTP was sent successfully, False otherwise.
+            - str: A message indicating the result of the OTP sending process.
+            - int or None: The OTP expiry time as a Unix timestamp if the OTP was sent successfully;
+              otherwise, None.
     """
     logger.debug("Sending OTP to phone number...")
     if is_rate_limited(phone_number):
@@ -87,7 +90,7 @@ def send_otp(phone_number):
     elif phone_number in DUMMY_PHONENUMBERS:
         success, message = mock_send_otp()
     else:
-        success, message = twilio_send_otp(phone_number)
+        success, message = twilio_send_otp(phone_number, message_body)
 
     if success:
         otp = increment_rate_limit(phone_number)
@@ -96,13 +99,15 @@ def send_otp(phone_number):
     return success, message, expires
 
 
-def verify_otp(phone_number, otp):
+def verify_otp(phone_number, otp, use_twilio=True):
     """
     Verify the provided OTP for the given phone number.
 
     Args:
         phone_number (str): The phone number to verify the OTP for.
         otp (str): The OTP to verify.
+        use_twilio (bool, optional): A flag to indicate whether to use
+            Twilio for verification. Defaults to True.
 
     Returns:
         tuple: A tuple containing the following elements:
@@ -120,8 +125,10 @@ def verify_otp(phone_number, otp):
         success, message = mock_verify_otp(otp)
     elif phone_number in DUMMY_PHONENUMBERS:
         success, message = mock_verify_otp(otp)
-    else:
+    elif use_twilio:
         success, message = twilio_verify_otp(phone_number, otp)
+    else:
+        success, message = verify_inapp_otp(phone_number, otp)
 
     if success:
         clear_rate_limit(phone_number)
@@ -129,32 +136,40 @@ def verify_otp(phone_number, otp):
     return success, message
 
 
-def twilio_send_otp(phone_number):
+def twilio_send_otp(phone_number, message_body=None):
     """
-    Send an OTP using Twilio to the provided phone number.
+    Sends a One-Time Password (OTP) using Twilio to the specified phone number.
 
     Args:
-        phone_number (str): The phone number to send the OTP to.
+        phone_number (str): The recipient's phone number in E.164 format (e.g., "+1234567890").
+        message_body (str, optional): A custom message body for the OTP.
 
     Returns:
-        tuple: A tuple containing the following elements:
-            - A boolean indicating whether the OTP was sent successfully.
-            - A message indicating the result of the OTP sending process.
+        tuple:
+            - bool: True if the message was sent successfully, False otherwise.
+            - str: A detailed message indicating the result.
     """
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
     try:
-        verification = client.verify.v2.services(
-            TWILIO_SERVICE_SID
-        ).verifications.create(to=phone_number, channel="sms")
-        if verification.status == "pending":
+        if message_body:
+            message = client.messages.create(
+                body=message_body,
+                messaging_service_sid=TWILIO_MESSAGING_SERVICE_SID,
+                to=phone_number,
+            )
+            status = message.status
+        else:
+            verification = client.verify.v2.services(
+                TWILIO_SERVICE_SID
+            ).verifications.create(to=phone_number, channel="sms")
+            status = verification.status
+
+        if status in ("accepted", "pending"):
             logger.info("OTP sent successfully.")
             return True, "OTP sent successfully. Please check your phone for the code."
 
-        logger.error(
-            "Failed to send OTP. Twilio status: %s",
-            verification.status,
-        )
+        logger.error("Failed to send OTP. Twilio status: %s", status)
         return (
             False,
             "Failed to send OTP. Please ensure your phone number is correct and try again later.",
