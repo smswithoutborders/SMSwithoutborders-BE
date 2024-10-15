@@ -13,6 +13,7 @@
    - [Usage](#usage-1)
      - [Generating Device ID](#1-generating-device-id)
    - [Code Example (Python)](#code-example-python-1)
+3. [Auth Phrase](#3-auth-phrase)
 
 ## 1. Long-Lived Tokens (LLTs)
 
@@ -172,4 +173,17 @@ def compute_device_id(secret_key: bytes, phone_number: str, public_key: bytes) -
     hmac_object = hmac.new(secret_key, combined_input, hashlib.sha256)
     # Return bytes representation of HMAC digest
     return hmac_object.digest()
+```
+
+## 3. Auth-Phrase
+
+```python
+ auth_phrase = (
+        struct.pack("<i", len(server_publish_pub_key))  # Length of public key
+        + server_publish_pub_key  # Public key
+        + struct.pack("<i", len(otp_code))  # Length of OTP
+        + otp_code.encode("utf-8")  # OTP code
+        + str(otp_exp_time).encode("utf-8")  # OTP expiration time
+    )
+  print(base64.b64encode(auth_phrase).decode("utf-8"))
 ```

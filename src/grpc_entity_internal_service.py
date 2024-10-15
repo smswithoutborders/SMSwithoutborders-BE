@@ -3,6 +3,7 @@
 import base64
 import re
 import traceback
+import struct
 
 import grpc
 import phonenumbers
@@ -877,10 +878,16 @@ class EntityInternalService(vault_pb2_grpc.EntityInternalServicer):
             _, otp_result = create_inapp_otp(phone_number=request.phone_number)
             otp_code, otp_exp_time = otp_result
 
+            auth_phrase = (
+                struct.pack("<i", len(entity_publish_pub_key))
+                + entity_publish_pub_key
+                + struct.pack("<i", len(otp_code))
+                + otp_code.encode("utf-8")
+                + str(otp_exp_time).encode("utf-8")
+            )
             message_body = (
                 "Your RelaySMS Auth Phrase is: "
-                f'{base64.b64encode(entity_publish_pub_key).decode("utf-8")}:'
-                f"{otp_code}:{otp_exp_time}"
+                f'{base64.b64encode(auth_phrase).decode("utf-8")}'
             )
 
             success, message, _ = send_otp(request.phone_number, message_body)
