@@ -24,7 +24,7 @@ jobs:
             echo "============================"
             echo "Updating repository ..."
             echo "============================"
-            if ! assembler clone --branch staging --project --vault; then
+            if ! assembler clone --branch staging --project vault; then
               echo "❌ Error updating repository!"
               exit 1
             fi
